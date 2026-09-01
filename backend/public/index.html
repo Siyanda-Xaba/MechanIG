@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MechanIQ Picture Search Test</title>
+    <style>
+      body { background: #0d1520; color: #edf5f8; font-family: Arial, sans-serif; margin: 0; }
+      main { max-width: 680px; margin: 40px auto; padding: 28px; background: #162332; border-radius: 14px; }
+      h1 { margin-top: 0; } p { color: #b6c4ce; line-height: 1.5; }
+      label { display: block; font-weight: 700; margin-top: 18px; }
+      input { box-sizing: border-box; width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #526777; border-radius: 6px; }
+      button { background: #27bd78; border: 0; border-radius: 6px; color: #062416; cursor: pointer; font-size: 16px; font-weight: 700; margin-top: 24px; padding: 12px 18px; }
+      button:disabled { cursor: wait; opacity: .6; }
+      #preview { display: none; max-height: 260px; max-width: 100%; margin-top: 16px; border-radius: 8px; }
+      #result-frame { background: #081018; border: 0; border-left: 4px solid #27bd78; border-radius: 8px; box-sizing: border-box; color: #edf5f8; display: block; height: 300px; margin-top: 12px; width: 100%; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MechanIQ picture-search test</h1>
+      <p>Take a clear photo of one vehicle part, or select one from your device. Vehicle details are optional, but they help find compatible parts.</p>
+      <form id="search-form" action="/api/v1/part-searches" method="post" enctype="multipart/form-data" target="result-frame">
+        <input type="hidden" name="responseFormat" value="html" />
+        <label for="image">Vehicle-part photo *</label>
+        <input id="image" name="image" type="file" accept="image/*" capture="environment" required />
+        <p>On a phone, choose <strong>Camera</strong> to take a new photo. On a computer, choose an existing image file.</p>
+        <img id="preview" alt="Selected vehicle part" />
+        <div class="grid">
+          <label>Make<input name="make" placeholder="Toyota" /></label>
+          <label>Model<input name="model" placeholder="Corolla" /></label>
+          <label>Year<input name="year" type="number" placeholder="2020" /></label>
+          <label>Engine<input name="engine" placeholder="1.8L" /></label>
+        </div>
+        <button id="submit" type="submit">Search this picture</button>
+      </form>
+      <h2>Result</h2>
+      <iframe id="result-frame" name="result-frame" title="Picture search result"></iframe>
+    </main>
+    <script>
+      const form = document.querySelector('#search-form');
+      const image = document.querySelector('#image');
+      const preview = document.querySelector('#preview');
+
+      image.addEventListener('change', () => {
+        const [file] = image.files;
+        if (!file) return;
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+      });
+
+    </script>
+  </body>
+</html>

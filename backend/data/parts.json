@@ -1,0 +1,72 @@
+[
+  {
+    "id": "part-brake-pad-corolla-2014-2021",
+    "category": "brake pad",
+    "name": "Front brake pad set",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "04465-0D140",
+    "priceZar": 850,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Toyota", "model": "Corolla", "yearFrom": 2014, "yearTo": 2021, "engine": "1.8L" }]
+  },
+  {
+    "id": "part-air-filter-polo-2018-2024",
+    "category": "air filter",
+    "name": "Engine air filter",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "04E129620",
+    "priceZar": 280,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Volkswagen", "model": "Polo", "yearFrom": 2018, "yearTo": 2024, "engine": "1.0 TSI" }]
+  },
+  {
+    "id": "part-oil-filter-i20-2015-2021",
+    "category": "oil filter",
+    "name": "Spin-on oil filter",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "26300-35505",
+    "priceZar": 155,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Hyundai", "model": "i20", "yearFrom": 2015, "yearTo": 2021, "engine": "1.4L" }]
+  },
+  {
+    "id": "part-headlamp-corolla-2014-2016",
+    "category": "headlamp assembly",
+    "name": "Right headlamp assembly",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "81110-02D80",
+    "priceZar": 3200,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Toyota", "model": "Corolla", "yearFrom": 2014, "yearTo": 2016, "engine": "1.8L" }]
+  },
+  {
+    "id": "part-side-mirror-polo-2018-2024",
+    "category": "side mirror",
+    "name": "Right electric side mirror",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "2G1857508",
+    "priceZar": 1850,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Volkswagen", "model": "Polo", "yearFrom": 2018, "yearTo": 2024, "engine": "1.0 TSI" }]
+  },
+  {
+    "id": "part-front-strut-corolla-2014-2021",
+    "category": "suspension strut",
+    "name": "Front suspension strut",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "48510-12B20",
+    "priceZar": 2750,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Toyota", "model": "Corolla", "yearFrom": 2014, "yearTo": 2021, "engine": "1.8L" }]
+  },
+  {
+    "id": "part-shock-absorber-corolla-2014-2021",
+    "category": "shock absorber",
+    "name": "Front shock absorber",
+    "brand": "MechanIQ Sample",
+    "oemPartNumber": "48520-12A90",
+    "priceZar": 2150,
+    "currency": "ZAR",
+    "fitments": [{ "make": "Toyota", "model": "Corolla", "yearFrom": 2014, "yearTo": 2021, "engine": "1.8L" }]
+  }
+]
