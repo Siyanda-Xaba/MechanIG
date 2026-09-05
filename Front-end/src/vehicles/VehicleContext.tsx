@@ -2,26 +2,64 @@ import {
   createContext,
   ReactNode,
   useContext,
+  useEffect,
   useState,
 } from 'react'
 
 import { Vehicle } from './types'
+import { getUserVehicles } from './vehicleService'
 
 type VehicleContextType = {
   vehicles: Vehicle[]
   selectedVehicle: Vehicle | null
+  isLoadingVehicles: boolean
   addVehicle: (vehicle: Vehicle) => void
   selectVehicle: (vehicleId: string) => void
+  refreshVehicles: () => Promise<void>
 }
 
-const VehicleContext = createContext<VehicleContextType | undefined>(undefined)
+const VehicleContext = createContext<VehicleContextType | undefined>(
+  undefined
+)
 
-export function VehicleProvider({ children }: { children: ReactNode }) {
+export function VehicleProvider({
+  children,
+}: {
+  children: ReactNode
+}) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
+  const [selectedVehicle, setSelectedVehicle] =
+    useState<Vehicle | null>(null)
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true)
+
+  useEffect(() => {
+    refreshVehicles()
+  }, [])
+
+  async function refreshVehicles() {
+    try {
+      setIsLoadingVehicles(true)
+
+      const userVehicles = await getUserVehicles()
+
+      setVehicles(userVehicles)
+
+      const primaryVehicle =
+        userVehicles.find((vehicle) => vehicle.isPrimary) ??
+        userVehicles[0] ??
+        null
+
+      setSelectedVehicle(primaryVehicle)
+    } finally {
+      setIsLoadingVehicles(false)
+    }
+  }
 
   function addVehicle(vehicle: Vehicle) {
-    setVehicles((currentVehicles) => [...currentVehicles, vehicle])
+    setVehicles((currentVehicles) => [
+      ...currentVehicles,
+      vehicle,
+    ])
 
     if (vehicle.isPrimary || selectedVehicle === null) {
       setSelectedVehicle(vehicle)
@@ -29,7 +67,9 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
   }
 
   function selectVehicle(vehicleId: string) {
-    const vehicle = vehicles.find((item) => item.id === vehicleId)
+    const vehicle = vehicles.find(
+      (item) => item.id === vehicleId
+    )
 
     if (vehicle) {
       setSelectedVehicle(vehicle)
@@ -41,8 +81,10 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
       value={{
         vehicles,
         selectedVehicle,
+        isLoadingVehicles,
         addVehicle,
         selectVehicle,
+        refreshVehicles,
       }}
     >
       {children}
@@ -54,7 +96,9 @@ export function useVehicle() {
   const context = useContext(VehicleContext)
 
   if (!context) {
-    throw new Error('useVehicle must be used inside VehicleProvider')
+    throw new Error(
+      'useVehicle must be used inside VehicleProvider'
+    )
   }
 
   return context

@@ -1,68 +1,135 @@
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { Tabs } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { CustomerDiagnosticsProvider } from '../../src/customer/CustomerDiagnosticsContext'
+import { CustomerHomeProvider } from '../../src/customer/CustomerHomeContext'
+import { useTheme } from '../../src/theme/ThemeContext'
 
 export default function CustomerLayout() {
+  const { colors } = useTheme()
+  const insets = useSafeAreaInsets()
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#3CFFFC',
-        tabBarInactiveTintColor: '#8C969D',
-        tabBarStyle: {
-          backgroundColor: '#000000',
-          borderTopColor: '#1D252B',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
+    <CustomerHomeProvider>
+      <CustomerDiagnosticsProvider>
+        <Tabs
+          screenOptions={{
+            headerShown: false,
 
-      <Tabs.Screen
-        name="diagnostics"
-        options={{
-          title: 'Diagnostics',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pulse-outline" size={size} color={color} />
-          ),
-        }}
-      />
+            tabBarActiveTintColor: colors.accent,
+            tabBarInactiveTintColor: colors.secondaryText,
 
-      <Tabs.Screen
-        name="fuel"
-        options={{
-          title: 'Fuel',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="speedometer-outline" size={size} color={color} />
-          ),
-        }}
-      />
+            tabBarStyle: {
+              position: 'absolute',
 
-      <Tabs.Screen
-        name="marketplace"
-        options={{
-          title: 'Marketplace',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="storefront-outline" size={size} color={color} />
-          ),
-        }}
-      />
+              left: 16,
+              right: 16,
+              bottom: Math.max(insets.bottom - 10, 2),
 
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+              height: 68,
+
+              backgroundColor: colors.card,
+
+              borderWidth: 1,
+              borderTopWidth: 1,
+              borderColor: colors.border,
+
+              borderRadius: 18,
+
+              paddingTop: 7,
+              paddingBottom: 7,
+
+              marginHorizontal: 16,
+            },
+
+            tabBarItemStyle: {
+              flex: 1,
+              paddingVertical: 2,
+            },
+
+            tabBarLabelStyle: {
+              fontSize: 9.5,
+              fontWeight: '500',
+              marginTop: 2,
+            },
+
+            tabBarIconStyle: {
+              marginTop: 1,
+            },
+          }}
+        >
+          <Tabs.Screen
+            name="index"
+            options={{
+              title: 'Home',
+              tabBarIcon: ({ color }) => (
+                <Ionicons
+                  name="home-outline"
+                  size={24}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          <Tabs.Screen
+            name="diagnostics"
+            options={{
+              title: 'Diagnostics',
+              tabBarIcon: ({ color }) => (
+                <MaterialCommunityIcons
+                  name="engine-outline"
+                  size={25}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          <Tabs.Screen
+            name="fuel"
+            options={{
+              title: 'Fuel',
+              tabBarIcon: ({ color }) => (
+                <MaterialCommunityIcons
+                  name="gas-station-outline"
+                  size={25}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          <Tabs.Screen
+            name="marketplace"
+            options={{
+              title: 'Marketplace',
+              tabBarIcon: ({ color }) => (
+                <Ionicons
+                  name="storefront-outline"
+                  size={24}
+                  color={color}
+                />
+              ),
+            }}
+          />
+
+          <Tabs.Screen
+            name="profile"
+            options={{
+              title: 'Profile',
+              tabBarIcon: ({ color }) => (
+                <Ionicons
+                  name="person-outline"
+                  size={25}
+                  color={color}
+                />
+              ),
+            }}
+          />
+        </Tabs>
+      </CustomerDiagnosticsProvider>
+    </CustomerHomeProvider>
   )
 }

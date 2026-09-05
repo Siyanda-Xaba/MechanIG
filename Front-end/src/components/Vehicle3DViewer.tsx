@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
 import { Asset } from 'expo-asset'
 import { Canvas } from '@react-three/fiber/native'
 import { OrbitControls, useGLTF } from '@react-three/drei/native'
+import * as THREE from 'three'
 
 type Vehicle3DViewerProps = {
   modelSource: number | null
@@ -17,11 +18,43 @@ type Vehicle3DViewerProps = {
 function VehicleModel({ uri }: { uri: string }) {
   const { scene } = useGLTF(uri)
 
+  const fittedScene = useMemo(() => {
+    const model = scene.clone(true)
+
+    // Find original model size
+    const box = new THREE.Box3().setFromObject(model)
+    const size = new THREE.Vector3()
+
+    box.getSize(size)
+
+    const largestDimension = Math.max(
+      size.x,
+      size.y,
+      size.z
+    )
+
+    // Resize car first
+    if (largestDimension > 0) {
+      const scale = 4.5 / largestDimension
+      model.scale.setScalar(scale)
+    }
+
+    // Recalculate the box AFTER scaling
+    const scaledBox = new THREE.Box3().setFromObject(model)
+    const center = new THREE.Vector3()
+
+    scaledBox.getCenter(center)
+
+    // Then centre the resized vehicle
+    model.position.sub(center)
+
+    return model
+  }, [scene])
+
   return (
     <primitive
-      object={scene}
-      position={[0, -0.8, 0]}
-      scale={1}
+      object={fittedScene}
+      rotation={[0, Math.PI, 0]}
     />
   )
 }
@@ -73,20 +106,24 @@ export default function Vehicle3DViewer({
     <View style={[styles.container, { height }]}>
       <Canvas
         camera={{
-          position: [0, 1.2, 5],
+          position: [0, 0.7, 5],
           fov: 35,
         }}
       >
-        <ambientLight intensity={2} />
+        <ambientLight intensity={3} />
 
-        <directionalLight
-          position={[5, 5, 5]}
-          intensity={3}
+        <hemisphereLight
+          args={['#FFFFFF', '#555555', 3]}
         />
 
         <directionalLight
-          position={[-5, 2, -5]}
-          intensity={1.5}
+          position={[5, 5, 5]}
+          intensity={5}
+        />
+
+        <directionalLight
+          position={[-5, 3, 2]}
+          intensity={3}
         />
 
         <Suspense fallback={null}>

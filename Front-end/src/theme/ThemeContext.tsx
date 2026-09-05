@@ -22,15 +22,22 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 const THEME_STORAGE_KEY = 'mechaniq-theme'
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('dark')
+export function ThemeProvider({
+  children,
+}: {
+  children: ReactNode
+}) {
+  // Light mode is now the default MechanIQ theme
+  const [theme, setThemeState] = useState<ThemeMode>('light')
 
   useEffect(() => {
     loadTheme()
   }, [])
 
   async function loadTheme() {
-    const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY)
+    const savedTheme = await AsyncStorage.getItem(
+      THEME_STORAGE_KEY
+    )
 
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setThemeState(savedTheme)
@@ -39,14 +46,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   async function setTheme(newTheme: ThemeMode) {
     setThemeState(newTheme)
-    await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme)
+
+    await AsyncStorage.setItem(
+      THEME_STORAGE_KEY,
+      newTheme
+    )
   }
 
   function toggleTheme() {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
+    setTheme(theme === 'light' ? 'dark' : 'light')
   }
 
-  const colors = theme === 'dark' ? darkColors : lightColors
+  const colors =
+    theme === 'light'
+      ? lightColors
+      : darkColors
 
   return (
     <ThemeContext.Provider
@@ -66,7 +80,9 @@ export function useTheme() {
   const context = useContext(ThemeContext)
 
   if (!context) {
-    throw new Error('useTheme must be used inside ThemeProvider')
+    throw new Error(
+      'useTheme must be used inside ThemeProvider'
+    )
   }
 
   return context
