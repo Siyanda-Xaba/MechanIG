@@ -1,4 +1,7 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+} from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import {
   Image,
@@ -366,7 +369,7 @@ export default function CustomerHome() {
             description="Find trusted mechanics"
             icon="account-wrench-outline"
             onPress={() => {
-              // Dedicated Find Mechanic route will be connected later.
+              router.push('/find-mechanic')
             }}
           />
 
@@ -375,7 +378,7 @@ export default function CustomerHome() {
             description="Schedule service appointments"
             icon="calendar-check-outline"
             onPress={() => {
-              // Dedicated Book Service route will be connected later.
+              router.push('/book-service/index')
             }}
           />
         </View>
@@ -394,7 +397,8 @@ export default function CustomerHome() {
           <MaintenanceReminderCard
             reminder={maintenanceReminder}
             onPress={() => {
-              // Detailed maintenance route will be connected later.
+              // Detailed maintenance route
+              // will be connected later.
             }}
           />
         </View>
@@ -403,7 +407,8 @@ export default function CustomerHome() {
         <RecentActivityCard
           activities={recentActivity}
           onViewAllPress={() => {
-            // Full activity-history screen can be connected later.
+            // Full activity-history screen
+            // will be connected later.
           }}
           onActivityPress={(activity) => {
             if (
