@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Front-end",
-    "slug": "Front-end",
+    "name": "MechanIQ",
+    "slug": "mechaniq",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -44,6 +44,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b86ee14b-bb66-435d-ad29-1a7808fbdcf5"
+      }
+    },
+    "owner": "zack_kwd"
   }
 }
