@@ -151,7 +151,7 @@ export default function CustomerHome() {
               activeOpacity={0.7}
               onPress={() => {
                 router.push(
-                  '/notifications/index'
+                  '/notifications'
                 )
               }}
               accessibilityRole="button"
@@ -692,7 +692,7 @@ export default function CustomerHome() {
             icon="calendar-check-outline"
             onPress={() => {
               router.push(
-                '/book-service/index'
+                '/book-service'
               )
             }}
           />
@@ -719,8 +719,9 @@ export default function CustomerHome() {
               maintenanceReminder
             }
             onPress={() => {
-              // Detailed maintenance route
-              // will be connected later.
+              router.push(
+                '/maintenance'
+              )
             }}
           />
         </View>

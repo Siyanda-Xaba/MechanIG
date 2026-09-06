@@ -79,7 +79,7 @@ export default function CustomerNotificationsScreen() {
           return
         }
 
-        router.push('/book-service/index')
+        router.push('/book-service')
         return
       }
 
