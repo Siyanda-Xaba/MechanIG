@@ -3,6 +3,7 @@ import {
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import { useState } from 'react'
 import {
   Image,
   ScrollView,
@@ -21,6 +22,7 @@ import RecentActivityCard from '../../src/components/RecentActivityCard'
 import Vehicle3DViewer from '../../src/components/Vehicle3DViewer'
 import VehicleHealthRing from '../../src/components/VehicleHealthRing'
 import { useCustomerHome } from '../../src/customer/CustomerHomeContext'
+import { useCustomerNotifications } from '../../src/customer/useCustomerNotifications'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useUser } from '../../src/users/UserContext'
 import { useVehicle } from '../../src/vehicles/VehicleContext'
@@ -30,14 +32,21 @@ export default function CustomerHome() {
   const router = useRouter()
   const { colors } = useTheme()
 
+  const [
+    isVehicleSelectorOpen,
+    setIsVehicleSelectorOpen,
+  ] = useState(false)
+
   const {
     user,
     isLoadingUser,
   } = useUser()
 
   const {
+    vehicles,
     selectedVehicle,
     isLoadingVehicles,
+    selectVehicle,
   } = useVehicle()
 
   const {
@@ -46,34 +55,55 @@ export default function CustomerHome() {
     homeError,
   } = useCustomerHome()
 
+  const {
+    notificationsData,
+  } = useCustomerNotifications()
+
   const vehicleModel = selectedVehicle
-    ? getVehicleModelSource(selectedVehicle.modelKey)
+    ? getVehicleModelSource(
+        selectedVehicle.modelKey
+      )
     : null
 
-  const firstName = user?.firstName ?? 'Driver'
+  const firstName =
+    user?.firstName ?? 'Driver'
 
   const isVehicleLoading =
     isLoadingVehicles || isLoadingHome
 
   const maintenanceReminder =
-    homeData?.maintenanceReminders?.[0] ?? null
+    homeData?.maintenanceReminders?.[0] ??
+    null
 
   const recentActivity =
     homeData?.recentActivity ?? []
+
+  const unreadNotificationCount =
+    notificationsData?.unreadCount ?? 0
+
+  function handleVehicleSelection(
+    vehicleId: string
+  ) {
+    selectVehicle(vehicleId)
+    setIsVehicleSelectorOpen(false)
+  }
 
   return (
     <SafeAreaView
       style={[
         styles.safeArea,
         {
-          backgroundColor: colors.background,
+          backgroundColor:
+            colors.background,
         },
       ]}
       edges={['top']}
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={
+          styles.content
+        }
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -85,12 +115,17 @@ export default function CustomerHome() {
           />
 
           <View style={styles.headerRight}>
-            <View style={styles.greetingContainer}>
+            <View
+              style={
+                styles.greetingContainer
+              }
+            >
               <Text
                 style={[
                   styles.greeting,
                   {
-                    color: colors.secondaryText,
+                    color:
+                      colors.secondaryText,
                   },
                 ]}
               >
@@ -113,26 +148,72 @@ export default function CustomerHome() {
             </View>
 
             <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                router.push(
+                  '/notifications/index'
+                )
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open notifications"
               style={[
                 styles.notificationButton,
                 {
-                  borderColor: colors.border,
-                  backgroundColor: colors.card,
+                  borderColor:
+                    colors.border,
+                  backgroundColor:
+                    colors.card,
                 },
               ]}
-              activeOpacity={0.7}
             >
               <Ionicons
                 name="notifications-outline"
                 size={21}
                 color={colors.text}
               />
+
+              {unreadNotificationCount >
+              0 ? (
+                <View
+                  style={[
+                    styles.notificationBadge,
+                    {
+                      backgroundColor:
+                        colors.accent,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={
+                      styles.notificationBadgeText
+                    }
+                  >
+                    {unreadNotificationCount >
+                    9
+                      ? '9+'
+                      : unreadNotificationCount}
+                  </Text>
+                </View>
+              ) : null}
             </TouchableOpacity>
 
-            <ProfileAvatar
-              imageUrl={user?.profileImageUrl}
-              size={42}
-            />
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => {
+                router.push(
+                  '/(customer)/profile'
+                )
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile"
+            >
+              <ProfileAvatar
+                imageUrl={
+                  user?.profileImageUrl
+                }
+                size={42}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -141,18 +222,24 @@ export default function CustomerHome() {
           style={[
             styles.vehicleCard,
             {
-              backgroundColor: colors.card,
+              backgroundColor:
+                colors.card,
               borderColor: colors.border,
             },
           ]}
         >
           {isVehicleLoading ? (
-            <View style={styles.vehicleMessageContainer}>
+            <View
+              style={
+                styles.vehicleMessageContainer
+              }
+            >
               <Text
                 style={[
                   styles.vehicleMessage,
                   {
-                    color: colors.secondaryText,
+                    color:
+                      colors.secondaryText,
                   },
                 ]}
               >
@@ -160,18 +247,25 @@ export default function CustomerHome() {
               </Text>
             </View>
           ) : !selectedVehicle ? (
-            <View style={styles.vehicleMessageContainer}>
+            <View
+              style={
+                styles.vehicleMessageContainer
+              }
+            >
               <MaterialCommunityIcons
                 name="car-outline"
                 size={34}
-                color={colors.secondaryText}
+                color={
+                  colors.secondaryText
+                }
               />
 
               <Text
                 style={[
                   styles.vehicleMessage,
                   {
-                    color: colors.secondaryText,
+                    color:
+                      colors.secondaryText,
                   },
                 ]}
               >
@@ -180,63 +274,270 @@ export default function CustomerHome() {
             </View>
           ) : (
             <>
-              <View style={styles.vehicleHeader}>
+              <View
+                style={
+                  styles.vehicleHeader
+                }
+              >
                 <View>
                   <Text
                     style={[
                       styles.vehicleName,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
                     ]}
                   >
-                    {selectedVehicle.make}{' '}
-                    {selectedVehicle.model}
+                    {
+                      selectedVehicle.make
+                    }{' '}
+                    {
+                      selectedVehicle.model
+                    }
                   </Text>
 
                   <Text
                     style={[
                       styles.registration,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
-                    {selectedVehicle.registration}
+                    {
+                      selectedVehicle.registration
+                    }
                   </Text>
                 </View>
 
                 <TouchableOpacity
                   activeOpacity={0.7}
+                  onPress={() => {
+                    setIsVehicleSelectorOpen(
+                      (currentValue) =>
+                        !currentValue
+                    )
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select vehicle"
                   style={[
                     styles.vehicleSelector,
                     {
-                      borderColor: colors.border,
+                      borderColor:
+                        isVehicleSelectorOpen
+                          ? colors.accent
+                          : colors.border,
                     },
                   ]}
                 >
                   <Ionicons
-                    name="chevron-down"
+                    name={
+                      isVehicleSelectorOpen
+                        ? 'chevron-up'
+                        : 'chevron-down'
+                    }
                     size={18}
-                    color={colors.accent}
+                    color={
+                      colors.accent
+                    }
                   />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.vehicleMainContent}>
-                <View style={styles.vehicleModelContainer}>
+              {isVehicleSelectorOpen ? (
+                <View
+                  style={[
+                    styles.vehicleSelectorMenu,
+                    {
+                      backgroundColor:
+                        colors.background,
+                      borderColor:
+                        colors.border,
+                    },
+                  ]}
+                >
+                  {vehicles.map(
+                    (
+                      vehicle,
+                      index
+                    ) => {
+                      const isSelected =
+                        vehicle.id ===
+                        selectedVehicle.id
+
+                      return (
+                        <TouchableOpacity
+                          key={vehicle.id}
+                          activeOpacity={0.75}
+                          onPress={() =>
+                            handleVehicleSelection(
+                              vehicle.id
+                            )
+                          }
+                          style={[
+                            styles.vehicleSelectorOption,
+                            index !==
+                            vehicles.length -
+                              1
+                              ? {
+                                  borderBottomWidth: 1,
+                                  borderBottomColor:
+                                    colors.border,
+                                }
+                              : null,
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.vehicleSelectorIcon,
+                              {
+                                borderColor:
+                                  isSelected
+                                    ? colors.accent
+                                    : colors.border,
+                              },
+                            ]}
+                          >
+                            <MaterialCommunityIcons
+                              name="car-outline"
+                              size={21}
+                              color={
+                                isSelected
+                                  ? colors.accent
+                                  : colors.secondaryText
+                              }
+                            />
+                          </View>
+
+                          <View
+                            style={
+                              styles.vehicleSelectorContent
+                            }
+                          >
+                            <View
+                              style={
+                                styles.vehicleSelectorTitleRow
+                              }
+                            >
+                              <Text
+                                numberOfLines={
+                                  1
+                                }
+                                style={[
+                                  styles.vehicleSelectorTitle,
+                                  {
+                                    color:
+                                      colors.text,
+                                  },
+                                ]}
+                              >
+                                {
+                                  vehicle.make
+                                }{' '}
+                                {
+                                  vehicle.model
+                                }
+                              </Text>
+
+                              {vehicle.isPrimary ? (
+                                <View
+                                  style={[
+                                    styles.primaryBadge,
+                                    {
+                                      borderColor:
+                                        colors.accent,
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.primaryBadgeText,
+                                      {
+                                        color:
+                                          colors.accent,
+                                      },
+                                    ]}
+                                  >
+                                    Primary
+                                  </Text>
+                                </View>
+                              ) : null}
+                            </View>
+
+                            <Text
+                              style={[
+                                styles.vehicleSelectorRegistration,
+                                {
+                                  color:
+                                    colors.secondaryText,
+                                },
+                              ]}
+                            >
+                              {
+                                vehicle.registration
+                              }
+                              {' • '}
+                              {
+                                vehicle.year
+                              }
+                            </Text>
+                          </View>
+
+                          {isSelected ? (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={21}
+                              color={
+                                colors.accent
+                              }
+                            />
+                          ) : (
+                            <Ionicons
+                              name="ellipse-outline"
+                              size={21}
+                              color={
+                                colors.secondaryText
+                              }
+                            />
+                          )}
+                        </TouchableOpacity>
+                      )
+                    }
+                  )}
+                </View>
+              ) : null}
+
+              <View
+                style={
+                  styles.vehicleMainContent
+                }
+              >
+                <View
+                  style={
+                    styles.vehicleModelContainer
+                  }
+                >
                   <Vehicle3DViewer
-                    modelSource={vehicleModel}
+                    modelSource={
+                      vehicleModel
+                    }
                     height={155}
                   />
                 </View>
 
-                <View style={styles.healthContainer}>
+                <View
+                  style={
+                    styles.healthContainer
+                  }
+                >
                   <Text
                     style={[
                       styles.healthTitle,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
@@ -256,7 +557,8 @@ export default function CustomerHome() {
                     style={[
                       styles.healthLabel,
                       {
-                        color: colors.accent,
+                        color:
+                          colors.accent,
                       },
                     ]}
                   >
@@ -270,7 +572,8 @@ export default function CustomerHome() {
                 style={[
                   styles.statusRow,
                   {
-                    borderTopColor: colors.border,
+                    borderTopColor:
+                      colors.border,
                   },
                 ]}
               >
@@ -278,7 +581,8 @@ export default function CustomerHome() {
                   icon="gas-station"
                   label="Fuel Level"
                   value={
-                    homeData?.fuelLevel != null
+                    homeData?.fuelLevel !=
+                    null
                       ? `${homeData.fuelLevel}%`
                       : 'N/A'
                   }
@@ -289,7 +593,8 @@ export default function CustomerHome() {
                   icon="wrench-outline"
                   label="Next Service"
                   value={
-                    homeData?.nextServiceKm != null
+                    homeData?.nextServiceKm !=
+                    null
                       ? `${homeData.nextServiceKm.toLocaleString()} km`
                       : 'N/A'
                   }
@@ -345,13 +650,17 @@ export default function CustomerHome() {
           Quick Actions
         </Text>
 
-        <View style={styles.quickActionsGrid}>
+        <View
+          style={styles.quickActionsGrid}
+        >
           <QuickActionCard
             title="Diagnose Vehicle"
             description="Scan & check vehicle health"
             icon="car-search"
             onPress={() => {
-              router.push('/(customer)/diagnostics')
+              router.push(
+                '/(customer)/diagnostics'
+              )
             }}
           />
 
@@ -360,7 +669,9 @@ export default function CustomerHome() {
             description="Request fuel delivery"
             icon="gas-station"
             onPress={() => {
-              router.push('/(customer)/fuel')
+              router.push(
+                '/(customer)/fuel'
+              )
             }}
           />
 
@@ -369,7 +680,9 @@ export default function CustomerHome() {
             description="Find trusted mechanics"
             icon="account-wrench-outline"
             onPress={() => {
-              router.push('/find-mechanic')
+              router.push(
+                '/find-mechanic'
+              )
             }}
           />
 
@@ -378,24 +691,33 @@ export default function CustomerHome() {
             description="Schedule service appointments"
             icon="calendar-check-outline"
             onPress={() => {
-              router.push('/book-service/index')
+              router.push(
+                '/book-service/index'
+              )
             }}
           />
         </View>
 
         {/* Power Shield + Maintenance */}
-        <View style={styles.dashboardRow}>
+        <View
+          style={styles.dashboardRow}
+        >
           <PowerShieldCard
             nextOutageTime={
-              homeData?.nextOutageTime ?? null
+              homeData?.nextOutageTime ??
+              null
             }
             onSchedulePress={() => {
-              router.push('/(customer)/fuel')
+              router.push(
+                '/(customer)/fuel'
+              )
             }}
           />
 
           <MaintenanceReminderCard
-            reminder={maintenanceReminder}
+            reminder={
+              maintenanceReminder
+            }
             onPress={() => {
               // Detailed maintenance route
               // will be connected later.
@@ -410,13 +732,19 @@ export default function CustomerHome() {
             // Full activity-history screen
             // will be connected later.
           }}
-          onActivityPress={(activity) => {
+          onActivityPress={(
+            activity
+          ) => {
             if (
               activity.title
                 .toLowerCase()
-                .includes('diagnostic')
+                .includes(
+                  'diagnostic'
+                )
             ) {
-              router.push('/(customer)/diagnostics')
+              router.push(
+                '/(customer)/diagnostics'
+              )
               return
             }
 
@@ -425,7 +753,9 @@ export default function CustomerHome() {
                 .toLowerCase()
                 .includes('fuel')
             ) {
-              router.push('/(customer)/fuel')
+              router.push(
+                '/(customer)/fuel'
+              )
             }
           }}
         />
@@ -468,7 +798,8 @@ function VehicleStatusItem({
         style={[
           styles.statusLabel,
           {
-            color: colors.secondaryText,
+            color:
+              colors.secondaryText,
           },
         ]}
       >
@@ -546,6 +877,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+
+  notificationBadge: {
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  notificationBadgeText: {
+    color: '#000000',
+    fontSize: 7,
+    fontWeight: '800',
   },
 
   vehicleCard: {
@@ -581,6 +931,63 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  vehicleSelectorMenu: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+  },
+
+  vehicleSelectorOption: {
+    minHeight: 66,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  vehicleSelectorIcon: {
+    width: 38,
+    height: 38,
+    borderWidth: 1,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  vehicleSelectorContent: {
+    flex: 1,
+    marginHorizontal: 10,
+  },
+
+  vehicleSelectorTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+
+  vehicleSelectorTitle: {
+    maxWidth: 150,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  vehicleSelectorRegistration: {
+    marginTop: 4,
+    fontSize: 9,
+  },
+
+  primaryBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderRadius: 5,
+  },
+
+  primaryBadgeText: {
+    fontSize: 7.5,
+    fontWeight: '700',
   },
 
   vehicleMainContent: {
