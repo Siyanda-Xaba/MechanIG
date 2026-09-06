@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import DiagnosticActionCard from '../../src/components/DiagnosticActionCard'
 import RecentDiagnosticsList from '../../src/components/RecentDiagnosticsList'
 import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard'
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext'
+import { useDiagnosticScan } from '../../src/customer/useDiagnosticScan'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useVehicle } from '../../src/vehicles/VehicleContext'
 
@@ -32,6 +34,14 @@ export default function CustomerDiagnostics() {
     diagnosticsError,
   } = useCustomerDiagnostics()
 
+  const {
+    scanResult,
+    isStartingScan,
+    scanError,
+    startScan,
+    clearScanResult,
+  } = useDiagnosticScan()
+
   const isLoading =
     isLoadingVehicles || isLoadingDiagnostics
 
@@ -40,6 +50,22 @@ export default function CustomerDiagnostics() {
 
   const recentScans =
     diagnosticsData?.recentScans ?? []
+
+  async function handleScanAgain() {
+    const result = await startScan()
+
+    if (!result?.resultId) {
+      return
+    }
+
+    router.push({
+      pathname:
+        '/diagnostic-result/[resultId]',
+      params: {
+        resultId: result.resultId,
+      },
+    })
+  }
 
   return (
     <SafeAreaView
@@ -193,27 +219,205 @@ export default function CustomerDiagnostics() {
 
                 <TouchableOpacity
                   activeOpacity={0.75}
+                  disabled={isStartingScan}
+                  onPress={handleScanAgain}
                   style={[
                     styles.scanButton,
                     {
                       backgroundColor: colors.accent,
+                      opacity: isStartingScan
+                        ? 0.55
+                        : 1,
                     },
                   ]}
                 >
-                  <MaterialCommunityIcons
-                    name="car-search"
-                    size={18}
-                    color="#000000"
-                  />
+                  {isStartingScan ? (
+                    <ActivityIndicator
+                      size="small"
+                      color="#000000"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name="car-search"
+                      size={18}
+                      color="#000000"
+                    />
+                  )}
 
                   <Text style={styles.scanButtonText}>
-                    Scan Again
+                    {isStartingScan
+                      ? 'Starting...'
+                      : 'Scan Again'}
                   </Text>
                 </TouchableOpacity>
               </View>
             </>
           )}
         </View>
+
+        {/* Scan feedback */}
+        {scanResult ? (
+          <View
+            style={[
+              styles.scanFeedbackCard,
+              {
+                backgroundColor: colors.card,
+                borderColor:
+                  scanResult.status ===
+                  'obd-not-connected'
+                    ? colors.warning
+                    : scanResult.status ===
+                        'ready'
+                      ? colors.accent
+                      : colors.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.scanFeedbackIcon,
+                {
+                  borderColor:
+                    scanResult.status ===
+                    'obd-not-connected'
+                      ? colors.warning
+                      : colors.accent,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={
+                  scanResult.status ===
+                  'obd-not-connected'
+                    ? 'connection'
+                    : scanResult.status ===
+                        'ready'
+                      ? 'check-circle-outline'
+                      : 'information-outline'
+                }
+                size={22}
+                color={
+                  scanResult.status ===
+                  'obd-not-connected'
+                    ? colors.warning
+                    : colors.accent
+                }
+              />
+            </View>
+
+            <View style={styles.scanFeedbackContent}>
+              <Text
+                style={[
+                  styles.scanFeedbackTitle,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {scanResult.status ===
+                'obd-not-connected'
+                  ? 'OBD device not connected'
+                  : scanResult.status ===
+                      'obd-unsupported'
+                    ? 'OBD device unsupported'
+                    : scanResult.status ===
+                        'ready'
+                      ? 'Scan ready'
+                      : 'Scan unavailable'}
+              </Text>
+
+              <Text
+                style={[
+                  styles.scanFeedbackMessage,
+                  {
+                    color: colors.secondaryText,
+                  },
+                ]}
+              >
+                {scanResult.message}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={clearScanResult}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss scan message"
+              style={styles.dismissButton}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={19}
+                color={colors.secondaryText}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {scanError ? (
+          <View
+            style={[
+              styles.scanFeedbackCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.danger,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.scanFeedbackIcon,
+                {
+                  borderColor: colors.danger,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="alert-circle-outline"
+                size={22}
+                color={colors.danger}
+              />
+            </View>
+
+            <View style={styles.scanFeedbackContent}>
+              <Text
+                style={[
+                  styles.scanFeedbackTitle,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                Unable to start scan
+              </Text>
+
+              <Text
+                style={[
+                  styles.scanFeedbackMessage,
+                  {
+                    color: colors.secondaryText,
+                  },
+                ]}
+              >
+                {scanError}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={clearScanResult}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss scan error"
+              style={styles.dismissButton}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={19}
+                color={colors.secondaryText}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {/* Sound Diagnosis */}
         <SoundDiagnosisCard
@@ -383,6 +587,48 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 11,
     fontWeight: '700',
+  },
+
+  scanFeedbackCard: {
+    marginTop: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  scanFeedbackIcon: {
+    width: 42,
+    height: 42,
+    borderWidth: 1,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  scanFeedbackContent: {
+    flex: 1,
+    marginLeft: 11,
+  },
+
+  scanFeedbackTitle: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+
+  scanFeedbackMessage: {
+    marginTop: 4,
+    fontSize: 9.5,
+    lineHeight: 14,
+  },
+
+  dismissButton: {
+    width: 32,
+    height: 32,
+    marginLeft: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   actionsRow: {
