@@ -15,21 +15,3 @@ export const darkColors = {
   warning: '#FFB020',
   danger: '#FF3B30',
 }
-
-export const lightColors = {
-  background: '#FFFFFF',
-  card: '#FFFFFF',
-
-  text: '#000000',
-  secondaryText: '#333333',
-
-  accent: '#00E5FF',
-  highlight: '#01E2FE',
-  electricBlue: '#008CFF',
-
-  border: '#BDBDBD',
-
-  success: '#42B72A',
-  warning: '#E89B00',
-  danger: '#D93025',
-}

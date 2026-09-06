@@ -1,74 +1,29 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   createContext,
   ReactNode,
   useContext,
-  useEffect,
-  useState,
 } from 'react'
 
-import { darkColors, lightColors } from './colors'
-
-type ThemeMode = 'light' | 'dark'
+import { darkColors } from './colors'
 
 type ThemeContextType = {
-  theme: ThemeMode
   colors: typeof darkColors
-  setTheme: (theme: ThemeMode) => void
-  toggleTheme: () => void
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
-
-const THEME_STORAGE_KEY = 'mechaniq-theme'
+const ThemeContext =
+  createContext<ThemeContextType | undefined>(
+    undefined
+  )
 
 export function ThemeProvider({
   children,
 }: {
   children: ReactNode
 }) {
-  // Light mode is now the default MechanIQ theme
-  const [theme, setThemeState] = useState<ThemeMode>('light')
-
-  useEffect(() => {
-    loadTheme()
-  }, [])
-
-  async function loadTheme() {
-    const savedTheme = await AsyncStorage.getItem(
-      THEME_STORAGE_KEY
-    )
-
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setThemeState(savedTheme)
-    }
-  }
-
-  async function setTheme(newTheme: ThemeMode) {
-    setThemeState(newTheme)
-
-    await AsyncStorage.setItem(
-      THEME_STORAGE_KEY,
-      newTheme
-    )
-  }
-
-  function toggleTheme() {
-    setTheme(theme === 'light' ? 'dark' : 'light')
-  }
-
-  const colors =
-    theme === 'light'
-      ? lightColors
-      : darkColors
-
   return (
     <ThemeContext.Provider
       value={{
-        theme,
-        colors,
-        setTheme,
-        toggleTheme,
+        colors: darkColors,
       }}
     >
       {children}
