@@ -22,6 +22,9 @@ import RecentActivityCard from '../../src/components/RecentActivityCard'
 import Vehicle3DViewer from '../../src/components/Vehicle3DViewer'
 import VehicleHealthRing from '../../src/components/VehicleHealthRing'
 import { useCustomerHome } from '../../src/customer/CustomerHomeContext'
+import {
+  CustomerActivityAction,
+} from '../../src/customer/homeTypes'
 import { useCustomerNotifications } from '../../src/customer/useCustomerNotifications'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useUser } from '../../src/users/UserContext'
@@ -86,6 +89,71 @@ export default function CustomerHome() {
   ) {
     selectVehicle(vehicleId)
     setIsVehicleSelectorOpen(false)
+  }
+
+  function handleActivityAction(
+    action: CustomerActivityAction
+  ) {
+    switch (action.type) {
+      case 'diagnostics': {
+        if (action.resultId) {
+          router.push({
+            pathname:
+              '/diagnostic-result/[resultId]',
+            params: {
+              resultId: action.resultId,
+            },
+          })
+
+          return
+        }
+
+        router.push(
+          '/(customer)/diagnostics'
+        )
+        return
+      }
+
+      case 'fuel': {
+        router.push('/(customer)/fuel')
+        return
+      }
+
+      case 'maintenance': {
+        router.push('/maintenance')
+        return
+      }
+
+      case 'service': {
+        if (action.mechanicId) {
+          router.push({
+            pathname:
+              '/workshop-booking/[mechanicId]',
+            params: {
+              mechanicId:
+                action.mechanicId,
+            },
+          })
+
+          return
+        }
+
+        router.push('/book-service')
+        return
+      }
+
+      case 'marketplace': {
+        router.push(
+          '/(customer)/marketplace'
+        )
+        return
+      }
+
+      case 'profile': {
+        router.push('/(customer)/profile')
+        return
+      }
+    }
   }
 
   return (
@@ -730,34 +798,18 @@ export default function CustomerHome() {
         <RecentActivityCard
           activities={recentActivity}
           onViewAllPress={() => {
-            // Full activity-history screen
-            // will be connected later.
+            router.push('/activity')
           }}
           onActivityPress={(
             activity
           ) => {
-            if (
-              activity.title
-                .toLowerCase()
-                .includes(
-                  'diagnostic'
-                )
-            ) {
-              router.push(
-                '/(customer)/diagnostics'
-              )
+            if (!activity.action) {
               return
             }
 
-            if (
-              activity.title
-                .toLowerCase()
-                .includes('fuel')
-            ) {
-              router.push(
-                '/(customer)/fuel'
-              )
-            }
+            handleActivityAction(
+              activity.action
+            )
           }}
         />
       </ScrollView>

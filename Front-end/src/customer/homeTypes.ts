@@ -9,12 +9,39 @@ export type MaintenanceReminder = {
   description: string
 }
 
+export type CustomerActivityAction =
+  | {
+      type: 'diagnostics'
+      resultId?: string
+    }
+  | {
+      type: 'fuel'
+      deliveryId?: string
+    }
+  | {
+      type: 'maintenance'
+    }
+  | {
+      type: 'service'
+      mechanicId?: string
+    }
+  | {
+      type: 'marketplace'
+    }
+  | {
+      type: 'profile'
+    }
+
 export type RecentActivityItem = {
   id: string
+
   title: string
   description: string
+
   time: string
   status: string
+
+  action: CustomerActivityAction | null
 }
 
 export type CustomerHomeData = {
