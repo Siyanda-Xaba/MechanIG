@@ -211,7 +211,7 @@ export default function SignUpScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
-            source={require('../assets/MechanicIQLogo.jpeg')}
+            source={require('../assets/images/MechanicIQLogo.jpeg')}
             style={styles.logo}
             resizeMode="contain"
           />
