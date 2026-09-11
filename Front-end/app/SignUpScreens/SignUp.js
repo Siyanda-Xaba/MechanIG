@@ -1,8 +1,3 @@
-// SignUpScreen.js
-// Multi-step "Create Your Account" flow: Personal Details -> Vehicle Details -> Security
-// Uses local state to track which step we're on instead of separate routes,
-// since all 3 steps share the same header/progress bar.
-
 import React, { useState } from 'react';
 import {
   View,
@@ -69,7 +64,7 @@ export default function SignUpScreen() {
 
   const handleBack = () => {
     if (step === 1) {
-      router.back(); // leave the sign-up flow entirely
+      router.back(); 
     } else {
       setStep(step - 1);
     }
@@ -109,7 +104,6 @@ export default function SignUpScreen() {
     }
   };
 
-  // small reusable component for a text field with an icon on the left
   const InputField = ({ icon, label, value, onChangeText, placeholder, keyboardType, rightElement }) => (
     <View style={styles.inputWrapper}>
       <Ionicons name={icon} size={18} color="#888888" style={styles.inputIcon} />
@@ -128,8 +122,6 @@ export default function SignUpScreen() {
     </View>
   );
 
-  // small reusable component for a "dropdown" - for now just a tappable field
-  // NOTE: this doesn't open a real picker yet. Hook it up to a library like
   // @react-native-picker/picker or a custom modal when you're ready.
   const DropdownField = ({ icon, label, value, placeholder, onPress }) => (
     <TouchableOpacity style={styles.inputWrapper} onPress={onPress}>
@@ -224,7 +216,7 @@ export default function SignUpScreen() {
         {/* Progress steps */}
         <StepIndicator />
 
-        {/* ---------------- STEP 1: PERSONAL DETAILS ---------------- */}
+        {/*STEP 1: PERSONAL DETAILS */}
         {step === 1 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -344,7 +336,7 @@ export default function SignUpScreen() {
           </View>
         )}
 
-        {/* ---------------- STEP 2: VEHICLE DETAILS ---------------- */}
+        {/* STEP 2: VEHICLE DETAILS*/}
         {step === 2 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -492,7 +484,7 @@ export default function SignUpScreen() {
           </View>
         )}
 
-        {/* ---------------- STEP 3: SECURITY ---------------- */}
+        {/* STEP 3: SECURITY*/}
         {step === 3 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
