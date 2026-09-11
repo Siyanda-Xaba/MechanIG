@@ -1,6 +1,3 @@
-// WelcomeScreen.js
-// This is the first screen users see - they pick if they're a customer or a mechanic
-
 import React from 'react';
 import {
   View,
@@ -15,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons'; // for the person/wrench icons
 export default function WelcomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      {/* Logo + tagline */}
+      {/* Logo */}
       <View style={styles.logoContainer}>
         <Image
           source={require('../assets/MechanicIQLogo.jpeg')}
