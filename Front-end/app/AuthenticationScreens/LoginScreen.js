@@ -1,7 +1,3 @@
-// LoginScreen.js
-// This screen lets a user sign in with email/phone + password,
-// or continue with Google/Apple
-
 import React, { useState } from 'react';
 import {
   View,
@@ -21,7 +17,6 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
 
   const handleSignIn = () => {
-    // TODO: connect this to your backend / auth logic later
     console.log('Signing in with:', emailOrPhone, password);
   };
 
