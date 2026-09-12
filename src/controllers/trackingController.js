@@ -1,10 +1,7 @@
 import trackingService from "../services/trackingService.js";
 
 function sendError(res, error) {
-  const status =
-    error.message === "Tracking session was not found"
-      ? 404
-      : 400;
+  const status = error.message === "Tracking session was not found" ? 404 : 400;
 
   return res.status(status).json({
     success: false,
@@ -20,13 +17,16 @@ export const start = (req, res) => {
       success: true,
       data: session,
     });
+
   } catch (error) {
+
     return sendError(res, error);
   }
 };
 
 export const get = (req, res) => {
   try {
+
     const session = trackingService.get(
       req.params.requestId
     );
@@ -35,13 +35,16 @@ export const get = (req, res) => {
       success: true,
       data: session,
     });
+
   } catch (error) {
+
     return sendError(res, error);
   }
 };
 
 export const updateLocation = (req, res) => {
   try {
+
     const session = trackingService.updateLocation(
       req.params.requestId,
       req.body.location
@@ -51,7 +54,9 @@ export const updateLocation = (req, res) => {
       success: true,
       data: session,
     });
+
   } catch (error) {
+
     return sendError(res, error);
   }
 };
@@ -67,7 +72,9 @@ export const updateStatus = (req, res) => {
       success: true,
       data: session,
     });
+
   } catch (error) {
+
     return sendError(res, error);
   }
 };
