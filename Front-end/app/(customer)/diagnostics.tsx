@@ -15,6 +15,7 @@ import DiagnosticActionCard from '../../src/components/DiagnosticActionCard'
 import RecentDiagnosticsList from '../../src/components/RecentDiagnosticsList'
 import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard'
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext'
+import CustomerPartScanAction from '../../src/customer/CustomerPartScanAction'
 import { useDiagnosticScan } from '../../src/customer/useDiagnosticScan'
 import { useSoundDiagnosis } from '../../src/customer/useSoundDiagnosis'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -640,15 +641,7 @@ export default function CustomerDiagnostics() {
 
         {/* Diagnostic Actions */}
         <View style={styles.actionsRow}>
-          <DiagnosticActionCard
-            title="Scan a Part"
-            description="Use camera to identify visible parts."
-            icon="camera"
-            onPress={() => {
-              // Camera/gallery + image recognition flow
-              // will be connected here.
-            }}
-          />
+          <CustomerPartScanAction />
 
           <DiagnosticActionCard
             title="Describe a Problem"
