@@ -11,11 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import CommonSymptomsGrid from '../../src/components/CommonSymptomsGrid'
-import DiagnosticActionCard from '../../src/components/DiagnosticActionCard'
 import RecentDiagnosticsList from '../../src/components/RecentDiagnosticsList'
 import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard'
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext'
 import CustomerPartScanAction from '../../src/customer/CustomerPartScanAction'
+import CustomerProblemDescriptionAction from '../../src/customer/CustomerProblemDescriptionAction'
 import { useDiagnosticScan } from '../../src/customer/useDiagnosticScan'
 import { useSoundDiagnosis } from '../../src/customer/useSoundDiagnosis'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -643,15 +643,7 @@ export default function CustomerDiagnostics() {
         <View style={styles.actionsRow}>
           <CustomerPartScanAction />
 
-          <DiagnosticActionCard
-            title="Describe a Problem"
-            description="Tell MechanIQ what you notice."
-            icon="message-text"
-            onPress={() => {
-              // Problem description flow
-              // will be connected here.
-            }}
-          />
+          <CustomerProblemDescriptionAction />
         </View>
 
         {/* Common Symptoms */}
