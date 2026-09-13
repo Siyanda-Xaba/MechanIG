@@ -1,4 +1,7 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+} from '@expo/vector-icons'
 import {
   StyleSheet,
   Text,
@@ -44,11 +47,20 @@ export default function MaintenanceReminderCard({
           Maintenance Reminders
         </Text>
 
-        <Ionicons
-          name="notifications-outline"
-          size={20}
-          color={colors.accent}
-        />
+        <View
+          style={[
+            styles.reminderBell,
+            {
+              borderColor: colors.accent,
+            },
+          ]}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={16}
+            color={colors.accent}
+          />
+        </View>
       </View>
 
       {reminder ? (
@@ -84,7 +96,8 @@ export default function MaintenanceReminderCard({
               style={[
                 styles.description,
                 {
-                  color: colors.secondaryText,
+                  color:
+                    colors.secondaryText,
                 },
               ]}
             >
@@ -104,7 +117,8 @@ export default function MaintenanceReminderCard({
             style={[
               styles.emptyText,
               {
-                color: colors.secondaryText,
+                color:
+                  colors.secondaryText,
               },
             ]}
           >
@@ -127,18 +141,30 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
 
   title: {
+    flex: 1,
+    paddingRight: 8,
     fontSize: 14,
     fontWeight: '700',
+    lineHeight: 17,
+  },
+
+  reminderBell: {
+    width: 32,
+    height: 32,
+    flexShrink: 0,
+    borderWidth: 1,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   reminderContent: {
     flex: 1,
-    marginTop: 18,
+    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
