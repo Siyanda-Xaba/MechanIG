@@ -18,8 +18,9 @@ type UseProblemDescriptionReturn = {
   isSubmittingDescription: boolean
   problemDescriptionError: string | null
   setDescription: (value: string) => void
-  submitDescription:
-    () => Promise<ProblemDescriptionAnalysisResult | null>
+  submitDescription: (
+    descriptionOverride?: string
+  ) => Promise<ProblemDescriptionAnalysisResult | null>
   clearDescription: () => void
   clearProblemDescriptionError: () => void
   clearAnalysisResult: () => void
@@ -62,57 +63,66 @@ export function useProblemDescription():
     }, [])
 
   const submitDescription =
-    useCallback(async () => {
-      if (!selectedVehicle) {
-        setProblemDescriptionError(
-          'Select a vehicle before describing a problem.'
-        )
+    useCallback(
+      async (
+        descriptionOverride?: string
+      ) => {
+        if (!selectedVehicle) {
+          setProblemDescriptionError(
+            'Select a vehicle before describing a problem.'
+          )
 
-        return null
-      }
+          return null
+        }
 
-      const trimmedDescription =
-        description.trim()
+        const descriptionToSubmit =
+          descriptionOverride ??
+          description
 
-      if (!trimmedDescription) {
-        setProblemDescriptionError(
-          'Describe what you are noticing before submitting.'
-        )
+        const trimmedDescription =
+          descriptionToSubmit.trim()
 
-        return null
-      }
+        if (!trimmedDescription) {
+          setProblemDescriptionError(
+            'Describe what you are noticing before submitting.'
+          )
 
-      try {
-        setIsSubmittingDescription(true)
-        setProblemDescriptionError(null)
-        setAnalysisResult(null)
+          return null
+        }
 
-        const result =
-          await analyzeProblemDescription({
-            vehicleId:
-              selectedVehicle.id,
-            description:
-              trimmedDescription,
-            submittedAt:
-              new Date().toISOString(),
-          })
+        try {
+          setIsSubmittingDescription(true)
+          setProblemDescriptionError(null)
+          setAnalysisResult(null)
 
-        setAnalysisResult(result)
+          const result =
+            await analyzeProblemDescription({
+              vehicleId:
+                selectedVehicle.id,
+              description:
+                trimmedDescription,
+              submittedAt:
+                new Date().toISOString(),
+            })
 
-        return result
-      } catch {
-        setProblemDescriptionError(
-          'Unable to submit your problem description.'
-        )
+          setAnalysisResult(result)
 
-        return null
-      } finally {
-        setIsSubmittingDescription(false)
-      }
-    }, [
-      description,
-      selectedVehicle,
-    ])
+          return result
+        } catch {
+          setProblemDescriptionError(
+            'Unable to submit your problem description.'
+          )
+
+          return null
+        } finally {
+          setIsSubmittingDescription(false)
+        }
+      },
+      [
+        description,
+        selectedVehicle,
+      ]
+    )
 
   const clearDescription =
     useCallback(() => {

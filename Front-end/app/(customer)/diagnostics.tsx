@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import { useState } from 'react'
 import {
   ActivityIndicator,
   ScrollView,
@@ -16,6 +17,8 @@ import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard'
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext'
 import CustomerPartScanAction from '../../src/customer/CustomerPartScanAction'
 import CustomerProblemDescriptionAction from '../../src/customer/CustomerProblemDescriptionAction'
+import CustomerSymptomAnalysisModal from '../../src/customer/CustomerSymptomAnalysisModal'
+import { DiagnosticSymptom } from '../../src/customer/diagnosticsTypes'
 import { useDiagnosticScan } from '../../src/customer/useDiagnosticScan'
 import { useSoundDiagnosis } from '../../src/customer/useSoundDiagnosis'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -24,6 +27,13 @@ import { useVehicle } from '../../src/vehicles/VehicleContext'
 export default function CustomerDiagnostics() {
   const router = useRouter()
   const { colors } = useTheme()
+
+  const [
+    selectedSymptom,
+    setSelectedSymptom,
+  ] = useState<DiagnosticSymptom | null>(
+    null
+  )
 
   const {
     selectedVehicle,
@@ -650,10 +660,14 @@ export default function CustomerDiagnostics() {
         <CommonSymptomsGrid
           symptoms={commonSymptoms}
           onSymptomPress={(symptom) => {
-            console.log(
-              'Selected symptom:',
-              symptom.label
-            )
+            setSelectedSymptom(symptom)
+          }}
+        />
+
+        <CustomerSymptomAnalysisModal
+          symptom={selectedSymptom}
+          onClose={() => {
+            setSelectedSymptom(null)
           }}
         />
 
