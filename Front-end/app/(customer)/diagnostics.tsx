@@ -16,6 +16,7 @@ import RecentDiagnosticsList from '../../src/components/RecentDiagnosticsList'
 import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard'
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext'
 import { useDiagnosticScan } from '../../src/customer/useDiagnosticScan'
+import { useSoundDiagnosis } from '../../src/customer/useSoundDiagnosis'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useVehicle } from '../../src/vehicles/VehicleContext'
 
@@ -42,6 +43,21 @@ export default function CustomerDiagnostics() {
     clearScanResult,
   } = useDiagnosticScan()
 
+  const {
+    captureStatus,
+    recording,
+    durationMillis,
+    isSubmittingAnalysis,
+    analysisResult,
+    soundDiagnosisError,
+    startRecording,
+    stopRecording,
+    submitRecordingForAnalysis,
+    discardRecording,
+    clearSoundDiagnosisError,
+    clearAnalysisResult,
+  } = useSoundDiagnosis()
+
   const isLoading =
     isLoadingVehicles || isLoadingDiagnostics
 
@@ -53,6 +69,31 @@ export default function CustomerDiagnostics() {
 
   async function handleScanAgain() {
     const result = await startScan()
+
+    if (!result?.resultId) {
+      return
+    }
+
+    router.push({
+      pathname:
+        '/diagnostic-result/[resultId]',
+      params: {
+        resultId: result.resultId,
+      },
+    })
+  }
+
+  function handleStartSoundRecording() {
+    void startRecording()
+  }
+
+  function handleStopSoundRecording() {
+    void stopRecording()
+  }
+
+  async function handleSubmitSoundAnalysis() {
+    const result =
+      await submitRecordingForAnalysis()
 
     if (!result?.resultId) {
       return
@@ -421,10 +462,181 @@ export default function CustomerDiagnostics() {
 
         {/* Sound Diagnosis */}
         <SoundDiagnosisCard
-          onStartScan={() => {
-            // Microphone recording flow will be connected here.
-          }}
+          captureStatus={captureStatus}
+          durationMillis={
+            recording?.durationMillis ??
+            durationMillis
+          }
+          hasRecording={Boolean(recording)}
+          isSubmittingAnalysis={
+            isSubmittingAnalysis
+          }
+          onStartRecording={
+            handleStartSoundRecording
+          }
+          onStopRecording={
+            handleStopSoundRecording
+          }
+          onDiscardRecording={
+            discardRecording
+          }
+          onSubmitForAnalysis={
+            handleSubmitSoundAnalysis
+          }
         />
+
+        {soundDiagnosisError ? (
+          <View
+            style={[
+              styles.scanFeedbackCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.danger,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.scanFeedbackIcon,
+                {
+                  borderColor: colors.danger,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="microphone-off"
+                size={22}
+                color={colors.danger}
+              />
+            </View>
+
+            <View style={styles.scanFeedbackContent}>
+              <Text
+                style={[
+                  styles.scanFeedbackTitle,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                Sound recording unavailable
+              </Text>
+
+              <Text
+                style={[
+                  styles.scanFeedbackMessage,
+                  {
+                    color: colors.secondaryText,
+                  },
+                ]}
+              >
+                {soundDiagnosisError}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={
+                clearSoundDiagnosisError
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss sound recording error"
+              style={styles.dismissButton}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={19}
+                color={colors.secondaryText}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {analysisResult ? (
+          <View
+            style={[
+              styles.scanFeedbackCard,
+              {
+                backgroundColor: colors.card,
+                borderColor:
+                  analysisResult.status ===
+                  'submitted'
+                    ? colors.accent
+                    : colors.warning,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.scanFeedbackIcon,
+                {
+                  borderColor:
+                    analysisResult.status ===
+                    'submitted'
+                      ? colors.accent
+                      : colors.warning,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={
+                  analysisResult.status ===
+                  'submitted'
+                    ? 'check-circle-outline'
+                    : 'information-outline'
+                }
+                size={22}
+                color={
+                  analysisResult.status ===
+                  'submitted'
+                    ? colors.accent
+                    : colors.warning
+                }
+              />
+            </View>
+
+            <View style={styles.scanFeedbackContent}>
+              <Text
+                style={[
+                  styles.scanFeedbackTitle,
+                  {
+                    color: colors.text,
+                  },
+                ]}
+              >
+                {analysisResult.status ===
+                'submitted'
+                  ? 'Recording submitted'
+                  : 'Sound analysis unavailable'}
+              </Text>
+
+              <Text
+                style={[
+                  styles.scanFeedbackMessage,
+                  {
+                    color: colors.secondaryText,
+                  },
+                ]}
+              >
+                {analysisResult.message}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={clearAnalysisResult}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss sound analysis message"
+              style={styles.dismissButton}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={19}
+                color={colors.secondaryText}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {/* Diagnostic Actions */}
         <View style={styles.actionsRow}>
