@@ -661,8 +661,7 @@ export default function CustomerDiagnostics() {
         <RecentDiagnosticsList
           scans={recentScans}
           onViewAllPress={() => {
-            // Full diagnostics history screen
-            // will be connected later.
+            router.push('/diagnostic-history')
           }}
           onScanPress={(scan) => {
             if (!scan.resultId) {
