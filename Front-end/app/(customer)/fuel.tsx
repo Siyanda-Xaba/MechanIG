@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import {
   ScrollView,
   StyleSheet,
@@ -11,10 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import FuelActionCard from '../../src/components/FuelActionCard'
 import FuelRecentActivityCard from '../../src/components/FuelRecentActivityCard'
 import { useCustomerFuel } from '../../src/customer/CustomerFuelContext'
+import type { FuelRequestType } from '../../src/customer/fuelTypes'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useVehicle } from '../../src/vehicles/VehicleContext'
 
 export default function CustomerFuel() {
+  const router = useRouter()
   const { colors } = useTheme()
 
   const {
@@ -34,20 +37,107 @@ export default function CustomerFuel() {
   const recentActivity =
     fuelData?.recentActivity ?? []
 
+  function handleFuelRequest(
+    requestType: FuelRequestType
+  ) {
+    const fuelType = fuelData?.fuelType
+
+    const compatibleFuelTypes =
+      fuelData?.compatibleFuelTypes ?? []
+
+    router.push({
+      pathname: '/fuel-delivery-request',
+      params: {
+        requestType,
+
+        ...(fuelType
+          ? {
+              fuelType,
+            }
+          : {}),
+
+        compatibleFuelTypes:
+          JSON.stringify(
+            compatibleFuelTypes
+          ),
+      },
+    })
+  }
+
+  function handleScheduleTopUp() {
+    const fuelType = fuelData?.fuelType
+
+    const compatibleFuelTypes =
+      fuelData?.compatibleFuelTypes ?? []
+
+    router.push({
+      pathname: '/fuel-top-up-schedule',
+      params: {
+        ...(fuelType
+          ? {
+              fuelType,
+            }
+          : {}),
+
+        compatibleFuelTypes:
+          JSON.stringify(
+            compatibleFuelTypes
+          ),
+      },
+    })
+  }
+
+  function handleTrackDelivery() {
+    const activeDeliveryId =
+      fuelData?.activeDeliveryId
+
+    if (activeDeliveryId) {
+      router.push({
+        pathname:
+          '/fuel-delivery-tracking',
+        params: {
+          deliveryId:
+            activeDeliveryId,
+        },
+      })
+
+      return
+    }
+
+    router.push(
+      '/fuel-delivery-tracking'
+    )
+  }
+
+  function handleFuelHistory() {
+    router.push('/fuel-history')
+  }
+
+  function handleSavedLocations() {
+    router.push(
+      '/fuel-saved-locations'
+    )
+  }
+
   return (
     <SafeAreaView
       style={[
         styles.safeArea,
         {
-          backgroundColor: colors.background,
+          backgroundColor:
+            colors.background,
         },
       ]}
       edges={['top']}
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
         <Text
           style={[
@@ -64,20 +154,24 @@ export default function CustomerFuel() {
           style={[
             styles.subtitle,
             {
-              color: colors.secondaryText,
+              color:
+                colors.secondaryText,
             },
           ]}
         >
-          Manage fuel delivery, nearby stations, and emergency top-ups.
+          Manage fuel delivery, nearby
+          stations, and emergency
+          top-ups.
         </Text>
 
-        {/* Vehicle Fuel Summary */}
         <View
           style={[
             styles.vehicleCard,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
             },
           ]}
         >
@@ -86,18 +180,21 @@ export default function CustomerFuel() {
               style={[
                 styles.message,
                 {
-                  color: colors.secondaryText,
+                  color:
+                    colors.secondaryText,
                 },
               ]}
             >
-              Loading fuel information...
+              Loading fuel
+              information...
             </Text>
           ) : !selectedVehicle ? (
             <Text
               style={[
                 styles.message,
                 {
-                  color: colors.secondaryText,
+                  color:
+                    colors.secondaryText,
                 },
               ]}
             >
@@ -105,29 +202,41 @@ export default function CustomerFuel() {
             </Text>
           ) : (
             <>
-              <View style={styles.vehicleTopRow}>
+              <View
+                style={
+                  styles.vehicleTopRow
+                }
+              >
                 <View>
                   <Text
                     style={[
                       styles.vehicleName,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
                     ]}
                   >
-                    {selectedVehicle.make}{' '}
-                    {selectedVehicle.model}
+                    {
+                      selectedVehicle.make
+                    }{' '}
+                    {
+                      selectedVehicle.model
+                    }
                   </Text>
 
                   <Text
                     style={[
                       styles.registration,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
-                    {selectedVehicle.registration}
+                    {
+                      selectedVehicle.registration
+                    }
                   </Text>
                 </View>
 
@@ -138,13 +247,22 @@ export default function CustomerFuel() {
                 />
               </View>
 
-              <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
+              <View
+                style={
+                  styles.statsGrid
+                }
+              >
+                <View
+                  style={
+                    styles.statItem
+                  }
+                >
                   <Text
                     style={[
                       styles.statLabel,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
@@ -155,23 +273,31 @@ export default function CustomerFuel() {
                     style={[
                       styles.statValue,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
                     ]}
                   >
-                    {fuelData?.fuelLevel !== null &&
-                    fuelData?.fuelLevel !== undefined
+                    {fuelData?.fuelLevel !==
+                      null &&
+                    fuelData?.fuelLevel !==
+                      undefined
                       ? `${fuelData.fuelLevel}%`
                       : '—'}
                   </Text>
                 </View>
 
-                <View style={styles.statItem}>
+                <View
+                  style={
+                    styles.statItem
+                  }
+                >
                   <Text
                     style={[
                       styles.statLabel,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
@@ -182,23 +308,31 @@ export default function CustomerFuel() {
                     style={[
                       styles.statValue,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
                     ]}
                   >
-                    {fuelData?.estimatedRangeKm !== null &&
-                    fuelData?.estimatedRangeKm !== undefined
+                    {fuelData?.estimatedRangeKm !==
+                      null &&
+                    fuelData?.estimatedRangeKm !==
+                      undefined
                       ? `${fuelData.estimatedRangeKm} km`
                       : '—'}
                   </Text>
                 </View>
 
-                <View style={styles.statItem}>
+                <View
+                  style={
+                    styles.statItem
+                  }
+                >
                   <Text
                     style={[
                       styles.statLabel,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
@@ -209,20 +343,27 @@ export default function CustomerFuel() {
                     style={[
                       styles.statValue,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
                     ]}
                   >
-                    {fuelData?.fuelType ?? '—'}
+                    {fuelData?.fuelType ??
+                      '—'}
                   </Text>
                 </View>
 
-                <View style={styles.statItem}>
+                <View
+                  style={
+                    styles.statItem
+                  }
+                >
                   <Text
                     style={[
                       styles.statLabel,
                       {
-                        color: colors.secondaryText,
+                        color:
+                          colors.secondaryText,
                       },
                     ]}
                   >
@@ -233,12 +374,19 @@ export default function CustomerFuel() {
                     style={[
                       styles.statValue,
                       {
-                        color: colors.text,
+                        color:
+                          colors.text,
                       },
                     ]}
                   >
-                    {fuelData?.nearestStation?.distanceKm !== null &&
-                    fuelData?.nearestStation?.distanceKm !== undefined
+                    {fuelData
+                      ?.nearestStation
+                      ?.distanceKm !==
+                      null &&
+                    fuelData
+                      ?.nearestStation
+                      ?.distanceKm !==
+                      undefined
                       ? `${fuelData.nearestStation.distanceKm} km`
                       : '—'}
                   </Text>
@@ -248,17 +396,22 @@ export default function CustomerFuel() {
           )}
         </View>
 
-        {/* Fuel Delivery */}
         <View
           style={[
             styles.deliveryCard,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
             },
           ]}
         >
-          <View style={styles.deliveryHeader}>
+          <View
+            style={
+              styles.deliveryHeader
+            }
+          >
             <View>
               <Text
                 style={[
@@ -275,7 +428,8 @@ export default function CustomerFuel() {
                 style={[
                   styles.deliveryStatus,
                   {
-                    color: colors.success,
+                    color:
+                      colors.success,
                   },
                 ]}
               >
@@ -294,19 +448,27 @@ export default function CustomerFuel() {
             style={[
               styles.deliveryDescription,
               {
-                color: colors.secondaryText,
+                color:
+                  colors.secondaryText,
               },
             ]}
           >
-            Get fuel delivered to your location quickly and safely.
+            Get fuel delivered to your
+            location quickly and safely.
           </Text>
 
           <TouchableOpacity
             activeOpacity={0.75}
+            onPress={() =>
+              handleFuelRequest(
+                'standard'
+              )
+            }
             style={[
               styles.requestButton,
               {
-                backgroundColor: colors.accent,
+                backgroundColor:
+                  colors.accent,
               },
             ]}
           >
@@ -316,20 +478,27 @@ export default function CustomerFuel() {
               color="#000000"
             />
 
-            <Text style={styles.requestButtonText}>
+            <Text
+              style={
+                styles.requestButtonText
+              }
+            >
               Request Fuel
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Fuel Actions */}
-        <View style={styles.actionsGrid}>
+        <View
+          style={styles.actionsGrid}
+        >
           <FuelActionCard
             title="Nearby Stations"
             description="Find fuel stations close to you."
             icon="map-marker-radius-outline"
             onPress={() => {
-              // Nearby stations flow
+              router.push(
+                '/nearby-fuel-stations'
+              )
             }}
           />
 
@@ -337,55 +506,58 @@ export default function CustomerFuel() {
             title="Emergency Fuel"
             description="Request urgent fuel assistance."
             icon="alert-circle-outline"
-            onPress={() => {
-              // Emergency fuel flow
-            }}
+            onPress={() =>
+              handleFuelRequest(
+                'emergency'
+              )
+            }
           />
 
           <FuelActionCard
             title="Track Delivery"
             description="View your active fuel delivery."
             icon="truck-fast-outline"
-            onPress={() => {
-              // Delivery tracking flow
-            }}
+            onPress={
+              handleTrackDelivery
+            }
           />
 
           <FuelActionCard
             title="Schedule Top-up"
             description="Plan a future fuel delivery."
             icon="calendar-clock-outline"
-            onPress={() => {
-              // Scheduled top-up flow
-            }}
+            onPress={
+              handleScheduleTopUp
+            }
           />
 
           <FuelActionCard
             title="Fuel History"
             description="View previous fuel activity."
             icon="history"
-            onPress={() => {
-              // Fuel history flow
-            }}
+            onPress={
+              handleFuelHistory
+            }
           />
 
           <FuelActionCard
             title="Saved Locations"
             description="Manage your frequent delivery locations."
             icon="map-marker-star-outline"
-            onPress={() => {
-              // Saved locations flow
-            }}
+            onPress={
+              handleSavedLocations
+            }
           />
         </View>
 
-        {/* Recent Activity */}
         <FuelRecentActivityCard
           activities={recentActivity}
-          onViewAllPress={() => {
-            // Full fuel history flow
-          }}
-          onActivityPress={(activity) => {
+          onViewAllPress={
+            handleFuelHistory
+          }
+          onActivityPress={(
+            activity
+          ) => {
             console.log(
               'Selected fuel activity:',
               activity.id

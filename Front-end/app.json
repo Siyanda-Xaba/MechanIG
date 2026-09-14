@@ -42,17 +42,21 @@
       "expo-image",
       "expo-web-browser",
       "expo-status-bar",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow MechanIQ to use your location to show nearby fuel stations and support fuel delivery services."
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "b86ee14b-bb66-435d-ad29-1a7808fbdcf5"
-      }
+      "router": {}
     },
     "owner": "zack_kwd"
   }
