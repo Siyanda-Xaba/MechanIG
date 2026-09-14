@@ -429,42 +429,8 @@ export default function CustomerSignUpScreen() {
           (item, index) => (
             <View
               key={item.number}
-              style={styles.stepItemRow}
+              style={styles.stepItem}
             >
-              <View
-                style={
-                  styles.stepCircleWrapper
-                }
-              >
-                <View
-                  style={[
-                    styles.stepCircle,
-                    step >= item.number &&
-                      styles.stepCircleActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepNumber,
-                      step >= item.number &&
-                        styles.stepNumberActive,
-                    ]}
-                  >
-                    {item.number}
-                  </Text>
-                </View>
-
-                <Text
-                  style={[
-                    styles.stepLabel,
-                    step === item.number &&
-                      styles.stepLabelActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </View>
-
               {index <
                 steps.length - 1 && (
                 <View
@@ -476,6 +442,35 @@ export default function CustomerSignUpScreen() {
                   ]}
                 />
               )}
+
+              <View
+                style={[
+                  styles.stepCircle,
+                  step >= item.number &&
+                    styles.stepCircleActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stepNumber,
+                    step >= item.number &&
+                      styles.stepNumberActive,
+                  ]}
+                >
+                  {item.number}
+                </Text>
+              </View>
+
+              <Text
+                style={[
+                  styles.stepLabel,
+                  step === item.number &&
+                    styles.stepLabelActive,
+                ]}
+                numberOfLines={2}
+              >
+                {item.label}
+              </Text>
             </View>
           )
         )}
@@ -1563,20 +1558,14 @@ const styles = StyleSheet.create({
 
   stepIndicatorRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    width: '100%',
     marginBottom: 24,
   },
 
-  stepItemRow: {
-    flexDirection: 'row',
+  stepItem: {
     flex: 1,
-    alignItems: 'flex-start',
-  },
-
-  stepCircleWrapper: {
     alignItems: 'center',
-    width: 90,
+    position: 'relative',
   },
 
   stepCircle: {
@@ -1588,6 +1577,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#0D0D0D',
+    zIndex: 2,
   },
 
   stepCircleActive: {
@@ -1610,6 +1600,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
     marginTop: 6,
+    width: '100%',
   },
 
   stepLabelActive: {
@@ -1618,10 +1609,13 @@ const styles = StyleSheet.create({
   },
 
   stepConnector: {
+    position: 'absolute',
+    top: 14,
+    left: '50%',
+    right: '-50%',
     height: 2,
-    flex: 1,
     backgroundColor: '#444444',
-    marginTop: 15,
+    zIndex: 1,
   },
 
   stepConnectorActive: {

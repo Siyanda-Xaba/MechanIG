@@ -2,10 +2,7 @@ import {
   AntDesign,
   Ionicons,
 } from '@expo/vector-icons'
-import {
-  useLocalSearchParams,
-  useRouter,
-} from 'expo-router'
+import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
   Image,
@@ -20,23 +17,8 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-type AuthRole =
-  | 'customer'
-  | 'mechanic'
-
 export default function LoginScreen() {
   const router = useRouter()
-
-  const {
-    role: roleParam,
-  } = useLocalSearchParams<{
-    role?: string
-  }>()
-
-  const role: AuthRole =
-    roleParam === 'mechanic'
-      ? 'mechanic'
-      : 'customer'
 
   const [
     emailOrPhone,
@@ -54,30 +36,34 @@ export default function LoginScreen() {
   ] = useState(false)
 
   function handleSignIn() {
-    if (role === 'customer') {
-      router.replace('/(customer)')
-      return
-    }
-
-    // Mechanic authentication/dashboard
-    // integration will be connected here
-    // separately.
-    console.log('Mechanic sign in requested', {
-      emailOrPhone,
-    })
+    /*
+     * Backend authentication will be
+     * connected here.
+     *
+     * The authenticated user's role
+     * must come from the backend/auth
+     * response and will eventually
+     * determine the destination:
+     *
+     * customer    -> /(customer)
+     * mechanic    -> /(mechanic)
+     * admin       -> /(admin)
+     * super-admin -> /(super-admin)
+     *
+     * Do not infer roles from an email,
+     * phone number, or other frontend
+     * credential values.
+     */
+    console.log(
+      'MechanIQ sign in requested',
+      {
+        emailOrPhone,
+      }
+    )
   }
 
   function handleCreateAccount() {
-    if (role === 'mechanic') {
-      router.push(
-        '/auth/mechanic-signup'
-      )
-      return
-    }
-
-    router.push(
-      '/auth/customer-signup'
-    )
+    router.push('/welcome')
   }
 
   return (
@@ -101,19 +87,9 @@ export default function LoginScreen() {
             styles.content
           }
         >
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            style={styles.backButton}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={25}
-              color="#FFFFFF"
-            />
-          </TouchableOpacity>
+          <View
+            style={styles.backButtonSpacer}
+          />
 
           <View
             style={styles.logoContainer}
@@ -130,8 +106,7 @@ export default function LoginScreen() {
           </Text>
 
           <Text style={styles.subtitle}>
-            Log in to your account to
-            continue{'\n'}as a {role}
+            Login your account to continue
           </Text>
 
           <View
@@ -310,9 +285,7 @@ export default function LoginScreen() {
               <Text
                 style={styles.footerLink}
               >
-                {role === 'mechanic'
-                  ? 'Create Mechanic Account'
-                  : 'Create Customer Account'}
+                Create Account
               </Text>
             </TouchableOpacity>
           </View>
@@ -339,12 +312,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  backButton: {
+  backButtonSpacer: {
     width: 38,
     height: 38,
     marginTop: 4,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
   },
 
   logoContainer: {

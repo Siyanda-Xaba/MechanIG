@@ -15,11 +15,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useMechanicSignUp } from '../../../src/auth/mechanic/MechanicSignUpContext'
 import {
   CYAN,
+  DropdownRow,
   FieldRow,
+  MUTED,
   SignUpFooter,
   SignUpHeader,
   styles,
@@ -140,482 +143,520 @@ export default function MechanicSignUpStep2() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={
-        Platform.OS === 'ios'
-          ? 'padding'
-          : undefined
-      }
+    <SafeAreaView
+      style={styles.container}
     >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={
-          styles.scrollContent
-        }
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={
-          false
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : undefined
         }
       >
-        <SignUpHeader
-          step={2}
-          onBack={() => router.back()}
-        />
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="location-outline"
-              size={20}
-              color={CYAN}
-            />
+        <ScrollView
+          contentContainerStyle={
+            styles.scrollContent
           }
-          label="Workshop Location"
-          placeholder="Enter your workshop location"
-          value={
-            step2Data.workshopLocation
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={
+            false
           }
-          onChangeText={(value) =>
-            updateStep2Field(
-              'workshopLocation',
-              value
-            )
-          }
-        />
-
-        <View style={styles.halfRow}>
-          <FieldRow
-            icon={
-              <Ionicons
-                name="locate-outline"
-                size={20}
-                color={CYAN}
-              />
-            }
-            label="Service Area / Radius"
-            placeholder="e.g. 25 km"
-            value={
-              step2Data.serviceRadius
-            }
-            onChangeText={(value) =>
-              updateStep2Field(
-                'serviceRadius',
-                value
-              )
-            }
-            style={styles.halfField}
-          />
-
-          <FieldRow
-            icon={
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={CYAN}
-              />
-            }
-            label="Years of Mechanical Experience"
-            placeholder="Enter years of experience"
-            keyboardType="number-pad"
-            value={
-              step2Data.yearsExperience
-            }
-            onChangeText={(value) =>
-              updateStep2Field(
-                'yearsExperience',
-                value
-              )
-            }
-            style={styles.halfField}
-          />
-        </View>
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="school-outline"
-              size={20}
-              color={CYAN}
-            />
-          }
-          label="Qualifications / Certifications"
-          placeholder="Enter your qualifications & certifications"
-          value={
-            step2Data.qualifications
-          }
-          onChangeText={(value) =>
-            updateStep2Field(
-              'qualifications',
-              value
-            )
-          }
-        />
-
-        <View
-          style={styles.fieldContainer}
         >
-          <View
-            style={styles.fieldLabelRow}
-          >
-            <Ionicons
-              name="construct-outline"
-              size={20}
-              color={CYAN}
-            />
+          <SignUpHeader
+            step={2}
+            onBack={() => router.back()}
+          />
 
-            <Text style={styles.fieldLabel}>
-              Specialisation
-            </Text>
-          </View>
+          <View style={styles.section}>
+            <View
+              style={styles.sectionHeader}
+            >
+              <Ionicons
+                name="construct-outline"
+                size={18}
+                color={CYAN}
+              />
 
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() =>
-              setSpecialisationOpen(true)
-            }
-            activeOpacity={0.8}
-          >
+              <Text
+                style={styles.sectionTitle}
+              >
+                PROFESSIONAL DETAILS
+              </Text>
+            </View>
+
             <Text
               style={
-                step2Data.specialisation
-                  ? styles.dropdownSelectedText
-                  : styles.fieldPlaceholder
+                styles.sectionSubtitle
               }
             >
-              {step2Data.specialisation ||
-                'Select your specialisation'}
+              Tell us about your workshop,
+              experience and services.
             </Text>
 
-            <Ionicons
-              name="chevron-down"
-              size={20}
-              color={CYAN}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <Modal
-          visible={specialisationOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() =>
-            setSpecialisationOpen(false)
-          }
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() =>
-              setSpecialisationOpen(false)
-            }
-          >
-            <Pressable
-              style={styles.dropdownModal}
-              onPress={() => {}}
-            >
-              <Text
-                style={styles.modalTitle}
-              >
-                Select Specialisation
-              </Text>
-
-              {SPECIALISATIONS.map(
-                (specialisation) => (
-                  <TouchableOpacity
-                    key={specialisation}
-                    style={
-                      styles.dropdownOption
-                    }
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      updateStep2Field(
-                        'specialisation',
-                        specialisation
-                      )
-
-                      setSpecialisationOpen(
-                        false
-                      )
-                    }}
-                  >
-                    <Text
-                      style={
-                        styles.dropdownOptionText
-                      }
-                    >
-                      {specialisation}
-                    </Text>
-
-                    {step2Data.specialisation ===
-                      specialisation && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={21}
-                        color={CYAN}
-                      />
-                    )}
-                  </TouchableOpacity>
+            <FieldRow
+              icon={
+                <Ionicons
+                  name="location-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Workshop Location"
+              placeholder="Enter your workshop location"
+              value={
+                step2Data.workshopLocation
+              }
+              onChangeText={(value) =>
+                updateStep2Field(
+                  'workshopLocation',
+                  value
                 )
-              )}
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        <View
-          style={styles.fieldContainer}
-        >
-          <View
-            style={styles.fieldLabelRow}
-          >
-            <Ionicons
-              name="car-outline"
-              size={20}
-              color={CYAN}
-            />
-
-            <Text style={styles.fieldLabel}>
-              Vehicle Brands Supported
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() =>
-              setVehicleBrandsOpen(true)
-            }
-            activeOpacity={0.8}
-          >
-            <Text
-              style={
-                step2Data.vehicleBrands
-                  .length > 0
-                  ? styles.dropdownSelectedText
-                  : styles.fieldPlaceholder
               }
-              numberOfLines={2}
-            >
-              {step2Data.vehicleBrands
-                .length > 0
-                ? step2Data.vehicleBrands.join(
-                    ', '
-                  )
-                : 'Select vehicle brands'}
-            </Text>
-
-            <Ionicons
-              name="chevron-down"
-              size={20}
-              color={CYAN}
             />
-          </TouchableOpacity>
-        </View>
 
-        <Modal
-          visible={vehicleBrandsOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() =>
-            setVehicleBrandsOpen(false)
-          }
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() =>
-              setVehicleBrandsOpen(false)
-            }
-          >
-            <Pressable
-              style={styles.dropdownModal}
-              onPress={() => {}}
-            >
-              <Text
-                style={styles.modalTitle}
+            <View style={styles.row}>
+              <View
+                style={styles.halfWidth}
               >
-                Select Vehicle Brands
-              </Text>
-
-              <Text
-                style={styles.modalSubtext}
-              >
-                Select all brands your
-                workshop supports
-              </Text>
-
-              {VEHICLE_BRANDS.map(
-                (brand) => {
-                  const selected =
-                    step2Data.vehicleBrands.includes(
-                      brand
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="locate-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Service Area / Radius"
+                  placeholder="e.g. 25 km"
+                  value={
+                    step2Data.serviceRadius
+                  }
+                  onChangeText={(value) =>
+                    updateStep2Field(
+                      'serviceRadius',
+                      value
                     )
+                  }
+                />
+              </View>
 
-                  return (
-                    <TouchableOpacity
-                      key={brand}
-                      style={
-                        styles.dropdownOption
-                      }
-                      onPress={() =>
-                        toggleVehicleBrand(
-                          brand
-                        )
-                      }
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={
-                          styles.dropdownOptionText
-                        }
-                      >
-                        {brand}
-                      </Text>
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="calendar-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Years of Experience"
+                  placeholder="Enter years"
+                  keyboardType="number-pad"
+                  value={
+                    step2Data.yearsExperience
+                  }
+                  onChangeText={(value) =>
+                    updateStep2Field(
+                      'yearsExperience',
+                      value
+                    )
+                  }
+                />
+              </View>
+            </View>
 
-                      {selected && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={22}
-                          color={CYAN}
-                        />
-                      )}
-                    </TouchableOpacity>
+            <FieldRow
+              icon={
+                <Ionicons
+                  name="school-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Qualifications / Certifications"
+              placeholder="Enter your qualifications and certifications"
+              value={
+                step2Data.qualifications
+              }
+              onChangeText={(value) =>
+                updateStep2Field(
+                  'qualifications',
+                  value
+                )
+              }
+            />
+
+            <DropdownRow
+              icon={
+                <Ionicons
+                  name="construct-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Specialisation"
+              placeholder="Select your specialisation"
+              value={
+                step2Data.specialisation
+              }
+              onPress={() =>
+                setSpecialisationOpen(true)
+              }
+            />
+
+            <Modal
+              visible={specialisationOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() =>
+                setSpecialisationOpen(false)
+              }
+            >
+              <Pressable
+                style={
+                  styles.modalOverlay
+                }
+                onPress={() =>
+                  setSpecialisationOpen(
+                    false
                   )
                 }
-              )}
+              >
+                <Pressable
+                  style={
+                    styles.dropdownModal
+                  }
+                  onPress={() => {}}
+                >
+                  <Text
+                    style={
+                      styles.modalTitle
+                    }
+                  >
+                    Select Specialisation
+                  </Text>
 
-              <TouchableOpacity
+                  {SPECIALISATIONS.map(
+                    (specialisation) => (
+                      <TouchableOpacity
+                        key={specialisation}
+                        style={
+                          styles.dropdownOption
+                        }
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          updateStep2Field(
+                            'specialisation',
+                            specialisation
+                          )
+
+                          setSpecialisationOpen(
+                            false
+                          )
+                        }}
+                      >
+                        <Text
+                          style={
+                            styles.dropdownOptionText
+                          }
+                        >
+                          {specialisation}
+                        </Text>
+
+                        {step2Data.specialisation ===
+                          specialisation && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={21}
+                            color={CYAN}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    )
+                  )}
+                </Pressable>
+              </Pressable>
+            </Modal>
+
+            <DropdownRow
+              icon={
+                <Ionicons
+                  name="car-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Vehicle Brands Supported"
+              placeholder="Select vehicle brands"
+              value={
+                step2Data.vehicleBrands
+                  .length > 0
+                  ? step2Data.vehicleBrands.join(
+                      ', '
+                    )
+                  : ''
+              }
+              onPress={() =>
+                setVehicleBrandsOpen(true)
+              }
+            />
+
+            <Modal
+              visible={vehicleBrandsOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() =>
+                setVehicleBrandsOpen(false)
+              }
+            >
+              <Pressable
                 style={
-                  styles.modalDoneButton
+                  styles.modalOverlay
                 }
                 onPress={() =>
                   setVehicleBrandsOpen(
                     false
                   )
                 }
-                activeOpacity={0.85}
               >
-                <Text
+                <Pressable
                   style={
-                    styles.modalDoneText
+                    styles.dropdownModal
                   }
+                  onPress={() => {}}
                 >
-                  Done
-                </Text>
-              </TouchableOpacity>
-            </Pressable>
-          </Pressable>
-        </Modal>
+                  <Text
+                    style={
+                      styles.modalTitle
+                    }
+                  >
+                    Select Vehicle Brands
+                  </Text>
 
-        <View style={styles.halfRow}>
-          <FieldRow
-            icon={
-              <MaterialCommunityIcons
-                name="card-account-details-outline"
-                size={20}
+                  <Text
+                    style={
+                      styles.modalSubtext
+                    }
+                  >
+                    Select all brands your
+                    workshop supports
+                  </Text>
+
+                  {VEHICLE_BRANDS.map(
+                    (brand) => {
+                      const selected =
+                        step2Data.vehicleBrands.includes(
+                          brand
+                        )
+
+                      return (
+                        <TouchableOpacity
+                          key={brand}
+                          style={
+                            styles.dropdownOption
+                          }
+                          onPress={() =>
+                            toggleVehicleBrand(
+                              brand
+                            )
+                          }
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={
+                              styles.dropdownOptionText
+                            }
+                          >
+                            {brand}
+                          </Text>
+
+                          {selected && (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={22}
+                              color={CYAN}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      )
+                    }
+                  )}
+
+                  <TouchableOpacity
+                    style={
+                      styles.modalDoneButton
+                    }
+                    onPress={() =>
+                      setVehicleBrandsOpen(
+                        false
+                      )
+                    }
+                    activeOpacity={0.85}
+                  >
+                    <Text
+                      style={
+                        styles.modalDoneText
+                      }
+                    >
+                      Done
+                    </Text>
+                  </TouchableOpacity>
+                </Pressable>
+              </Pressable>
+            </Modal>
+
+            <View style={styles.row}>
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <MaterialCommunityIcons
+                      name="card-account-details-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Trade Test / License Number"
+                  placeholder="Enter license number"
+                  value={
+                    step2Data.licenseNumber
+                  }
+                  onChangeText={(value) =>
+                    updateStep2Field(
+                      'licenseNumber',
+                      value
+                    )
+                  }
+                />
+              </View>
+
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <MaterialCommunityIcons
+                      name="card-account-details-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Business Registration Number"
+                  placeholder="Enter registration number"
+                  value={
+                    step2Data.registrationNumber
+                  }
+                  onChangeText={(value) =>
+                    updateStep2Field(
+                      'registrationNumber',
+                      value
+                    )
+                  }
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View
+              style={styles.sectionHeader}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={18}
                 color={CYAN}
               />
-            }
-            label="Trade Test / License Number"
-            placeholder="Enter license number"
-            value={
-              step2Data.licenseNumber
-            }
-            onChangeText={(value) =>
-              updateStep2Field(
-                'licenseNumber',
-                value
+
+              <Text
+                style={styles.sectionTitle}
+              >
+                VERIFICATION DOCUMENTS
+              </Text>
+            </View>
+
+            <Text
+              style={
+                styles.sectionSubtitle
+              }
+            >
+              Upload verification
+              documents for your mechanic
+              profile.
+            </Text>
+
+            <UploadRow
+              label="Upload ID Document"
+              onPress={() =>
+                handleDocumentUpload(
+                  'ID document'
+                )
+              }
+            />
+
+            <UploadRow
+              label="Upload Trade Certificate"
+              onPress={() =>
+                handleDocumentUpload(
+                  'Trade certificate'
+                )
+              }
+            />
+
+            <UploadRow
+              label="Upload Workshop Registration / Proof of Business"
+              onPress={() =>
+                handleDocumentUpload(
+                  'Workshop registration / proof of business'
+                )
+              }
+            />
+          </View>
+
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={
+                styles.backOutlineButton
+              }
+              activeOpacity={0.85}
+              onPress={() => router.back()}
+            >
+              <Text
+                style={
+                  styles.backOutlineText
+                }
+              >
+                Back
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ width: 10 }} />
+
+            <TouchableOpacity
+              style={styles.continueButton}
+              activeOpacity={0.85}
+              onPress={handleContinue}
+            >
+              <Text
+                style={styles.continueText}
+              >
+                Continue
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <SignUpFooter
+            onSignIn={() => {
+              router.replace(
+                '/auth/login'
               )
-            }
-            style={styles.halfField}
+            }}
           />
-
-          <FieldRow
-            icon={
-              <MaterialCommunityIcons
-                name="card-account-details-outline"
-                size={20}
-                color={CYAN}
-              />
-            }
-            label="Business Registration Number"
-            placeholder="Enter registration number"
-            value={
-              step2Data.registrationNumber
-            }
-            onChangeText={(value) =>
-              updateStep2Field(
-                'registrationNumber',
-                value
-              )
-            }
-            style={styles.halfField}
-          />
-        </View>
-
-        <UploadRow
-          label="Upload ID Document"
-          onPress={() =>
-            handleDocumentUpload(
-              'ID document'
-            )
-          }
-        />
-
-        <UploadRow
-          label="Upload Trade Certificate"
-          onPress={() =>
-            handleDocumentUpload(
-              'Trade certificate'
-            )
-          }
-        />
-
-        <UploadRow
-          label="Upload Workshop Registration / Proof of Business"
-          onPress={() =>
-            handleDocumentUpload(
-              'Workshop registration / proof of business'
-            )
-          }
-        />
-
-        <TouchableOpacity
-          style={styles.continueButton}
-          activeOpacity={0.85}
-          onPress={handleContinue}
-        >
-          <Text
-            style={styles.continueText}
-          >
-            Continue
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={
-            styles.backOutlineButton
-          }
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-        >
-          <Text
-            style={
-              styles.backOutlineText
-            }
-          >
-            Back
-          </Text>
-        </TouchableOpacity>
-
-        <SignUpFooter
-          onSignIn={() => {
-            router.replace({
-              pathname: '/auth/login',
-              params: {
-                role: 'mechanic',
-              },
-            })
-          }}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }

@@ -73,7 +73,7 @@ export default function SplashScreen() {
     }, 550)
 
     const timeout = setTimeout(() => {
-      router.replace('/welcome')
+      router.replace('/auth/login')
     }, 4000)
 
     return () => {

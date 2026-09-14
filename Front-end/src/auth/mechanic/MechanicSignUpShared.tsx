@@ -15,8 +15,8 @@ import {
 } from 'react-native'
 
 export const CYAN = '#00E5FF'
-export const BORDER = '#2C3B42'
-export const MUTED = '#7A8A94'
+export const BORDER = '#333333'
+export const MUTED = '#888888'
 export const GREEN = '#7CFF4F'
 
 export type MechanicSignUpStep =
@@ -25,10 +25,19 @@ export type MechanicSignUpStep =
   | 3
 
 export const STEP_LABELS = [
-  'Personal & Business Details',
-  'Professional Verification',
+  'Personal Details',
+  'Professional Details',
   'Security',
 ] as const
+
+const STEP_SUBTITLES: Record<
+  MechanicSignUpStep,
+  string
+> = {
+  1: "Let's get to know you and your business.",
+  2: 'Tell us about your professional experience.',
+  3: 'Secure your account.',
+}
 
 type FieldRowProps = {
   icon: ReactNode
@@ -68,7 +77,7 @@ export function FieldRow({
         <TextInput
           style={styles.fieldInput}
           placeholder={placeholder}
-          placeholderTextColor={MUTED}
+          placeholderTextColor="#666666"
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
@@ -82,6 +91,7 @@ type DropdownRowProps = {
   icon: ReactNode
   label: string
   placeholder: string
+  value?: string
   style?: StyleProp<ViewStyle>
   onPress?: () => void
 }
@@ -90,6 +100,7 @@ export function DropdownRow({
   icon,
   label,
   placeholder,
+  value = '',
   style,
   onPress,
 }: DropdownRowProps) {
@@ -99,7 +110,7 @@ export function DropdownRow({
         styles.fieldWrapper,
         style,
       ]}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       onPress={onPress}
     >
       <View style={styles.fieldIcon}>
@@ -112,16 +123,21 @@ export function DropdownRow({
         </Text>
 
         <Text
-          style={styles.fieldPlaceholder}
+          style={
+            value
+              ? styles.fieldInput
+              : styles.fieldPlaceholder
+          }
+          numberOfLines={1}
         >
-          {placeholder}
+          {value || placeholder}
         </Text>
       </View>
 
       <Ionicons
         name="chevron-down"
         size={18}
-        color={MUTED}
+        color="#888888"
       />
     </TouchableOpacity>
   )
@@ -139,14 +155,14 @@ export function UploadRow({
   return (
     <TouchableOpacity
       style={styles.fieldWrapper}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       onPress={onPress}
     >
       <View style={styles.fieldIcon}>
         <Ionicons
           name="document-text-outline"
-          size={20}
-          color={CYAN}
+          size={18}
+          color="#888888"
         />
       </View>
 
@@ -164,8 +180,8 @@ export function UploadRow({
 
       <Ionicons
         name="cloud-upload-outline"
-        size={20}
-        color={MUTED}
+        size={18}
+        color="#888888"
       />
     </TouchableOpacity>
   )
@@ -193,8 +209,8 @@ export function PasswordRow({
       <View style={styles.fieldIcon}>
         <Ionicons
           name="lock-closed-outline"
-          size={20}
-          color={CYAN}
+          size={18}
+          color="#888888"
         />
       </View>
 
@@ -206,7 +222,7 @@ export function PasswordRow({
         <TextInput
           style={styles.fieldInput}
           placeholder={placeholder}
-          placeholderTextColor={MUTED}
+          placeholderTextColor="#666666"
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={!visible}
@@ -221,11 +237,11 @@ export function PasswordRow({
         <Ionicons
           name={
             visible
-              ? 'eye-outline'
-              : 'eye-off-outline'
+              ? 'eye-off-outline'
+              : 'eye-outline'
           }
           size={20}
-          color={MUTED}
+          color="#888888"
         />
       </TouchableOpacity>
     </View>
@@ -240,79 +256,68 @@ export function StepIndicator({
   currentStep,
 }: StepIndicatorProps) {
   return (
-    <View>
-      <View style={styles.stepRow}>
-        {[1, 2, 3].map(
-          (stepNumber, index) => (
+    <View
+      style={styles.stepIndicatorRow}
+    >
+      {STEP_LABELS.map(
+        (label, index) => {
+          const stepNumber =
+            (index +
+              1) as MechanicSignUpStep
+
+          return (
             <View
               key={stepNumber}
               style={styles.stepItem}
             >
-              <View
-                style={[
-                  styles.stepCircle,
-                  stepNumber ===
-                    currentStep &&
-                    styles.stepCircleActive,
-                  stepNumber <
-                    currentStep &&
-                    styles.stepCircleDone,
-                ]}
-              >
-                {stepNumber <
-                currentStep ? (
-                  <Ionicons
-                    name="checkmark"
-                    size={16}
-                    color="#00131A"
-                  />
-                ) : (
-                  <Text
-                    style={[
-                      styles.stepNumber,
-                      stepNumber ===
-                        currentStep &&
-                        styles.stepNumberActive,
-                    ]}
-                  >
-                    {stepNumber}
-                  </Text>
-                )}
-              </View>
-
-              {index < 2 && (
+              {index <
+                STEP_LABELS.length -
+                  1 && (
                 <View
                   style={[
-                    styles.stepLine,
-                    stepNumber <
-                      currentStep &&
-                      styles.stepLineActive,
+                    styles.stepConnector,
+                    currentStep >
+                      stepNumber &&
+                      styles.stepConnectorActive,
                   ]}
                 />
               )}
+
+              <View
+                style={[
+                  styles.stepCircle,
+                  currentStep >=
+                    stepNumber &&
+                    styles.stepCircleActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stepNumber,
+                    currentStep >=
+                      stepNumber &&
+                      styles.stepNumberActive,
+                  ]}
+                >
+                  {stepNumber}
+                </Text>
+              </View>
+
+              <Text
+                style={[
+                  styles.stepLabel,
+                  currentStep ===
+                    stepNumber &&
+                    styles.stepLabelActive,
+                ]}
+                numberOfLines={2}
+              >
+                {label}
+              </Text>
             </View>
           )
-        )}
-      </View>
-
-      <View style={styles.stepLabelRow}>
-        {STEP_LABELS.map(
-          (label, index) => (
-            <Text
-              key={label}
-              style={[
-                styles.stepLabel,
-                index + 1 ===
-                  currentStep &&
-                  styles.stepLabelActive,
-              ]}
-              numberOfLines={2}
-            >
-              {label}
-            </Text>
-          )
-        )}
-      </View>
+        }
+      )}
     </View>
   )
 }
@@ -331,19 +336,20 @@ export function SignUpHeader({
       <TouchableOpacity
         style={styles.backButton}
         onPress={onBack}
-        hitSlop={10}
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
         <Ionicons
-          name="chevron-back"
-          size={26}
+          name="arrow-back"
+          size={24}
           color="#FFFFFF"
         />
       </TouchableOpacity>
 
-      <View style={styles.logoRow}>
+      <View
+        style={styles.logoContainer}
+      >
         <Image
           source={require('../../../assets/images/mechaniq-logo.png')}
           style={styles.logo}
@@ -352,15 +358,11 @@ export function SignUpHeader({
       </View>
 
       <Text style={styles.title}>
-        Create Mechanic Account
+        Create Your Account
       </Text>
 
       <Text style={styles.subtitle}>
-        Step {step} of 3{' '}
-        <Text style={styles.dot}>
-          •
-        </Text>{' '}
-        {STEP_LABELS[step - 1]}
+        {STEP_SUBTITLES[step]}
       </Text>
 
       <StepIndicator
@@ -388,7 +390,7 @@ export function SignUpFooter({
         activeOpacity={0.7}
       >
         <Text style={styles.footerLink}>
-          Sign In
+          Log in
         </Text>
       </TouchableOpacity>
     </View>
@@ -398,78 +400,75 @@ export function SignUpFooter({
 export const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0D0D0D',
   },
 
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0D0D0D',
   },
 
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 20,
     paddingBottom: 40,
   },
 
   backButton: {
-    marginTop: 8,
-    marginBottom: 4,
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
+    marginBottom: 10,
   },
 
-  logoRow: {
+  logoContainer: {
     alignItems: 'center',
+    marginBottom: 6,
   },
 
   logo: {
-    width: 210,
-    height: 100,
+    width: 150,
+    height: 80,
   },
 
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
 
   subtitle: {
-    color: '#9AA7AE',
-    fontSize: 13.5,
+    color: '#AAAAAA',
+    fontSize: 13,
     textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 18,
+    marginTop: 4,
+    marginBottom: 20,
   },
 
-  dot: {
-    color: CYAN,
-  },
-
-  stepRow: {
+  stepIndicatorRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    width: '100%',
+    marginBottom: 24,
   },
 
   stepItem: {
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
+    position: 'relative',
   },
 
   stepCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     borderWidth: 1.5,
-    borderColor: BORDER,
-    alignItems: 'center',
+    borderColor: '#555555',
     justifyContent: 'center',
-    backgroundColor: '#000000',
+    alignItems: 'center',
+    backgroundColor: '#0D0D0D',
+    zIndex: 2,
   },
 
   stepCircleActive: {
@@ -477,66 +476,91 @@ export const styles = StyleSheet.create({
     borderColor: CYAN,
   },
 
-  stepCircleDone: {
-    backgroundColor: CYAN,
-    borderColor: CYAN,
-  },
-
   stepNumber: {
-    color: '#9AA7AE',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#888888',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
 
   stepNumberActive: {
-    color: '#00131A',
-  },
-
-  stepLine: {
-    width: 56,
-    height: 2,
-    backgroundColor: BORDER,
-    marginHorizontal: 4,
-  },
-
-  stepLineActive: {
-    backgroundColor: CYAN,
-  },
-
-  stepLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 22,
-    paddingHorizontal: 2,
+    color: '#000000',
   },
 
   stepLabel: {
-    flex: 1,
-    color: '#7A8A94',
-    fontSize: 11,
+    color: '#777777',
+    fontSize: 10,
     textAlign: 'center',
+    marginTop: 6,
+    width: '100%',
   },
 
   stepLabelActive: {
     color: CYAN,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+
+  stepConnector: {
+    position: 'absolute',
+    top: 14,
+    left: '50%',
+    right: '-50%',
+    height: 2,
+    backgroundColor: '#444444',
+    zIndex: 1,
+  },
+
+  stepConnectorActive: {
+    backgroundColor: CYAN,
+  },
+
+  section: {
+    marginBottom: 10,
+  },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginLeft: 8,
+  },
+
+  sectionSubtitle: {
+    color: '#888888',
+    fontSize: 12,
+    marginBottom: 16,
+  },
+
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  halfWidth: {
+    width: '48%',
   },
 
   fieldWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderColor: '#333333',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginBottom: 14,
   },
 
   fieldIcon: {
-    width: 26,
+    marginRight: 10,
     alignItems: 'center',
-    marginRight: 8,
+    justifyContent: 'center',
   },
 
   fieldTextArea: {
@@ -544,219 +568,29 @@ export const styles = StyleSheet.create({
   },
 
   fieldLabel: {
-    color: '#B9C4CA',
-    fontSize: 12.5,
-    marginBottom: 2,
+    color: '#999999',
+    fontSize: 11,
   },
 
   fieldInput: {
     color: '#FFFFFF',
-    fontSize: 14.5,
-    padding: 0,
+    fontSize: 13,
+    paddingVertical: 2,
   },
 
   fieldPlaceholder: {
-    color: MUTED,
-    fontSize: 14.5,
+    color: '#666666',
+    fontSize: 13,
+    paddingVertical: 2,
   },
 
   halfRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
   },
 
   halfField: {
-    flex: 1,
-    marginRight: 0,
-  },
-
-  requirementsBox: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-  },
-
-  requirementsTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-
-  requirementText: {
-    color: '#B9C4CA',
-    fontSize: 13,
-    marginLeft: 8,
-    flexShrink: 1,
-  },
-
-  verificationBox: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-  },
-
-  verificationHeaderRow: {
-    flexDirection: 'row',
-    marginBottom: 14,
-  },
-
-  verificationHeaderText: {
-    marginLeft: 10,
-    flex: 1,
-  },
-
-  verificationSubtext: {
-    color: MUTED,
-    fontSize: 12.5,
-    marginTop: 2,
-  },
-
-  verificationInputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 10,
-  },
-
-  verificationInputArea: {
-    flex: 1,
-    marginRight: 10,
-  },
-
-  sendCodeButton: {
-    borderWidth: 1,
-    borderColor: CYAN,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-
-  sendCodeText: {
-    color: CYAN,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-
-  verifyCodeButton: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-
-  verifyCodeText: {
-    color: '#7A8A94',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-
-  twoFactorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-
-  twoFactorTextArea: {
-    flex: 1,
-    marginLeft: 10,
-    marginRight: 10,
-  },
-
-  agreeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 22,
-  },
-
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: CYAN,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-
-  checkboxChecked: {
-    backgroundColor: CYAN,
-  },
-
-  agreeText: {
-    flex: 1,
-    color: '#B9C4CA',
-    fontSize: 13,
-  },
-
-  agreeLink: {
-    color: CYAN,
-  },
-
-  continueButton: {
-    backgroundColor: CYAN,
-    borderRadius: 14,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-
-  continueText: {
-    color: '#00131A',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  backOutlineButton: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 14,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-
-  backOutlineText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 4,
-    flexWrap: 'wrap',
-  },
-
-  footerText: {
-    color: '#9AA7AE',
-    fontSize: 14,
-  },
-
-  footerLink: {
-    color: CYAN,
-    fontSize: 14,
-    fontWeight: '600',
+    width: '48%',
   },
 
   fieldContainer: {
@@ -773,20 +607,215 @@ export const styles = StyleSheet.create({
   dropdown: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 14,
-    paddingHorizontal: 14,
+    borderColor: '#333333',
+    borderRadius: 8,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#000000',
+    backgroundColor: '#0D0D0D',
   },
 
   dropdownSelectedText: {
     color: '#FFFFFF',
-    fontSize: 14.5,
+    fontSize: 13,
     flex: 1,
     marginRight: 10,
+  },
+
+  requirementsBox: {
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+  },
+
+  requirementsTitle: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+
+  requirementText: {
+    color: '#AAAAAA',
+    fontSize: 11,
+    marginLeft: 8,
+    flex: 1,
+  },
+
+  verificationBox: {
+    marginBottom: 14,
+  },
+
+  verificationHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+
+  verificationHeaderText: {
+    marginLeft: 10,
+    flex: 1,
+  },
+
+  verificationSubtext: {
+    color: '#888888',
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  verificationInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+
+  verificationInputArea: {
+    flex: 1,
+    marginRight: 10,
+  },
+
+  sendCodeButton: {
+    borderWidth: 1,
+    borderColor: CYAN,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+
+  sendCodeText: {
+    color: CYAN,
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+
+  verifyCodeButton: {
+    borderWidth: 1,
+    borderColor: '#444444',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+
+  verifyCodeText: {
+    color: '#666666',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+
+  twoFactorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+
+  twoFactorTextArea: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 10,
+  },
+
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+
+  checkbox: {
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+
+  checkboxChecked: {
+    backgroundColor: 'transparent',
+  },
+
+  agreeText: {
+    flex: 1,
+    color: '#AAAAAA',
+    fontSize: 11,
+  },
+
+  agreeLink: {
+    color: CYAN,
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+
+  continueButton: {
+    flex: 1,
+    backgroundColor: CYAN,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+
+  continueText: {
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+
+  backOutlineButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: CYAN,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+
+  backOutlineText: {
+    color: CYAN,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    flexWrap: 'wrap',
+  },
+
+  footerText: {
+    color: '#AAAAAA',
+    fontSize: 12,
+  },
+
+  footerLink: {
+    color: CYAN,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 
   modalOverlay: {
@@ -801,33 +830,33 @@ export const styles = StyleSheet.create({
   dropdownModal: {
     width: '100%',
     maxHeight: '80%',
-    backgroundColor: '#070D14',
+    backgroundColor: '#0D0D0D',
     borderWidth: 1,
     borderColor: CYAN,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 18,
   },
 
   modalTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
 
   modalSubtext: {
-    color: MUTED,
-    fontSize: 12.5,
+    color: '#888888',
+    fontSize: 11,
     textAlign: 'center',
     marginTop: -8,
     marginBottom: 12,
   },
 
   dropdownOption: {
-    minHeight: 48,
+    minHeight: 46,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    borderBottomColor: '#333333',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -836,21 +865,21 @@ export const styles = StyleSheet.create({
 
   dropdownOptionText: {
     color: '#FFFFFF',
-    fontSize: 14.5,
+    fontSize: 13,
   },
 
   modalDoneButton: {
     backgroundColor: CYAN,
-    borderRadius: 10,
-    height: 46,
+    borderRadius: 8,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
   },
 
   modalDoneText: {
-    color: '#00131A',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#000000',
+    fontSize: 13,
+    fontWeight: 'bold',
   },
 })

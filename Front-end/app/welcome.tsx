@@ -14,6 +14,18 @@ import {
 export default function WelcomeScreen() {
   const router = useRouter()
 
+  function handleCustomerSignUp() {
+    router.push(
+      '/auth/customer-signup'
+    )
+  }
+
+  function handleMechanicSignUp() {
+    router.push(
+      '/auth/mechanic-signup'
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
@@ -25,25 +37,18 @@ export default function WelcomeScreen() {
       </View>
 
       <Text style={styles.title}>
-        Welcome to{' '}
-        <Text style={styles.titleAccent}>
-          MechanIQ
-        </Text>
+        Create Your Account
       </Text>
 
       <Text style={styles.subtitle}>
-        Choose how you want to continue
+        Choose how you want to join
+        MechanIQ
       </Text>
 
       <View style={styles.cardRow}>
         <View style={styles.card}>
           <View
-            style={[
-              styles.iconCircle,
-              {
-                borderColor: '#00E5FF',
-              },
-            ]}
+            style={styles.iconCircle}
           >
             <Ionicons
               name="person-outline"
@@ -66,22 +71,10 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={[
-              styles.button,
-              {
-                backgroundColor:
-                  '#00E5FF',
-              },
-            ]}
-            onPress={() => {
-              router.push({
-                pathname:
-                  '/auth/login',
-                params: {
-                  role: 'customer',
-                },
-              })
-            }}
+            style={styles.button}
+            onPress={
+              handleCustomerSignUp
+            }
           >
             <Text style={styles.buttonText}>
               CONTINUE AS CUSTOMER
@@ -91,12 +84,7 @@ export default function WelcomeScreen() {
 
         <View style={styles.card}>
           <View
-            style={[
-              styles.iconCircle,
-              {
-                borderColor: '#00E5FF',
-              },
-            ]}
+            style={styles.iconCircle}
           >
             <Ionicons
               name="build-outline"
@@ -119,28 +107,35 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={[
-              styles.button,
-              {
-                backgroundColor:
-                  '#00E5FF',
-              },
-            ]}
-            onPress={() => {
-              router.push({
-                pathname:
-                  '/auth/login',
-                params: {
-                  role: 'mechanic',
-                },
-              })
-            }}
+            style={styles.button}
+            onPress={
+              handleMechanicSignUp
+            }
           >
             <Text style={styles.buttonText}>
               CONTINUE AS MECHANIC
             </Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={styles.loginRow}>
+        <Text style={styles.loginText}>
+          Already have an account?{' '}
+        </Text>
+
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            router.replace(
+              '/auth/login'
+            )
+          }}
+        >
+          <Text style={styles.loginLink}>
+            Login
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   )
@@ -170,17 +165,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     marginTop: 8,
-  },
-
-  titleAccent: {
-    color: '#00E5FF',
+    textAlign: 'center',
   },
 
   subtitle: {
     color: '#BDBDBD',
     fontSize: 13,
+    lineHeight: 19,
     marginTop: 6,
     marginBottom: 30,
+    textAlign: 'center',
   },
 
   cardRow: {
@@ -205,6 +199,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 1.5,
+    borderColor: '#00E5FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 13,
@@ -232,6 +227,7 @@ const styles = StyleSheet.create({
     minHeight: 38,
     borderRadius: 7,
     paddingHorizontal: 8,
+    backgroundColor: '#00E5FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -241,5 +237,23 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 9,
     textAlign: 'center',
+  },
+
+  loginRow: {
+    marginTop: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  loginText: {
+    color: '#BDBDBD',
+    fontSize: 12,
+  },
+
+  loginLink: {
+    color: '#00E5FF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 })

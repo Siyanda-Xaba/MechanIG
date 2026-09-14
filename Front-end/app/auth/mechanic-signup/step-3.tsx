@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useMechanicSignUp } from '../../../src/auth/mechanic/MechanicSignUpContext'
 import {
@@ -167,368 +168,415 @@ export default function MechanicSignUpStep3() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={
-        Platform.OS === 'ios'
-          ? 'padding'
-          : undefined
-      }
+    <SafeAreaView
+      style={styles.container}
     >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={
-          styles.scrollContent
-        }
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={
-          false
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : undefined
         }
       >
-        <SignUpHeader
-          step={3}
-          onBack={() => router.back()}
-        />
-
-        <PasswordRow
-          label="Create Password"
-          placeholder="Enter a strong password"
-          value={password}
-          onChangeText={setPassword}
-          visible={passwordVisible}
-          onToggleVisible={() =>
-            setPasswordVisible(
-              (current) => !current
-            )
+        <ScrollView
+          contentContainerStyle={
+            styles.scrollContent
           }
-        />
-
-        <PasswordRow
-          label="Confirm Password"
-          placeholder="Re-enter your password"
-          value={confirmPassword}
-          onChangeText={
-            setConfirmPassword
-          }
-          visible={
-            confirmPasswordVisible
-          }
-          onToggleVisible={() =>
-            setConfirmPasswordVisible(
-              (current) => !current
-            )
-          }
-        />
-
-        <View
-          style={
-            styles.requirementsBox
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={
+            false
           }
         >
-          <Text
-            style={
-              styles.requirementsTitle
-            }
-          >
-            Password requirements
-          </Text>
+          <SignUpHeader
+            step={3}
+            onBack={() => router.back()}
+          />
 
-          {passwordRequirements.map(
-            (requirement) => (
-              <View
-                key={requirement.label}
-                style={
-                  styles.requirementRow
-                }
+          <View style={styles.section}>
+            <View
+              style={styles.sectionHeader}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={18}
+                color={CYAN}
+              />
+
+              <Text
+                style={styles.sectionTitle}
               >
-                <Ionicons
-                  name={
-                    requirement.met
-                      ? 'checkmark-circle'
-                      : 'ellipse-outline'
-                  }
-                  size={16}
-                  color={
-                    requirement.met
-                      ? GREEN
-                      : MUTED
-                  }
-                />
+                SECURITY DETAILS
+              </Text>
+            </View>
 
-                <Text
-                  style={
-                    styles.requirementText
-                  }
-                >
-                  {requirement.label}
-                </Text>
-              </View>
-            )
-          )}
-        </View>
+            <Text
+              style={
+                styles.sectionSubtitle
+              }
+            >
+              Set up a strong password to
+              keep your account safe.
+            </Text>
 
-        <View
-          style={styles.verificationBox}
-        >
-          <View
-            style={
-              styles.verificationHeaderRow
-            }
-          >
-            <Ionicons
-              name="mail-outline"
-              size={20}
-              color={CYAN}
+            <PasswordRow
+              label="Create Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              visible={passwordVisible}
+              onToggleVisible={() =>
+                setPasswordVisible(
+                  (current) => !current
+                )
+              }
+            />
+
+            <PasswordRow
+              label="Confirm Password"
+              placeholder="Re-enter your password"
+              value={confirmPassword}
+              onChangeText={
+                setConfirmPassword
+              }
+              visible={
+                confirmPasswordVisible
+              }
+              onToggleVisible={() =>
+                setConfirmPasswordVisible(
+                  (current) => !current
+                )
+              }
             />
 
             <View
               style={
-                styles.verificationHeaderText
+                styles.requirementsBox
               }
             >
               <Text
-                style={styles.fieldLabel}
-              >
-                Email Verification
-              </Text>
-
-              <Text
                 style={
-                  styles.verificationSubtext
+                  styles.requirementsTitle
                 }
               >
-                We'll send a verification
-                code to your email
-                address.
+                Password requirements
               </Text>
+
+              {passwordRequirements.map(
+                (requirement) => (
+                  <View
+                    key={
+                      requirement.label
+                    }
+                    style={
+                      styles.requirementRow
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        requirement.met
+                          ? 'checkmark-circle'
+                          : 'ellipse-outline'
+                      }
+                      size={16}
+                      color={
+                        requirement.met
+                          ? GREEN
+                          : '#666666'
+                      }
+                    />
+
+                    <Text
+                      style={
+                        styles.requirementText
+                      }
+                    >
+                      {
+                        requirement.label
+                      }
+                    </Text>
+                  </View>
+                )
+              )}
             </View>
           </View>
 
-          <View
-            style={
-              styles.verificationInputRow
-            }
-          >
+          <View style={styles.section}>
             <View
-              style={
-                styles.verificationInputArea
-              }
+              style={styles.sectionHeader}
             >
-              <Text
-                style={styles.fieldLabel}
-              >
-                Email Address
-              </Text>
-
-              <Text
-                style={
-                  step1Data.email
-                    ? styles.fieldInput
-                    : styles.fieldPlaceholder
-                }
-                numberOfLines={1}
-              >
-                {step1Data.email ||
-                  'Enter email in Step 1'}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={
-                styles.sendCodeButton
-              }
-              activeOpacity={0.8}
-              onPress={handleSendCode}
-            >
-              <Text
-                style={styles.sendCodeText}
-              >
-                Send Code
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View
-            style={
-              styles.verificationInputRow
-            }
-          >
-            <View
-              style={
-                styles.verificationInputArea
-              }
-            >
-              <Text
-                style={styles.fieldLabel}
-              >
-                Verification Code
-              </Text>
-
-              <TextInput
-                style={styles.fieldInput}
-                placeholder="Enter 6-digit code"
-                placeholderTextColor={
-                  MUTED
-                }
-                keyboardType="number-pad"
-                value={verificationCode}
-                onChangeText={(value) =>
-                  setVerificationCode(
-                    value.replace(
-                      /[^0-9]/g,
-                      ''
-                    )
-                  )
-                }
-                maxLength={6}
+              <Ionicons
+                name="mail-outline"
+                size={18}
+                color={CYAN}
               />
+
+              <Text
+                style={styles.sectionTitle}
+              >
+                EMAIL VERIFICATION
+              </Text>
             </View>
 
-            <TouchableOpacity
-              style={
-                styles.verifyCodeButton
-              }
-              activeOpacity={0.8}
-              onPress={handleVerifyCode}
-            >
-              <Text
-                style={
-                  styles.verifyCodeText
-                }
-              >
-                Verify Code
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View
-          style={styles.twoFactorRow}
-        >
-          <Ionicons
-            name="shield-checkmark-outline"
-            size={20}
-            color={CYAN}
-          />
-
-          <View
-            style={
-              styles.twoFactorTextArea
-            }
-          >
             <Text
-              style={styles.fieldLabel}
+              style={
+                styles.sectionSubtitle
+              }
             >
-              Two-Factor Authentication
-              (Optional)
+              We'll send a verification
+              code to your email address.
             </Text>
 
-            <Text
+            <View
               style={
-                styles.verificationSubtext
+                styles.verificationInputRow
               }
             >
-              Add an extra layer of
-              security to protect your
+              <View
+                style={
+                  styles.verificationInputArea
+                }
+              >
+                <Text
+                  style={styles.fieldLabel}
+                >
+                  Email Address
+                </Text>
+
+                <Text
+                  style={
+                    step1Data.email
+                      ? styles.fieldInput
+                      : styles.fieldPlaceholder
+                  }
+                  numberOfLines={1}
+                >
+                  {step1Data.email ||
+                    'Enter your email in Step 1'}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={
+                  styles.sendCodeButton
+                }
+                activeOpacity={0.8}
+                onPress={handleSendCode}
+              >
+                <Text
+                  style={
+                    styles.sendCodeText
+                  }
+                >
+                  Send Code
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View
+              style={
+                styles.verificationInputRow
+              }
+            >
+              <View
+                style={
+                  styles.verificationInputArea
+                }
+              >
+                <Text
+                  style={styles.fieldLabel}
+                >
+                  Verification Code
+                </Text>
+
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="Enter 6-digit code"
+                  placeholderTextColor="#666666"
+                  keyboardType="number-pad"
+                  value={verificationCode}
+                  onChangeText={(value) =>
+                    setVerificationCode(
+                      value.replace(
+                        /[^0-9]/g,
+                        ''
+                      )
+                    )
+                  }
+                  maxLength={6}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={
+                  styles.verifyCodeButton
+                }
+                activeOpacity={0.8}
+                onPress={handleVerifyCode}
+              >
+                <Text
+                  style={
+                    styles.verifyCodeText
+                  }
+                >
+                  Verify Code
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View
+              style={styles.sectionHeader}
+            >
+              <Ionicons
+                name="shield-outline"
+                size={18}
+                color={CYAN}
+              />
+
+              <Text
+                style={styles.sectionTitle}
+              >
+                TWO-FACTOR AUTHENTICATION
+              </Text>
+            </View>
+
+            <Text
+              style={
+                styles.sectionSubtitle
+              }
+            >
+              Add an optional extra layer
+              of security to protect your
               account.
             </Text>
-          </View>
 
-          <Switch
-            value={twoFactorEnabled}
-            onValueChange={
-              setTwoFactorEnabled
-            }
-            trackColor={{
-              false: '#3A4750',
-              true: CYAN,
-            }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.agreeRow}
-          onPress={() =>
-            setAgreedToTerms(
-              (current) => !current
-            )
-          }
-          activeOpacity={0.7}
-        >
-          <View
-            style={[
-              styles.checkbox,
-              agreedToTerms &&
-                styles.checkboxChecked,
-            ]}
-          >
-            {agreedToTerms && (
+            <View
+              style={styles.twoFactorRow}
+            >
               <Ionicons
-                name="checkmark"
-                size={14}
-                color="#00131A"
+                name="shield-checkmark-outline"
+                size={18}
+                color={CYAN}
               />
-            )}
+
+              <View
+                style={
+                  styles.twoFactorTextArea
+                }
+              >
+                <Text
+                  style={styles.fieldLabel}
+                >
+                  Enable 2FA
+                </Text>
+
+                <Text
+                  style={
+                    styles.verificationSubtext
+                  }
+                >
+                  Receive a code when
+                  signing in from a new
+                  device
+                </Text>
+              </View>
+
+              <Switch
+                value={twoFactorEnabled}
+                onValueChange={
+                  setTwoFactorEnabled
+                }
+                trackColor={{
+                  false: '#444444',
+                  true: CYAN,
+                }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
           </View>
 
-          <Text
-            style={styles.agreeText}
-          >
-            I agree to the{' '}
-            <Text
-              style={styles.agreeLink}
-            >
-              Terms of Service
-            </Text>{' '}
-            and{' '}
-            <Text
-              style={styles.agreeLink}
-            >
-              Privacy Policy
-            </Text>
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.continueButton}
-          activeOpacity={0.85}
-          onPress={handleCreateAccount}
-        >
-          <Text
-            style={styles.continueText}
-          >
-            Create Account
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={
-            styles.backOutlineButton
-          }
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-        >
-          <Text
-            style={
-              styles.backOutlineText
+          <TouchableOpacity
+            style={styles.agreeRow}
+            onPress={() =>
+              setAgreedToTerms(
+                (current) => !current
+              )
             }
+            activeOpacity={0.8}
           >
-            Back
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name={
+                agreedToTerms
+                  ? 'checkbox'
+                  : 'square-outline'
+              }
+              size={18}
+              color={CYAN}
+            />
 
-        <SignUpFooter
-          onSignIn={() => {
-            router.replace({
-              pathname: '/auth/login',
-              params: {
-                role: 'mechanic',
-              },
-            })
-          }}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Text
+              style={styles.agreeText}
+            >
+              I agree to the{' '}
+              <Text
+                style={styles.agreeLink}
+              >
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.agreeLink}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={
+                styles.backOutlineButton
+              }
+              activeOpacity={0.85}
+              onPress={() => router.back()}
+            >
+              <Text
+                style={
+                  styles.backOutlineText
+                }
+              >
+                Back
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ width: 10 }} />
+
+            <TouchableOpacity
+              style={styles.continueButton}
+              activeOpacity={0.85}
+              onPress={
+                handleCreateAccount
+              }
+            >
+              <Text
+                style={styles.continueText}
+              >
+                Create Account
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <SignUpFooter
+            onSignIn={() => {
+              router.replace(
+                '/auth/login'
+              )
+            }}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }

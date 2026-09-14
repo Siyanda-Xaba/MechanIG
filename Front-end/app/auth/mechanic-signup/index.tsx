@@ -15,11 +15,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useMechanicSignUp } from '../../../src/auth/mechanic/MechanicSignUpContext'
 import {
   CYAN,
+  DropdownRow,
   FieldRow,
+  MUTED,
   SignUpFooter,
   SignUpHeader,
   styles,
@@ -112,462 +115,513 @@ export default function MechanicSignUpStep1() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={
-        Platform.OS === 'ios'
-          ? 'padding'
-          : undefined
-      }
+    <SafeAreaView
+      style={styles.container}
     >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={
-          styles.scrollContent
-        }
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={
-          false
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : undefined
         }
       >
-        <SignUpHeader
-          step={1}
-          onBack={() => router.back()}
-        />
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color={CYAN}
-            />
+        <ScrollView
+          contentContainerStyle={
+            styles.scrollContent
           }
-          label="Full Name"
-          placeholder="Enter your full name"
-          value={step1Data.fullName}
-          onChangeText={(value) =>
-            updateStep1Field(
-              'fullName',
-              value
-            )
-          }
-        />
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="mail-outline"
-              size={20}
-              color={CYAN}
-            />
-          }
-          label="Email Address"
-          placeholder="Enter your email address"
-          keyboardType="email-address"
-          value={step1Data.email}
-          onChangeText={(value) =>
-            updateStep1Field(
-              'email',
-              value
-            )
-          }
-        />
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="call-outline"
-              size={20}
-              color={CYAN}
-            />
-          }
-          label="Phone Number"
-          placeholder="Enter your phone number"
-          keyboardType="phone-pad"
-          value={step1Data.phone}
-          onChangeText={(value) =>
-            updateStep1Field(
-              'phone',
-              value
-            )
-          }
-        />
-
-        <FieldRow
-          icon={
-            <MaterialCommunityIcons
-              name="card-account-details-outline"
-              size={20}
-              color={CYAN}
-            />
-          }
-          label="ID Number / Passport"
-          placeholder="Enter ID number or passport number"
-          value={step1Data.idNumber}
-          onChangeText={(value) =>
-            updateStep1Field(
-              'idNumber',
-              value
-            )
-          }
-        />
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="storefront-outline"
-              size={20}
-              color={CYAN}
-            />
-          }
-          label="Workshop / Business Name"
-          placeholder="Enter your workshop or business name"
-          value={step1Data.businessName}
-          onChangeText={(value) =>
-            updateStep1Field(
-              'businessName',
-              value
-            )
-          }
-        />
-
-        <View
-          style={styles.fieldContainer}
-        >
-          <View
-            style={styles.fieldLabelRow}
-          >
-            <Ionicons
-              name="briefcase-outline"
-              size={20}
-              color={CYAN}
-            />
-
-            <Text style={styles.fieldLabel}>
-              Business Type
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() =>
-              setBusinessTypeOpen(true)
-            }
-            activeOpacity={0.8}
-          >
-            <Text
-              style={
-                step1Data.businessType
-                  ? styles.dropdownSelectedText
-                  : styles.fieldPlaceholder
-              }
-            >
-              {step1Data.businessType ||
-                'Select your business type'}
-            </Text>
-
-            <Ionicons
-              name="chevron-down"
-              size={20}
-              color={CYAN}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <Modal
-          visible={businessTypeOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() =>
-            setBusinessTypeOpen(false)
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={
+            false
           }
         >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() =>
-              setBusinessTypeOpen(false)
-            }
-          >
-            <Pressable
-              style={styles.dropdownModal}
-              onPress={() => {}}
-            >
-              <Text
-                style={styles.modalTitle}
-              >
-                Select Business Type
-              </Text>
-
-              {BUSINESS_TYPES.map(
-                (businessType) => (
-                  <TouchableOpacity
-                    key={businessType}
-                    style={
-                      styles.dropdownOption
-                    }
-                    onPress={() => {
-                      updateStep1Field(
-                        'businessType',
-                        businessType
-                      )
-
-                      setBusinessTypeOpen(
-                        false
-                      )
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={
-                        styles.dropdownOptionText
-                      }
-                    >
-                      {businessType}
-                    </Text>
-
-                    {step1Data.businessType ===
-                      businessType && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={21}
-                        color={CYAN}
-                      />
-                    )}
-                  </TouchableOpacity>
-                )
-              )}
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        <View style={styles.halfRow}>
-          <FieldRow
-            icon={
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={CYAN}
-              />
-            }
-            label="Years in Business"
-            placeholder="Enter years in business"
-            keyboardType="number-pad"
-            value={
-              step1Data.yearsInBusiness
-            }
-            onChangeText={(value) =>
-              updateStep1Field(
-                'yearsInBusiness',
-                value
-              )
-            }
-            style={styles.halfField}
+          <SignUpHeader
+            step={1}
+            onBack={() => router.back()}
           />
 
-          <FieldRow
-            icon={
-              <Ionicons
-                name="people-outline"
-                size={20}
-                color={CYAN}
-              />
-            }
-            label="Number of Employees"
-            placeholder="Enter number of employees"
-            keyboardType="number-pad"
-            value={step1Data.employees}
-            onChangeText={(value) =>
-              updateStep1Field(
-                'employees',
-                value
-              )
-            }
-            style={styles.halfField}
-          />
-        </View>
-
-        <FieldRow
-          icon={
-            <Ionicons
-              name="location-outline"
-              size={20}
-              color={CYAN}
-            />
-          }
-          label="Street Address"
-          placeholder="Enter your street address"
-          value={step1Data.address}
-          onChangeText={(value) =>
-            updateStep1Field(
-              'address',
-              value
-            )
-          }
-        />
-
-        <View style={styles.halfRow}>
-          <FieldRow
-            icon={
-              <Ionicons
-                name="business-outline"
-                size={20}
-                color={CYAN}
-              />
-            }
-            label="City"
-            placeholder="Enter your city"
-            value={step1Data.city}
-            onChangeText={(value) =>
-              updateStep1Field(
-                'city',
-                value
-              )
-            }
-            style={styles.halfField}
-          />
-
-          <View
-            style={[
-              styles.fieldContainer,
-              styles.halfField,
-            ]}
-          >
+          <View style={styles.section}>
             <View
-              style={
-                styles.fieldLabelRow
-              }
+              style={styles.sectionHeader}
             >
               <Ionicons
-                name="map-outline"
-                size={20}
+                name="person-outline"
+                size={18}
                 color={CYAN}
               />
 
               <Text
-                style={styles.fieldLabel}
+                style={styles.sectionTitle}
               >
-                Province
+                PERSONAL DETAILS
               </Text>
             </View>
 
-            <TouchableOpacity
-              style={styles.dropdown}
-              onPress={() =>
-                setProvinceOpen(true)
+            <Text
+              style={
+                styles.sectionSubtitle
               }
-              activeOpacity={0.8}
             >
-              <Text
-                style={
-                  step1Data.province
-                    ? styles.dropdownSelectedText
-                    : styles.fieldPlaceholder
-                }
-                numberOfLines={1}
-              >
-                {step1Data.province ||
-                  'Select your province'}
-              </Text>
+              Enter your personal
+              information.
+            </Text>
 
+            <View style={styles.row}>
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="person-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  value={
+                    step1Data.fullName
+                  }
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'fullName',
+                      value
+                    )
+                  }
+                />
+              </View>
+
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="mail-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Email Address"
+                  placeholder="Enter your email"
+                  keyboardType="email-address"
+                  value={step1Data.email}
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'email',
+                      value
+                    )
+                  }
+                />
+              </View>
+            </View>
+
+            <View style={styles.row}>
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="call-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Phone Number"
+                  placeholder="+27  Enter your number"
+                  keyboardType="phone-pad"
+                  value={step1Data.phone}
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'phone',
+                      value
+                    )
+                  }
+                />
+              </View>
+
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <MaterialCommunityIcons
+                      name="card-account-details-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="ID Number / Passport"
+                  placeholder="Enter ID or passport"
+                  value={
+                    step1Data.idNumber
+                  }
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'idNumber',
+                      value
+                    )
+                  }
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View
+              style={styles.sectionHeader}
+            >
               <Ionicons
-                name="chevron-down"
-                size={20}
+                name="storefront-outline"
+                size={18}
                 color={CYAN}
               />
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        <Modal
-          visible={provinceOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() =>
-            setProvinceOpen(false)
-          }
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() =>
-              setProvinceOpen(false)
-            }
-          >
-            <Pressable
-              style={styles.dropdownModal}
-              onPress={() => {}}
-            >
               <Text
-                style={styles.modalTitle}
+                style={styles.sectionTitle}
               >
-                Select Province
+                BUSINESS DETAILS
               </Text>
+            </View>
 
-              {PROVINCES.map(
-                (province) => (
-                  <TouchableOpacity
-                    key={province}
-                    style={
-                      styles.dropdownOption
-                    }
-                    onPress={() => {
-                      updateStep1Field(
-                        'province',
-                        province
-                      )
+            <Text
+              style={
+                styles.sectionSubtitle
+              }
+            >
+              Tell us about your workshop
+              or mechanic business.
+            </Text>
 
-                      setProvinceOpen(
-                        false
-                      )
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={
-                        styles.dropdownOptionText
-                      }
-                    >
-                      {province}
-                    </Text>
-
-                    {step1Data.province ===
-                      province && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={21}
-                        color={CYAN}
-                      />
-                    )}
-                  </TouchableOpacity>
+            <FieldRow
+              icon={
+                <Ionicons
+                  name="storefront-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Workshop / Business Name"
+              placeholder="Enter your workshop or business name"
+              value={
+                step1Data.businessName
+              }
+              onChangeText={(value) =>
+                updateStep1Field(
+                  'businessName',
+                  value
                 )
-              )}
-            </Pressable>
-          </Pressable>
-        </Modal>
+              }
+            />
 
-        <TouchableOpacity
-          style={styles.continueButton}
-          activeOpacity={0.85}
-          onPress={handleContinue}
-        >
-          <Text
-            style={styles.continueText}
+            <DropdownRow
+              icon={
+                <Ionicons
+                  name="briefcase-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Business Type"
+              placeholder="Select your business type"
+              value={
+                step1Data.businessType
+              }
+              onPress={() =>
+                setBusinessTypeOpen(true)
+              }
+            />
+
+            <Modal
+              visible={businessTypeOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() =>
+                setBusinessTypeOpen(false)
+              }
+            >
+              <Pressable
+                style={
+                  styles.modalOverlay
+                }
+                onPress={() =>
+                  setBusinessTypeOpen(
+                    false
+                  )
+                }
+              >
+                <Pressable
+                  style={
+                    styles.dropdownModal
+                  }
+                  onPress={() => {}}
+                >
+                  <Text
+                    style={
+                      styles.modalTitle
+                    }
+                  >
+                    Select Business Type
+                  </Text>
+
+                  {BUSINESS_TYPES.map(
+                    (businessType) => (
+                      <TouchableOpacity
+                        key={businessType}
+                        style={
+                          styles.dropdownOption
+                        }
+                        onPress={() => {
+                          updateStep1Field(
+                            'businessType',
+                            businessType
+                          )
+
+                          setBusinessTypeOpen(
+                            false
+                          )
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={
+                            styles.dropdownOptionText
+                          }
+                        >
+                          {businessType}
+                        </Text>
+
+                        {step1Data.businessType ===
+                          businessType && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={21}
+                            color={CYAN}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    )
+                  )}
+                </Pressable>
+              </Pressable>
+            </Modal>
+
+            <View style={styles.row}>
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="calendar-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Years in Business"
+                  placeholder="Enter years"
+                  keyboardType="number-pad"
+                  value={
+                    step1Data.yearsInBusiness
+                  }
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'yearsInBusiness',
+                      value
+                    )
+                  }
+                />
+              </View>
+
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="people-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Employees"
+                  placeholder="Enter number"
+                  keyboardType="number-pad"
+                  value={
+                    step1Data.employees
+                  }
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'employees',
+                      value
+                    )
+                  }
+                />
+              </View>
+            </View>
+
+            <FieldRow
+              icon={
+                <Ionicons
+                  name="location-outline"
+                  size={18}
+                  color={MUTED}
+                />
+              }
+              label="Street Address"
+              placeholder="Enter your street address"
+              value={step1Data.address}
+              onChangeText={(value) =>
+                updateStep1Field(
+                  'address',
+                  value
+                )
+              }
+            />
+
+            <View style={styles.row}>
+              <View
+                style={styles.halfWidth}
+              >
+                <FieldRow
+                  icon={
+                    <Ionicons
+                      name="business-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="City"
+                  placeholder="Enter your city"
+                  value={step1Data.city}
+                  onChangeText={(value) =>
+                    updateStep1Field(
+                      'city',
+                      value
+                    )
+                  }
+                />
+              </View>
+
+              <View
+                style={styles.halfWidth}
+              >
+                <DropdownRow
+                  icon={
+                    <Ionicons
+                      name="map-outline"
+                      size={18}
+                      color={MUTED}
+                    />
+                  }
+                  label="Province"
+                  placeholder="Select province"
+                  value={
+                    step1Data.province
+                  }
+                  onPress={() =>
+                    setProvinceOpen(true)
+                  }
+                />
+              </View>
+            </View>
+
+            <Modal
+              visible={provinceOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() =>
+                setProvinceOpen(false)
+              }
+            >
+              <Pressable
+                style={
+                  styles.modalOverlay
+                }
+                onPress={() =>
+                  setProvinceOpen(false)
+                }
+              >
+                <Pressable
+                  style={
+                    styles.dropdownModal
+                  }
+                  onPress={() => {}}
+                >
+                  <Text
+                    style={
+                      styles.modalTitle
+                    }
+                  >
+                    Select Province
+                  </Text>
+
+                  {PROVINCES.map(
+                    (province) => (
+                      <TouchableOpacity
+                        key={province}
+                        style={
+                          styles.dropdownOption
+                        }
+                        onPress={() => {
+                          updateStep1Field(
+                            'province',
+                            province
+                          )
+
+                          setProvinceOpen(
+                            false
+                          )
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={
+                            styles.dropdownOptionText
+                          }
+                        >
+                          {province}
+                        </Text>
+
+                        {step1Data.province ===
+                          province && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={21}
+                            color={CYAN}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    )
+                  )}
+                </Pressable>
+              </Pressable>
+            </Modal>
+          </View>
+
+          <TouchableOpacity
+            style={styles.continueButton}
+            activeOpacity={0.85}
+            onPress={handleContinue}
           >
-            Continue
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={styles.continueText}
+            >
+              Continue
+            </Text>
+          </TouchableOpacity>
 
-        <SignUpFooter
-          onSignIn={() => {
-            router.replace({
-              pathname: '/auth/login',
-              params: {
-                role: 'mechanic',
-              },
-            })
-          }}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <SignUpFooter
+            onSignIn={() => {
+              router.replace(
+                '/auth/login'
+              )
+            }}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
