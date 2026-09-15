@@ -49,6 +49,13 @@
           "locationWhenInUsePermission": "Allow MechanIQ to use your location to show nearby fuel stations and support fuel delivery services."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow MechanIQ to access your photos so you can upload a vehicle part image for identification.",
+          "cameraPermission": "Allow MechanIQ to use your camera so you can photograph a vehicle part for identification."
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

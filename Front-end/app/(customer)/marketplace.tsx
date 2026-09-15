@@ -2,8 +2,10 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,11 +22,41 @@ import { useCustomerMarketplace } from '../../src/customer/CustomerMarketplaceCo
 import {
   MarketplaceCategory,
   MarketplaceProduct,
+  MarketplaceProductFilters,
+  MarketplaceProductSort,
   MarketplaceStore,
 } from '../../src/customer/marketplaceTypes'
 import { useTheme } from '../../src/theme/ThemeContext'
 
+const defaultProductFilters: MarketplaceProductFilters = {
+  compatibleOnly: false,
+  sortBy: 'recommended',
+}
+
+const sortOptions: {
+  value: MarketplaceProductSort
+  label: string
+}[] = [
+  {
+    value: 'recommended',
+    label: 'Recommended',
+  },
+  {
+    value: 'price-low-to-high',
+    label: 'Price: Low to High',
+  },
+  {
+    value: 'price-high-to-low',
+    label: 'Price: High to Low',
+  },
+  {
+    value: 'rating-high-to-low',
+    label: 'Rating: High to Low',
+  },
+]
+
 export default function CustomerMarketplace() {
+  const router = useRouter()
   const { colors } = useTheme()
 
   const {
@@ -36,8 +68,34 @@ export default function CustomerMarketplace() {
   const [searchQuery, setSearchQuery] =
     useState('')
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<MarketplaceCategory | null>(null)
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] =
+    useState<MarketplaceCategory | null>(
+      null
+    )
+
+  const [
+    productFilters,
+    setProductFilters,
+  ] =
+    useState<MarketplaceProductFilters>(
+      defaultProductFilters
+    )
+
+  const [
+    draftProductFilters,
+    setDraftProductFilters,
+  ] =
+    useState<MarketplaceProductFilters>(
+      defaultProductFilters
+    )
+
+  const [
+    isFilterVisible,
+    setIsFilterVisible,
+  ] = useState(false)
 
   const categories =
     marketplaceData?.categories ?? []
@@ -51,14 +109,17 @@ export default function CustomerMarketplace() {
   const recentActivity =
     marketplaceData?.recentActivity ?? []
 
-  const filteredProducts = products.filter(
-    (product) => {
+  const filteredProducts = products
+    .filter((product) => {
       const matchesCategory =
         selectedCategory === null ||
-        product.category === selectedCategory
+        product.category ===
+          selectedCategory
 
       const normalizedQuery =
-        searchQuery.trim().toLowerCase()
+        searchQuery
+          .trim()
+          .toLowerCase()
 
       const matchesSearch =
         normalizedQuery.length === 0 ||
@@ -72,26 +133,79 @@ export default function CustomerMarketplace() {
           .toLowerCase()
           .includes(normalizedQuery)
 
-      return matchesCategory && matchesSearch
-    }
-  )
+      const matchesCompatibility =
+        !productFilters.compatibleOnly ||
+        product.compatibleWithSelectedVehicle ===
+          true
+
+      return (
+        matchesCategory &&
+        matchesSearch &&
+        matchesCompatibility
+      )
+    })
+    .sort((first, second) =>
+      compareProducts(
+        first,
+        second,
+        productFilters.sortBy
+      )
+    )
+
+  const hasActiveFilters =
+    productFilters.compatibleOnly ||
+    productFilters.sortBy !==
+      'recommended'
+
+  function openFilters() {
+    setDraftProductFilters(
+      productFilters
+    )
+    setIsFilterVisible(true)
+  }
+
+  function closeFilters() {
+    setIsFilterVisible(false)
+  }
+
+  function applyFilters() {
+    setProductFilters(
+      draftProductFilters
+    )
+    setIsFilterVisible(false)
+  }
+
+  function resetFilters() {
+    setDraftProductFilters(
+      defaultProductFilters
+    )
+    setProductFilters(
+      defaultProductFilters
+    )
+  }
 
   const handleProductPress = (
     product: MarketplaceProduct
   ) => {
-    console.log(
-      'Selected product:',
-      product.id
-    )
+    router.push({
+      pathname:
+        '/marketplace-product/[productId]',
+      params: {
+        productId: product.id,
+      },
+    })
   }
 
   const handleStorePress = (
     store: MarketplaceStore
   ) => {
-    console.log(
-      'Selected store:',
-      store.id
-    )
+    router.push({
+      pathname:
+        '/marketplace-store/[storeId]',
+      params: {
+        storeId: store.id,
+      },
+    })
   }
 
   return (
@@ -99,18 +213,22 @@ export default function CustomerMarketplace() {
       style={[
         styles.safeArea,
         {
-          backgroundColor: colors.background,
+          backgroundColor:
+            colors.background,
         },
       ]}
       edges={['top']}
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
         <Text
           style={[
             styles.title,
@@ -126,33 +244,43 @@ export default function CustomerMarketplace() {
           style={[
             styles.subtitle,
             {
-              color: colors.secondaryText,
+              color:
+                colors.secondaryText,
             },
           ]}
         >
-          Find compatible parts, compare prices, and discover nearby stores.
+          Find compatible parts,
+          compare prices, and discover
+          nearby stores.
         </Text>
 
-        {/* Search */}
-        <View style={styles.searchRow}>
+        <View
+          style={styles.searchRow}
+        >
           <View
             style={[
               styles.searchContainer,
               {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
               },
             ]}
           >
             <Ionicons
               name="search-outline"
               size={20}
-              color={colors.secondaryText}
+              color={
+                colors.secondaryText
+              }
             />
 
             <TextInput
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={
+                setSearchQuery
+              }
               placeholder="Search for parts, brands, or stores..."
               placeholderTextColor={
                 colors.secondaryText
@@ -161,12 +289,14 @@ export default function CustomerMarketplace() {
               style={[
                 styles.searchInput,
                 {
-                  color: colors.text,
+                  color:
+                    colors.text,
                 },
               ]}
             />
 
-            {searchQuery.length > 0 ? (
+            {searchQuery.length >
+            0 ? (
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() =>
@@ -192,20 +322,35 @@ export default function CustomerMarketplace() {
                 backgroundColor:
                   colors.card,
                 borderColor:
-                  colors.border,
+                  hasActiveFilters
+                    ? colors.accent
+                    : colors.border,
               },
             ]}
-            onPress={() => {}}
+            onPress={openFilters}
           >
             <MaterialCommunityIcons
               name="tune-variant"
               size={21}
               color={colors.accent}
             />
+
+            {hasActiveFilters ? (
+              <View
+                style={[
+                  styles.filterIndicator,
+                  {
+                    backgroundColor:
+                      colors.accent,
+                    borderColor:
+                      colors.card,
+                  },
+                ]}
+              />
+            ) : null}
           </TouchableOpacity>
         </View>
 
-        {/* Search by Picture */}
         <TouchableOpacity
           activeOpacity={0.75}
           style={[
@@ -217,7 +362,11 @@ export default function CustomerMarketplace() {
                 colors.border,
             },
           ]}
-          onPress={() => {}}
+          onPress={() =>
+            router.push(
+              '/marketplace-picture-search'
+            )
+          }
         >
           <View
             style={[
@@ -235,7 +384,11 @@ export default function CustomerMarketplace() {
             />
           </View>
 
-          <View style={styles.imageSearchContent}>
+          <View
+            style={
+              styles.imageSearchContent
+            }
+          >
             <Text
               style={[
                 styles.imageSearchTitle,
@@ -256,18 +409,20 @@ export default function CustomerMarketplace() {
                 },
               ]}
             >
-              Take or upload a photo to identify a vehicle part.
+              Take or upload a photo to
+              identify a vehicle part.
             </Text>
           </View>
 
           <Ionicons
             name="chevron-forward"
             size={19}
-            color={colors.secondaryText}
+            color={
+              colors.secondaryText
+            }
           />
         </TouchableOpacity>
 
-        {/* Categories */}
         <Text
           style={[
             styles.sectionTitle,
@@ -364,8 +519,9 @@ export default function CustomerMarketplace() {
           </ScrollView>
         )}
 
-        {/* Recommended Products */}
-        <View style={styles.sectionHeader}>
+        <View
+          style={styles.sectionHeader}
+        >
           <Text
             style={[
               styles.sectionTitleInline,
@@ -379,13 +535,18 @@ export default function CustomerMarketplace() {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => {}}
+            onPress={() =>
+              router.push(
+                '/marketplace-products'
+              )
+            }
           >
             <Text
               style={[
                 styles.viewAll,
                 {
-                  color: colors.accent,
+                  color:
+                    colors.accent,
                 },
               ]}
             >
@@ -394,7 +555,8 @@ export default function CustomerMarketplace() {
           </TouchableOpacity>
         </View>
 
-        {filteredProducts.length === 0 ? (
+        {filteredProducts.length ===
+        0 ? (
           <View
             style={[
               styles.emptyProducts,
@@ -450,8 +612,9 @@ export default function CustomerMarketplace() {
           </ScrollView>
         )}
 
-        {/* Nearby Stores */}
-        <View style={styles.sectionHeader}>
+        <View
+          style={styles.sectionHeader}
+        >
           <Text
             style={[
               styles.sectionTitleInline,
@@ -465,13 +628,18 @@ export default function CustomerMarketplace() {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => {}}
+            onPress={() =>
+              router.push(
+                '/marketplace-stores'
+              )
+            }
           >
             <Text
               style={[
                 styles.viewAll,
                 {
-                  color: colors.accent,
+                  color:
+                    colors.accent,
                 },
               ]}
             >
@@ -480,7 +648,8 @@ export default function CustomerMarketplace() {
           </TouchableOpacity>
         </View>
 
-        {nearbyStores.length === 0 ? (
+        {nearbyStores.length ===
+        0 ? (
           <View
             style={[
               styles.emptyProducts,
@@ -513,7 +682,9 @@ export default function CustomerMarketplace() {
             </Text>
           </View>
         ) : (
-          <View style={styles.storesList}>
+          <View
+            style={styles.storesList}
+          >
             {nearbyStores.map(
               (store) => (
                 <MarketplaceStoreCard
@@ -528,8 +699,9 @@ export default function CustomerMarketplace() {
           </View>
         )}
 
-        {/* Recent Activity */}
-        <View style={styles.sectionHeader}>
+        <View
+          style={styles.sectionHeader}
+        >
           <Text
             style={[
               styles.sectionTitleInline,
@@ -543,13 +715,18 @@ export default function CustomerMarketplace() {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => {}}
+            onPress={() =>
+              router.push(
+                '/marketplace-activity'
+              )
+            }
           >
             <Text
               style={[
                 styles.viewAll,
                 {
-                  color: colors.accent,
+                  color:
+                    colors.accent,
                 },
               ]}
             >
@@ -558,7 +735,8 @@ export default function CustomerMarketplace() {
           </TouchableOpacity>
         </View>
 
-        {recentActivity.length === 0 ? (
+        {recentActivity.length ===
+        0 ? (
           <View
             style={[
               styles.emptyProducts,
@@ -587,11 +765,14 @@ export default function CustomerMarketplace() {
                 },
               ]}
             >
-              No marketplace activity yet.
+              No marketplace activity
+              yet.
             </Text>
           </View>
         ) : (
-          <View style={styles.activityList}>
+          <View
+            style={styles.activityList}
+          >
             {recentActivity.map(
               (activity) => (
                 <MarketplaceActivityCard
@@ -608,7 +789,8 @@ export default function CustomerMarketplace() {
             style={[
               styles.errorText,
               {
-                color: colors.danger,
+                color:
+                  colors.danger,
               },
             ]}
           >
@@ -616,8 +798,391 @@ export default function CustomerMarketplace() {
           </Text>
         ) : null}
       </ScrollView>
+
+      <Modal
+        visible={isFilterVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={
+          closeFilters
+        }
+      >
+        <View
+          style={
+            styles.modalBackdrop
+          }
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={
+              styles.modalDismissArea
+            }
+            onPress={closeFilters}
+          />
+
+          <View
+            style={[
+              styles.filterSheet,
+              {
+                backgroundColor:
+                  colors.background,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <View
+              style={
+                styles.filterHeader
+              }
+            >
+              <Text
+                style={[
+                  styles.filterTitle,
+                  {
+                    color:
+                      colors.text,
+                  },
+                ]}
+              >
+                Filter Products
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={closeFilters}
+                style={[
+                  styles.closeButton,
+                  {
+                    borderColor:
+                      colors.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Text
+              style={[
+                styles.filterSectionTitle,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              Compatibility
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() =>
+                setDraftProductFilters(
+                  (current) => ({
+                    ...current,
+                    compatibleOnly:
+                      !current.compatibleOnly,
+                  })
+                )
+              }
+              style={[
+                styles.filterOption,
+                {
+                  backgroundColor:
+                    colors.card,
+                  borderColor:
+                    draftProductFilters.compatibleOnly
+                      ? colors.accent
+                      : colors.border,
+                },
+              ]}
+            >
+              <View
+                style={
+                  styles.filterOptionContent
+                }
+              >
+                <MaterialCommunityIcons
+                  name="check-circle-outline"
+                  size={21}
+                  color={
+                    draftProductFilters.compatibleOnly
+                      ? colors.accent
+                      : colors.secondaryText
+                  }
+                />
+
+                <View
+                  style={
+                    styles.filterOptionText
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionTitle,
+                      {
+                        color:
+                          colors.text,
+                      },
+                    ]}
+                  >
+                    Compatible only
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.filterOptionDescription,
+                      {
+                        color:
+                          colors.secondaryText,
+                      },
+                    ]}
+                  >
+                    Show only products
+                    currently marked as
+                    compatible with the
+                    selected vehicle.
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.checkbox,
+                  {
+                    borderColor:
+                      draftProductFilters.compatibleOnly
+                        ? colors.accent
+                        : colors.border,
+                    backgroundColor:
+                      draftProductFilters.compatibleOnly
+                        ? colors.accent
+                        : 'transparent',
+                  },
+                ]}
+              >
+                {draftProductFilters.compatibleOnly ? (
+                  <Ionicons
+                    name="checkmark"
+                    size={15}
+                    color="#000000"
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+
+            <Text
+              style={[
+                styles.filterSectionTitle,
+                {
+                  color:
+                    colors.text,
+                },
+              ]}
+            >
+              Sort By
+            </Text>
+
+            <View
+              style={
+                styles.sortOptions
+              }
+            >
+              {sortOptions.map(
+                (option) => {
+                  const isSelected =
+                    draftProductFilters.sortBy ===
+                    option.value
+
+                  return (
+                    <TouchableOpacity
+                      key={
+                        option.value
+                      }
+                      activeOpacity={0.75}
+                      onPress={() =>
+                        setDraftProductFilters(
+                          (current) => ({
+                            ...current,
+                            sortBy:
+                              option.value,
+                          })
+                        )
+                      }
+                      style={[
+                        styles.sortOption,
+                        {
+                          backgroundColor:
+                            colors.card,
+                          borderColor:
+                            isSelected
+                              ? colors.accent
+                              : colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.sortOptionText,
+                          {
+                            color:
+                              isSelected
+                                ? colors.accent
+                                : colors.text,
+                          },
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+
+                      <View
+                        style={[
+                          styles.radioOuter,
+                          {
+                            borderColor:
+                              isSelected
+                                ? colors.accent
+                                : colors.border,
+                          },
+                        ]}
+                      >
+                        {isSelected ? (
+                          <View
+                            style={[
+                              styles.radioInner,
+                              {
+                                backgroundColor:
+                                  colors.accent,
+                              },
+                            ]}
+                          />
+                        ) : null}
+                      </View>
+                    </TouchableOpacity>
+                  )
+                }
+              )}
+            </View>
+
+            <View
+              style={
+                styles.filterActions
+              }
+            >
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={resetFilters}
+                style={[
+                  styles.resetButton,
+                  {
+                    borderColor:
+                      colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.resetButtonText,
+                    {
+                      color:
+                        colors.text,
+                    },
+                  ]}
+                >
+                  Reset
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={applyFilters}
+                style={[
+                  styles.applyButton,
+                  {
+                    backgroundColor:
+                      colors.accent,
+                  },
+                ]}
+              >
+                <Text
+                  style={
+                    styles.applyButtonText
+                  }
+                >
+                  Apply Filters
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
+}
+
+function compareProducts(
+  first: MarketplaceProduct,
+  second: MarketplaceProduct,
+  sortBy: MarketplaceProductSort
+) {
+  switch (sortBy) {
+    case 'price-low-to-high':
+      return compareNullableNumbers(
+        first.price,
+        second.price,
+        'ascending'
+      )
+
+    case 'price-high-to-low':
+      return compareNullableNumbers(
+        first.price,
+        second.price,
+        'descending'
+      )
+
+    case 'rating-high-to-low':
+      return compareNullableNumbers(
+        first.rating,
+        second.rating,
+        'descending'
+      )
+
+    case 'recommended':
+    default:
+      return 0
+  }
+}
+
+function compareNullableNumbers(
+  first: number | null,
+  second: number | null,
+  direction:
+    | 'ascending'
+    | 'descending'
+) {
+  if (
+    first === null &&
+    second === null
+  ) {
+    return 0
+  }
+
+  if (first === null) {
+    return 1
+  }
+
+  if (second === null) {
+    return -1
+  }
+
+  return direction === 'ascending'
+    ? first - second
+    : second - first
 }
 
 function getCategoryIcon(
@@ -695,12 +1260,23 @@ const styles = StyleSheet.create({
   },
 
   filterButton: {
+    position: 'relative',
     width: 48,
     height: 48,
     borderWidth: 1,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  filterIndicator: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    width: 8,
+    height: 8,
+    borderWidth: 1,
+    borderRadius: 4,
   },
 
   imageSearchCard: {
@@ -822,5 +1398,165 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 11,
     textAlign: 'center',
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor:
+      'rgba(0, 0, 0, 0.65)',
+  },
+
+  modalDismissArea: {
+    flex: 1,
+  },
+
+  filterSheet: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 28,
+    borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
+  },
+
+  filterTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+  },
+
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  filterSectionTitle: {
+    marginTop: 20,
+    marginBottom: 9,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  filterOption: {
+    minHeight: 74,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
+    gap: 12,
+  },
+
+  filterOptionContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  filterOptionText: {
+    flex: 1,
+  },
+
+  filterOptionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  filterOptionDescription: {
+    marginTop: 4,
+    fontSize: 8,
+    lineHeight: 13,
+  },
+
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 1,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  sortOptions: {
+    gap: 8,
+  },
+
+  sortOption: {
+    minHeight: 46,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent:
+      'space-between',
+  },
+
+  sortOptionText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+
+  filterActions: {
+    marginTop: 22,
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  resetButton: {
+    minHeight: 48,
+    paddingHorizontal: 22,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  resetButtonText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  applyButton: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  applyButtonText: {
+    color: '#000000',
+    fontSize: 11,
+    fontWeight: '800',
   },
 })

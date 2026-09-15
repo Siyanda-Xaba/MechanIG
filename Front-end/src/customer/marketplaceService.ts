@@ -1,5 +1,12 @@
-import {
+import type {
   CustomerMarketplaceData,
+  MarketplaceActivity,
+  MarketplaceCompatibilityCheckInput,
+  MarketplaceCompatibilityResult,
+  MarketplacePartRecognitionResult,
+  MarketplacePictureSelection,
+  MarketplaceProduct,
+  MarketplaceStore,
 } from './marketplaceTypes'
 
 const developmentMarketplaceData: CustomerMarketplaceData = {
@@ -133,5 +140,138 @@ export async function getCustomerMarketplaceData(
   // - nearby businesses
   // - marketplace activity
 
+  void vehicleId
+
   return developmentMarketplaceData
+}
+
+export async function getMarketplaceProducts(
+  vehicleId: string
+): Promise<MarketplaceProduct[]> {
+  // Later this will call the MechanIQ backend
+  // using the selected vehicle ID.
+  //
+  // Production results should contain validated:
+  // - product details
+  // - current pricing
+  // - seller data
+  // - availability
+  // - selected-vehicle compatibility
+
+  void vehicleId
+
+  return developmentMarketplaceData.recommendedProducts
+}
+
+export async function getMarketplaceProductById(
+  productId: string,
+  vehicleId: string
+): Promise<MarketplaceProduct | null> {
+  // Later this will call the MechanIQ backend
+  // using both the product ID and selected vehicle ID.
+  //
+  // Production data must provide authoritative:
+  // - product details
+  // - current price
+  // - seller information
+  // - availability / stock
+  // - selected-vehicle compatibility
+
+  void vehicleId
+
+  return (
+    developmentMarketplaceData.recommendedProducts.find(
+      (product) => product.id === productId
+    ) ?? null
+  )
+}
+
+export async function getMarketplaceStores(): Promise<
+  MarketplaceStore[]
+> {
+  // Later this will call the MechanIQ backend or
+  // marketplace provider.
+  //
+  // Production nearby-store results should use:
+  // - validated store/provider data
+  // - authoritative coordinates
+  // - the customer's permitted location where needed
+  // - current opening status
+  // - supported stock / pricing information
+
+  return developmentMarketplaceData.nearbyStores
+}
+
+export async function getMarketplaceStoreById(
+  storeId: string
+): Promise<MarketplaceStore | null> {
+  // Later this will call the MechanIQ backend or
+  // marketplace provider using the store ID.
+  //
+  // Production data can then provide authoritative:
+  // - store address and coordinates
+  // - opening status and trading hours
+  // - contact information
+  // - available products
+  // - live stock / pricing where supported
+
+  return (
+    developmentMarketplaceData.nearbyStores.find(
+      (store) => store.id === storeId
+    ) ?? null
+  )
+}
+
+export async function getMarketplaceActivity(
+  vehicleId: string
+): Promise<MarketplaceActivity[]> {
+  // Later this will call the MechanIQ backend
+  // using the authenticated customer and, where
+  // relevant, the selected vehicle.
+  //
+  // Production activity may include:
+  // - viewed products
+  // - saved products
+  // - cart activity
+  // - completed purchases
+  //
+  // This currently returns only the same temporary
+  // development activity shown on the Marketplace tab.
+
+  void vehicleId
+
+  return developmentMarketplaceData.recentActivity
+}
+
+export async function recognizeMarketplacePart(
+  picture: MarketplacePictureSelection
+): Promise<MarketplacePartRecognitionResult> {
+  // This must be completed by a real recognition
+  // backend/service.
+  //
+  // Recognition confidence describes how confident
+  // the service is about the pictured part. It does
+  // NOT prove vehicle compatibility.
+
+  void picture
+
+  throw new Error(
+    'Part recognition is not available until the marketplace recognition backend is connected.'
+  )
+}
+
+export async function checkMarketplacePartCompatibility(
+  input: MarketplaceCompatibilityCheckInput
+): Promise<MarketplaceCompatibilityResult> {
+  // Compatibility must be validated separately
+  // from image recognition.
+  //
+  // A photo result alone must never be treated
+  // as proof that a part fits the selected vehicle.
+
+  void input
+
+  throw new Error(
+    'Vehicle compatibility checking is not available until the marketplace backend is connected.'
+  )
 }
