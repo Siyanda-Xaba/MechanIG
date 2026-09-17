@@ -52,8 +52,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow MechanIQ to access your photos so you can upload a vehicle part image for identification.",
-          "cameraPermission": "Allow MechanIQ to use your camera so you can photograph a vehicle part for identification."
+          "photosPermission": "Allow MechanIQ to access your photos so you can choose images for your profile and supported vehicle features.",
+          "cameraPermission": "Allow MechanIQ to use your camera so you can take photos for your profile and supported vehicle features."
         }
       ],
       "@react-native-community/datetimepicker"

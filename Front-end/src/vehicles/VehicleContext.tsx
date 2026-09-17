@@ -13,7 +13,10 @@ type VehicleContextType = {
   vehicles: Vehicle[]
   selectedVehicle: Vehicle | null
   isLoadingVehicles: boolean
-  addVehicle: (vehicle: Vehicle) => void
+  addVehicle: (
+    vehicle: Vehicle,
+    shouldSelect?: boolean
+  ) => void
   selectVehicle: (vehicleId: string) => void
   refreshVehicles: () => Promise<void>
 }
@@ -55,15 +58,35 @@ export function VehicleProvider({
     }
   }
 
-  function addVehicle(vehicle: Vehicle) {
-    setVehicles((currentVehicles) => [
-      ...currentVehicles,
-      vehicle,
-    ])
+  function addVehicle(
+    vehicle: Vehicle,
+    shouldSelect = false
+  ) {
+    setVehicles((currentVehicles) => {
+      const existingVehicles = vehicle.isPrimary
+        ? currentVehicles.map((currentVehicle) => ({
+            ...currentVehicle,
+            isPrimary: false,
+          }))
+        : currentVehicles
 
-    if (vehicle.isPrimary || selectedVehicle === null) {
-      setSelectedVehicle(vehicle)
-    }
+      return [
+        ...existingVehicles,
+        vehicle,
+      ]
+    })
+
+    setSelectedVehicle((currentVehicle) => {
+      if (
+        shouldSelect ||
+        vehicle.isPrimary ||
+        currentVehicle === null
+      ) {
+        return vehicle
+      }
+
+      return currentVehicle
+    })
   }
 
   function selectVehicle(vehicleId: string) {

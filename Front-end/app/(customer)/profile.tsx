@@ -2,9 +2,10 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import { useState } from 'react'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,7 +13,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import ImageSourcePickerModal from '../../src/components/ImageSourcePickerModal'
 import ProfileAvatar from '../../src/components/ProfileAvatar'
+import StableScrollView from '../../src/components/StableScrollView'
 import { useCustomerProfile } from '../../src/customer/CustomerProfileContext'
 import {
   CustomerProfileActivity,
@@ -23,10 +26,12 @@ import {
   CustomerProfileSettingId,
 } from '../../src/customer/customerProfileTypes'
 import { useTheme } from '../../src/theme/ThemeContext'
+import { useProfileImageUpload } from '../../src/users/useProfileImageUpload'
 import { useUser } from '../../src/users/UserContext'
 import { useVehicle } from '../../src/vehicles/VehicleContext'
 
 export default function CustomerProfile() {
+  const router = useRouter()
   const { colors } = useTheme()
 
   const {
@@ -45,10 +50,28 @@ export default function CustomerProfile() {
     profileError,
   } = useCustomerProfile()
 
+  const {
+    previewImageUrl,
+    isSelectingImage,
+    isUploadingProfileImage,
+    profileImageError,
+    selectAndUploadProfileImage,
+    clearProfileImageError,
+  } = useProfileImageUpload()
+
+  const [
+    isImageSourcePickerVisible,
+    setIsImageSourcePickerVisible,
+  ] = useState(false)
+
   const isLoading =
     isLoadingUser ||
     isLoadingVehicles ||
     isLoadingProfile
+
+  const isProfileImageBusy =
+    isSelectingImage ||
+    isUploadingProfileImage
 
   const fullName = user
     ? `${user.firstName} ${user.lastName}`.trim()
@@ -64,16 +87,20 @@ export default function CustomerProfile() {
     profileData?.recentActivity ?? []
 
   function handleProfileImagePress() {
-    // Profile image camera/gallery selection
-    // will be implemented here.
-    //
-    // Profile is intentionally the only screen
-    // allowed to change profileImageUrl.
+    clearProfileImageError()
+    setIsImageSourcePickerVisible(true)
+  }
+
+  async function handleProfileImageSource(
+    source: 'camera' | 'library'
+  ) {
+    await selectAndUploadProfileImage(source)
+
+    setIsImageSourcePickerVisible(false)
   }
 
   function handleVehiclePress() {
-    // Vehicle details / vehicle-management flow
-    // will be connected here.
+    router.push('/vehicle-details')
   }
 
   function handleQuickActionPress(
@@ -85,15 +112,15 @@ export default function CustomerProfile() {
         return
 
       case 'service-history':
-        // Service history flow
+        router.push('/service-history')
         return
 
       case 'saved-addresses':
-        // Saved addresses flow
+        router.push('/saved-addresses')
         return
 
       case 'payment-methods':
-        // Payment methods flow
+        router.push('/payment-methods')
         return
     }
   }
@@ -103,19 +130,19 @@ export default function CustomerProfile() {
   ) {
     switch (setting.id) {
       case 'personal-information':
-        // Personal information editor
+        router.push('/personal-information')
         return
 
       case 'notifications':
-        // Notification preferences
+        router.push('/notification-preferences')
         return
 
       case 'security':
-        // Security settings
+        router.push('/security')
         return
 
       case 'help-support':
-        // Help and support flow
+        router.push('/help-support')
         return
     }
   }
@@ -125,13 +152,17 @@ export default function CustomerProfile() {
   ) {
     switch (activity.type) {
       case 'profile-updated':
-        // Profile activity detail
+        router.push('/personal-information')
         return
 
       case 'service-booking-confirmed':
-        // Service booking detail
+        router.push('/service-history')
         return
     }
+  }
+
+  function handleViewAllActivityPress() {
+    router.push('/activity')
   }
 
   function handleSignOutPress() {
@@ -150,12 +181,11 @@ export default function CustomerProfile() {
       ]}
       edges={['top']}
     >
-      <ScrollView
+      <StableScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <Text
           style={[
             styles.title,
@@ -178,7 +208,6 @@ export default function CustomerProfile() {
           Manage your account, vehicles, and preferences.
         </Text>
 
-        {/* Main Profile Card */}
         <View
           style={[
             styles.profileCard,
@@ -230,26 +259,41 @@ export default function CustomerProfile() {
               <View style={styles.profileTopRow}>
                 <View style={styles.avatarContainer}>
                   <ProfileAvatar
-                    imageUrl={user.profileImageUrl}
+                    imageUrl={
+                      previewImageUrl ??
+                      user.profileImageUrl
+                    }
                     size={74}
                   />
 
                   <TouchableOpacity
                     activeOpacity={0.75}
+                    disabled={isProfileImageBusy}
                     onPress={handleProfileImagePress}
                     style={[
                       styles.cameraButton,
                       {
                         backgroundColor: colors.accent,
                         borderColor: colors.card,
+                        opacity:
+                          isProfileImageBusy
+                            ? 0.55
+                            : 1,
                       },
                     ]}
                   >
-                    <MaterialCommunityIcons
-                      name="camera"
-                      size={14}
-                      color="#000000"
-                    />
+                    {isProfileImageBusy ? (
+                      <ActivityIndicator
+                        size="small"
+                        color="#000000"
+                      />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name="camera"
+                        size={14}
+                        color="#000000"
+                      />
+                    )}
                   </TouchableOpacity>
                 </View>
 
@@ -309,6 +353,65 @@ export default function CustomerProfile() {
                   </View>
                 </View>
               </View>
+
+              {previewImageUrl ? (
+                <View
+                  style={[
+                    styles.previewNotice,
+                    {
+                      borderColor: colors.warning,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="information-outline"
+                    size={18}
+                    color={colors.warning}
+                  />
+
+                  <Text
+                    style={[
+                      styles.previewNoticeText,
+                      {
+                        color: colors.secondaryText,
+                      },
+                    ]}
+                  >
+                    This is a local preview. Your new
+                    profile photo will become permanent
+                    only after the profile-image backend
+                    successfully uploads it.
+                  </Text>
+                </View>
+              ) : null}
+
+              {profileImageError ? (
+                <View
+                  style={[
+                    styles.imageErrorContainer,
+                    {
+                      borderColor: colors.danger,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={18}
+                    color={colors.danger}
+                  />
+
+                  <Text
+                    style={[
+                      styles.imageErrorText,
+                      {
+                        color: colors.danger,
+                      },
+                    ]}
+                  >
+                    {profileImageError}
+                  </Text>
+                </View>
+              ) : null}
 
               <View style={styles.contactList}>
                 <View style={styles.contactRow}>
@@ -510,7 +613,6 @@ export default function CustomerProfile() {
           )}
         </View>
 
-        {/* Quick Actions */}
         <View style={styles.quickActionsRow}>
           {quickActions.map((action) => (
             <TouchableOpacity
@@ -555,7 +657,6 @@ export default function CustomerProfile() {
           ))}
         </View>
 
-        {/* Account Settings */}
         <Text
           style={[
             styles.sectionTitle,
@@ -641,7 +742,6 @@ export default function CustomerProfile() {
           ))}
         </View>
 
-        {/* Recent Activity */}
         <View style={styles.sectionHeader}>
           <Text
             style={[
@@ -656,10 +756,7 @@ export default function CustomerProfile() {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => {
-              // Full customer account activity
-              // will be connected later.
-            }}
+            onPress={handleViewAllActivityPress}
           >
             <Text
               style={[
@@ -786,7 +883,6 @@ export default function CustomerProfile() {
           )}
         </View>
 
-        {/* Error */}
         {profileError ? (
           <View
             style={[
@@ -815,7 +911,6 @@ export default function CustomerProfile() {
           </View>
         ) : null}
 
-        {/* Sign Out */}
         <TouchableOpacity
           activeOpacity={0.75}
           onPress={handleSignOutPress}
@@ -843,7 +938,25 @@ export default function CustomerProfile() {
             Sign Out
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </StableScrollView>
+
+      <ImageSourcePickerModal
+        visible={isImageSourcePickerVisible}
+        isBusy={isProfileImageBusy}
+        title="Change Profile Photo"
+        description="Take a new profile photo or choose an existing image from your device."
+        onCameraPress={() =>
+          handleProfileImageSource('camera')
+        }
+        onLibraryPress={() =>
+          handleProfileImageSource('library')
+        }
+        onClose={() => {
+          if (!isProfileImageBusy) {
+            setIsImageSourcePickerVisible(false)
+          }
+        }}
+      />
     </SafeAreaView>
   )
 }
@@ -997,6 +1110,42 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontSize: 10,
     fontWeight: '600',
+  },
+
+  previewNotice: {
+    marginTop: 14,
+    minHeight: 52,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+
+  previewNoticeText: {
+    flex: 1,
+    fontSize: 9,
+    lineHeight: 14,
+  },
+
+  imageErrorContainer: {
+    marginTop: 10,
+    minHeight: 44,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  imageErrorText: {
+    flex: 1,
+    fontSize: 9.5,
+    lineHeight: 14,
   },
 
   contactList: {
