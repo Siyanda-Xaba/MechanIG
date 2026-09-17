@@ -10,7 +10,6 @@ import {
 import {
   Alert,
   Image,
-  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -20,6 +19,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 type Step = 1 | 2 | 3
 
@@ -482,7 +483,7 @@ export default function CustomerSignUpScreen() {
     <SafeAreaView
       style={styles.container}
     >
-      <ScrollView
+      <StableScrollView
         contentContainerStyle={
           styles.scrollContent
         }
@@ -1506,7 +1507,7 @@ export default function CustomerSignUpScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

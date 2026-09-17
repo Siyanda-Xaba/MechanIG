@@ -5,7 +5,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Switch,
   Text,
   TextInput,
@@ -15,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useMechanicSignUp } from '../../../src/auth/mechanic/MechanicSignUpContext'
+import StableScrollView from '../../../src/components/StableScrollView'
 import {
   CYAN,
   GREEN,
@@ -179,7 +179,7 @@ export default function MechanicSignUpStep3() {
             : undefined
         }
       >
-        <ScrollView
+        <StableScrollView
           contentContainerStyle={
             styles.scrollContent
           }
@@ -575,7 +575,7 @@ export default function MechanicSignUpStep3() {
               )
             }}
           />
-        </ScrollView>
+        </StableScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

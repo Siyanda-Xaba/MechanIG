@@ -10,7 +10,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -18,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useMechanicSignUp } from '../../../src/auth/mechanic/MechanicSignUpContext'
+import StableScrollView from '../../../src/components/StableScrollView'
 import {
   CYAN,
   DropdownRow,
@@ -154,7 +154,7 @@ export default function MechanicSignUpStep2() {
             : undefined
         }
       >
-        <ScrollView
+        <StableScrollView
           contentContainerStyle={
             styles.scrollContent
           }
@@ -655,7 +655,7 @@ export default function MechanicSignUpStep2() {
               )
             }}
           />
-        </ScrollView>
+        </StableScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
