@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import {
   CustomerMaintenanceReminder,
@@ -187,7 +188,7 @@ export default function CustomerMaintenanceScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -669,7 +670,7 @@ export default function CustomerMaintenanceScreen() {
             Maintenance recommendations will later be synchronized with vehicle mileage, service history, manufacturer intervals and validated diagnostic data. MechanIQ does not treat these frontend reminders as proof that a service is required or completed.
           </Text>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

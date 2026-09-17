@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import {
   CustomerActivityAction,
@@ -245,7 +246,7 @@ export default function CustomerActivityHistoryScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -640,7 +641,7 @@ export default function CustomerActivityHistoryScreen() {
             Full activity history will eventually come from MechanIQ backend records. Navigation actions only use identifiers when a real related diagnostic, delivery, mechanic or service record exists.
           </Text>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

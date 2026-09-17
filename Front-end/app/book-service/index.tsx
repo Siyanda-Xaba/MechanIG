@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import {
   CustomerServiceTypeId,
@@ -241,7 +242,7 @@ export default function BookServiceScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -631,7 +632,7 @@ export default function BookServiceScreen() {
         >
           Final pricing, available dates, workshop capacity, and mechanic availability will come from validated MechanIQ backend data.
         </Text>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

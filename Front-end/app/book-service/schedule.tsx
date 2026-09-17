@@ -15,6 +15,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 import {
   useEffect,
   useMemo,
@@ -380,7 +382,7 @@ export default function BookServiceScheduleScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -923,7 +925,7 @@ export default function BookServiceScheduleScreen() {
         >
           These are preferred scheduling details only. Final availability, pricing and confirmation will come from the selected mechanic or workshop through MechanIQ backend services.
         </Text>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

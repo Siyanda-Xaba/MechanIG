@@ -9,7 +9,6 @@ import {
 import { useState } from 'react'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +16,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import { useWorkshopBooking } from '../../src/customer/useWorkshopBooking'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -251,7 +252,7 @@ export default function WorkshopBookingScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.content}
@@ -653,7 +654,7 @@ export default function WorkshopBookingScreen() {
           confirmation will be provided by the workshop
           through MechanIQ.
         </Text>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

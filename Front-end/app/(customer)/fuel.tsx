@@ -1,7 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import FuelActionCard from '../../src/components/FuelActionCard'
 import FuelRecentActivityCard from '../../src/components/FuelRecentActivityCard'
+import StableScrollView from '../../src/components/StableScrollView'
 import { useCustomerFuel } from '../../src/customer/CustomerFuelContext'
 import type { FuelRequestType } from '../../src/customer/fuelTypes'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -130,7 +130,7 @@ export default function CustomerFuel() {
       ]}
       edges={['top']}
     >
-      <ScrollView
+      <StableScrollView
         style={styles.scrollView}
         contentContainerStyle={
           styles.content
@@ -577,7 +577,7 @@ export default function CustomerFuel() {
             {fuelError}
           </Text>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

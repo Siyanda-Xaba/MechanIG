@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import MarketplaceActivityCard from '../../src/components/MarketplaceActivityCard'
 import MarketplaceProductCard from '../../src/components/MarketplaceProductCard'
 import MarketplaceStoreCard from '../../src/components/MarketplaceStoreCard'
+import StableScrollView from '../../src/components/StableScrollView'
 import { useCustomerMarketplace } from '../../src/customer/CustomerMarketplaceContext'
 import {
   MarketplaceCategory,
@@ -219,7 +220,7 @@ export default function CustomerMarketplace() {
       ]}
       edges={['top']}
     >
-      <ScrollView
+      <StableScrollView
         style={styles.scrollView}
         contentContainerStyle={
           styles.content
@@ -797,7 +798,7 @@ export default function CustomerMarketplace() {
             {marketplaceError}
           </Text>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
 
       <Modal
         visible={isFilterVisible}

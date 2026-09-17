@@ -8,13 +8,14 @@ import {
 } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import {
   BookServiceLocationPreference,
@@ -293,7 +294,7 @@ export default function BookServiceOptionsScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -932,7 +933,7 @@ export default function BookServiceOptionsScreen() {
         >
           These matches are frontend development data only. Final service support, pricing, capacity, travel availability and appointment confirmation must be validated by the MechanIQ backend.
         </Text>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

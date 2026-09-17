@@ -8,7 +8,6 @@ import {
 } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useState } from 'react'
 
+import StableScrollView from '../../src/components/StableScrollView'
 import { useMechanicRequest } from '../../src/customer/useMechanicRequest'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useUser } from '../../src/users/UserContext'
@@ -221,7 +221,7 @@ export default function MechanicRequestScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -604,7 +604,7 @@ export default function MechanicRequestScreen() {
           will be confirmed by MechanIQ before service
           begins.
         </Text>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

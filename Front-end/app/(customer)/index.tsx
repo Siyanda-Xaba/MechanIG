@@ -40,6 +40,11 @@ export default function CustomerHome() {
     setIsVehicleSelectorOpen,
   ] = useState(false)
 
+  const [
+    isVehicleModelInteracting,
+    setIsVehicleModelInteracting,
+  ] = useState(false)
+
   const {
     user,
     isLoadingUser,
@@ -173,6 +178,12 @@ export default function CustomerHome() {
           styles.content
         }
         showsVerticalScrollIndicator={false}
+        scrollEnabled={
+          !isVehicleModelInteracting
+        }
+        bounces={false}
+        alwaysBounceVertical={false}
+        overScrollMode="never"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -587,12 +598,27 @@ export default function CustomerHome() {
                     styles.vehicleModelContainer
                   }
                 >
-                  <Vehicle3DViewer
-                    modelSource={
-                      vehicleModel
-                    }
-                    height={155}
-                  />
+                  <View
+                    style={[
+                      styles.vehicleModelFrame,
+                      {
+                        backgroundColor:
+                          colors.background,
+                        borderColor:
+                          colors.border,
+                      },
+                    ]}
+                  >
+                    <Vehicle3DViewer
+                      modelSource={
+                        vehicleModel
+                      }
+                      height={155}
+                      onInteractionChange={
+                        setIsVehicleModelInteracting
+                      }
+                    />
+                  </View>
                 </View>
 
                 <View
@@ -1052,6 +1078,21 @@ const styles = StyleSheet.create({
   vehicleModelContainer: {
     flex: 1,
     minWidth: 0,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 7,
+    elevation: 5,
+  },
+
+  vehicleModelFrame: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
 
   healthContainer: {

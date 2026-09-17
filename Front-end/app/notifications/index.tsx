@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import {
   CustomerNotification,
@@ -223,7 +224,7 @@ export default function CustomerNotificationsScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -571,7 +572,7 @@ export default function CustomerNotificationsScreen() {
             Notification delivery and read state will be synchronized with the MechanIQ backend. This screen does not simulate mechanic responses or push events locally.
           </Text>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

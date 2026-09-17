@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 
 import { useFuelHistory } from '../src/customer/useFuelHistory'
 import { useTheme } from '../src/theme/ThemeContext'
@@ -49,7 +50,7 @@ export default function FuelHistoryScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={
           false
         }
@@ -595,7 +596,7 @@ export default function FuelHistoryScreen() {
             )}
           </View>
         )}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

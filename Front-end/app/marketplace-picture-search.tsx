@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +13,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 import {
   useEffect,
   useState,
@@ -154,7 +155,7 @@ export default function MarketplacePictureSearchScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={
           false
         }
@@ -1025,7 +1026,7 @@ export default function MarketplacePictureSearchScreen() {
             </View>
           </View>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

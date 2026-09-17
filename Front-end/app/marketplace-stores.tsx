@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 
 import MarketplaceStoreCard from '../src/components/MarketplaceStoreCard'
 import { useMarketplaceStores } from '../src/customer/useMarketplaceStores'
@@ -51,7 +52,7 @@ export default function MarketplaceStoresScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={
           false
         }
@@ -305,7 +306,7 @@ export default function MarketplaceStoresScreen() {
             or provider data.
           </Text>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

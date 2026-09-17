@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import CommonSymptomsGrid from '../../src/components/CommonSymptomsGrid'
 import RecentDiagnosticsList from '../../src/components/RecentDiagnosticsList'
+import StableScrollView from '../../src/components/StableScrollView'
 import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard'
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext'
 import CustomerPartScanAction from '../../src/customer/CustomerPartScanAction'
@@ -129,7 +129,7 @@ export default function CustomerDiagnostics() {
       ]}
       edges={['top']}
     >
-      <ScrollView
+      <StableScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -704,7 +704,7 @@ export default function CustomerDiagnostics() {
             {diagnosticsError}
           </Text>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

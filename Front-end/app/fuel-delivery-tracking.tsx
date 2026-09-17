@@ -8,13 +8,14 @@ import {
 } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 
 import FuelMap from '../src/components/FuelMap'
 import { useFuelDeliveryTracking } from '../src/customer/useFuelDeliveryTracking'
@@ -359,7 +360,7 @@ export default function FuelDeliveryTrackingScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={
           false
         }
@@ -758,7 +759,7 @@ export default function FuelDeliveryTrackingScreen() {
             ) : null}
           </>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

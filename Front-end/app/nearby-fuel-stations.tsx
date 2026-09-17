@@ -4,13 +4,14 @@ import {
 } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 
 import FuelMap from '../src/components/FuelMap'
 import { useForegroundLocation } from '../src/location/useForegroundLocation'
@@ -37,7 +38,7 @@ export default function NearbyFuelStationsScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={
           false
         }
@@ -196,7 +197,7 @@ export default function NearbyFuelStationsScreen() {
             </Text>
           </View>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

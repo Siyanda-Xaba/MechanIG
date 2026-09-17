@@ -8,7 +8,6 @@ import {
 } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -16,6 +15,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import StableScrollView from '../../src/components/StableScrollView'
 import { useMechanicSearch } from '../../src/customer/useMechanicSearch'
 import { useTheme } from '../../src/theme/ThemeContext'
 
@@ -157,7 +157,7 @@ export default function FindMechanicScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
@@ -602,7 +602,7 @@ export default function FindMechanicScreen() {
             )
           })
         )}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

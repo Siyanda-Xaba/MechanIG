@@ -12,7 +12,6 @@ import {
 import {
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -20,6 +19,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 import {
   useEffect,
   useMemo,
@@ -384,7 +385,7 @@ export default function FuelTopUpScheduleScreen() {
             : undefined
         }
       >
-        <ScrollView
+        <StableScrollView
           showsVerticalScrollIndicator={
             false
           }
@@ -1165,7 +1166,7 @@ export default function FuelTopUpScheduleScreen() {
                 : 'Schedule Top-up'}
             </Text>
           </TouchableOpacity>
-        </ScrollView>
+        </StableScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

@@ -5,7 +5,6 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import StableScrollView from '../../src/components/StableScrollView'
 import { useVehicleMechanicSearch } from '../../src/customer/useVehicleMechanicSearch'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useVehicle } from '../../src/vehicles/VehicleContext'
@@ -237,7 +237,7 @@ export default function VehicleMechanicSearchScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -895,7 +895,7 @@ export default function VehicleMechanicSearchScreen() {
         >
           Mechanic availability, distance, pricing, and live status will be verified by MechanIQ backend services.
         </Text>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

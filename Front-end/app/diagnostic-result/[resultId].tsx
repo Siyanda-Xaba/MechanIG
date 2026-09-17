@@ -2,13 +2,14 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../../src/components/StableScrollView'
 
 import { useDiagnosticResult } from '../../src/customer/useDiagnosticResult'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -161,7 +162,7 @@ export default function DiagnosticResultScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
@@ -514,7 +515,7 @@ export default function DiagnosticResultScreen() {
             />
           </TouchableOpacity>
         ) : null}
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

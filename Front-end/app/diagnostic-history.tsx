@@ -5,13 +5,14 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import StableScrollView from '../src/components/StableScrollView'
 
 import { DiagnosticScan } from '../src/customer/diagnosticsTypes'
 import { useDiagnosticHistory } from '../src/customer/useDiagnosticHistory'
@@ -187,7 +188,7 @@ export default function DiagnosticHistoryScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={
           styles.content
@@ -582,7 +583,7 @@ export default function DiagnosticHistoryScreen() {
             Full diagnostic history will come from MechanIQ backend records for the selected vehicle. Only records with a related diagnostic result can open a result screen.
           </Text>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }

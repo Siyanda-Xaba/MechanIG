@@ -15,6 +15,8 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import StableScrollView from '../src/components/StableScrollView'
+
 import MarketplaceProductCard from '../src/components/MarketplaceProductCard'
 import { useMarketplaceProducts } from '../src/customer/useMarketplaceProducts'
 import type {
@@ -119,7 +121,7 @@ export default function MarketplaceProductsScreen() {
         },
       ]}
     >
-      <ScrollView
+      <StableScrollView
         showsVerticalScrollIndicator={
           false
         }
@@ -631,7 +633,7 @@ export default function MarketplaceProductsScreen() {
             data.
           </Text>
         </View>
-      </ScrollView>
+      </StableScrollView>
     </SafeAreaView>
   )
 }
