@@ -18,6 +18,8 @@ import {
 } from '@react-three/drei/native'
 import * as THREE from 'three'
 
+import { useTheme } from '../theme/ThemeContext'
+
 type Vehicle3DViewerProps = {
   modelSource: number | null
   height?: number
@@ -36,23 +38,18 @@ function VehicleModel({
   const fittedScene = useMemo(() => {
     const model = scene.clone(true)
 
-    // Prevent imported GLB meshes from being
-    // incorrectly removed while the camera
-    // orbits around the vehicle.
     model.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.frustumCulled = false
       }
     })
 
-    // Find original model size.
     const box =
       new THREE.Box3().setFromObject(
         model
       )
 
     const size = new THREE.Vector3()
-
     box.getSize(size)
 
     const largestDimension =
@@ -62,16 +59,12 @@ function VehicleModel({
         size.z
       )
 
-    // Preserve the established BMW
-    // display scale.
     if (largestDimension > 0) {
       const scale =
         4.5 / largestDimension
-
       model.scale.setScalar(scale)
     }
 
-    // Recalculate bounds after scaling.
     const scaledBox =
       new THREE.Box3().setFromObject(
         model
@@ -79,11 +72,8 @@ function VehicleModel({
 
     const center =
       new THREE.Vector3()
-
     scaledBox.getCenter(center)
 
-    // Preserve the established model
-    // centering at the orbit target.
     model.position.sub(center)
 
     return model
@@ -102,6 +92,8 @@ export default function Vehicle3DViewer({
   height = 220,
   onInteractionChange,
 }: Vehicle3DViewerProps) {
+  const { colors } = useTheme()
+
   const [
     modelUri,
     setModelUri,
@@ -156,7 +148,7 @@ export default function Vehicle3DViewer({
         ]}
       >
         <ActivityIndicator
-          color="#3CFFFC"
+          color={colors.accent}
         />
       </View>
     )
@@ -186,9 +178,7 @@ export default function Vehicle3DViewer({
           far: 100,
         }}
       >
-        <ambientLight
-          intensity={3}
-        />
+        <ambientLight intensity={3} />
 
         <hemisphereLight
           args={[
@@ -243,7 +233,6 @@ const styles =
     loadingContainer: {
       width: '100%',
       alignItems: 'center',
-      justifyContent:
-        'center',
+      justifyContent: 'center',
     },
   })

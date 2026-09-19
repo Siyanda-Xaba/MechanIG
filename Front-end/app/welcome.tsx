@@ -11,8 +11,11 @@ import {
   View,
 } from 'react-native'
 
+import { useTheme } from '../src/theme/ThemeContext'
+
 export default function WelcomeScreen() {
   const router = useRouter()
+  const { colors } = useTheme()
 
   function handleCustomerSignUp() {
     router.push(
@@ -27,7 +30,15 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        {
+          backgroundColor:
+            colors.background,
+        },
+      ]}
+    >
       <View style={styles.logoContainer}>
         <Image
           source={require('../assets/images/mechaniq-logo.png')}
@@ -36,33 +47,77 @@ export default function WelcomeScreen() {
         />
       </View>
 
-      <Text style={styles.title}>
+      <Text
+        style={[
+          styles.title,
+          {
+            color: colors.text,
+          },
+        ]}
+      >
         Create Your Account
       </Text>
 
-      <Text style={styles.subtitle}>
+      <Text
+        style={[
+          styles.subtitle,
+          {
+            color:
+              colors.secondaryText,
+          },
+        ]}
+      >
         Choose how you want to join
         MechanIQ
       </Text>
 
       <View style={styles.cardRow}>
-        <View style={styles.card}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
           <View
-            style={styles.iconCircle}
+            style={[
+              styles.iconCircle,
+              {
+                borderColor:
+                  colors.accent,
+              },
+            ]}
           >
             <Ionicons
               name="person-outline"
               size={28}
-              color="#00E5FF"
+              color={colors.accent}
             />
           </View>
 
-          <Text style={styles.cardTitle}>
+          <Text
+            style={[
+              styles.cardTitle,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
             I'M A CUSTOMER
           </Text>
 
           <Text
-            style={styles.cardDescription}
+            style={[
+              styles.cardDescription,
+              {
+                color:
+                  colors.secondaryText,
+              },
+            ]}
           >
             Manage your vehicles, run
             diagnostics, order fuel,
@@ -71,7 +126,13 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={styles.button}
+            style={[
+              styles.button,
+              {
+                backgroundColor:
+                  colors.accent,
+              },
+            ]}
             onPress={
               handleCustomerSignUp
             }
@@ -82,23 +143,52 @@ export default function WelcomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor:
+                colors.card,
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
           <View
-            style={styles.iconCircle}
+            style={[
+              styles.iconCircle,
+              {
+                borderColor:
+                  colors.accent,
+              },
+            ]}
           >
             <Ionicons
               name="build-outline"
               size={28}
-              color="#00E5FF"
+              color={colors.accent}
             />
           </View>
 
-          <Text style={styles.cardTitle}>
+          <Text
+            style={[
+              styles.cardTitle,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
             I'M A MECHANIC
           </Text>
 
           <Text
-            style={styles.cardDescription}
+            style={[
+              styles.cardDescription,
+              {
+                color:
+                  colors.secondaryText,
+              },
+            ]}
           >
             Manage jobs, diagnostics,
             customers, bookings and
@@ -107,7 +197,13 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={styles.button}
+            style={[
+              styles.button,
+              {
+                backgroundColor:
+                  colors.accent,
+              },
+            ]}
             onPress={
               handleMechanicSignUp
             }
@@ -120,7 +216,15 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.loginRow}>
-        <Text style={styles.loginText}>
+        <Text
+          style={[
+            styles.loginText,
+            {
+              color:
+                colors.secondaryText,
+            },
+          ]}
+        >
           Already have an account?{' '}
         </Text>
 
@@ -132,7 +236,14 @@ export default function WelcomeScreen() {
             )
           }}
         >
-          <Text style={styles.loginLink}>
+          <Text
+            style={[
+              styles.loginLink,
+              {
+                color: colors.accent,
+              },
+            ]}
+          >
             Login
           </Text>
         </TouchableOpacity>
@@ -144,7 +255,6 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -161,7 +271,6 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '800',
     marginTop: 8,
@@ -169,7 +278,6 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    color: '#BDBDBD',
     fontSize: 13,
     lineHeight: 19,
     marginTop: 6,
@@ -186,9 +294,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minHeight: 235,
-    backgroundColor: '#010101',
     borderWidth: 1,
-    borderColor: '#333333',
     borderRadius: 14,
     padding: 14,
     alignItems: 'center',
@@ -199,14 +305,12 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: '#00E5FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 13,
   },
 
   cardTitle: {
-    color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 12,
     marginBottom: 9,
@@ -215,7 +319,6 @@ const styles = StyleSheet.create({
 
   cardDescription: {
     flex: 1,
-    color: '#BDBDBD',
     fontSize: 10.5,
     lineHeight: 15,
     textAlign: 'center',
@@ -227,13 +330,12 @@ const styles = StyleSheet.create({
     minHeight: 38,
     borderRadius: 7,
     paddingHorizontal: 8,
-    backgroundColor: '#00E5FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   buttonText: {
-    color: '#000000',
+    color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 9,
     textAlign: 'center',
@@ -247,12 +349,10 @@ const styles = StyleSheet.create({
   },
 
   loginText: {
-    color: '#BDBDBD',
     fontSize: 12,
   },
 
   loginLink: {
-    color: '#00E5FF',
     fontSize: 12,
     fontWeight: '700',
   },

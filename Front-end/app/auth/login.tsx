@@ -17,9 +17,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import StableScrollView from '../../src/components/StableScrollView'
+import { useTheme } from '../../src/theme/ThemeContext'
 
 export default function LoginScreen() {
   const router = useRouter()
+  const { colors } = useTheme()
 
   const [
     emailOrPhone,
@@ -69,7 +71,13 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView
-      style={styles.safeArea}
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor:
+            colors.background,
+        },
+      ]}
     >
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -102,28 +110,58 @@ export default function LoginScreen() {
             />
           </View>
 
-          <Text style={styles.title}>
+          <Text
+            style={[
+              styles.title,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
             Welcome Back
           </Text>
 
-          <Text style={styles.subtitle}>
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color:
+                  colors.secondaryText,
+              },
+            ]}
+          >
             Login your account to continue
           </Text>
 
           <View
-            style={styles.inputWrapper}
+            style={[
+              styles.inputWrapper,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
+              },
+            ]}
           >
             <Ionicons
               name="person-outline"
               size={20}
-              color="#00E5FF"
+              color={colors.accent}
               style={styles.inputIcon}
             />
 
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  color: colors.text,
+                },
+              ]}
               placeholder="Email or Phone Number"
-              placeholderTextColor="#7A8A94"
+              placeholderTextColor={
+                colors.secondaryText
+              }
               value={emailOrPhone}
               onChangeText={
                 setEmailOrPhone
@@ -134,19 +172,34 @@ export default function LoginScreen() {
           </View>
 
           <View
-            style={styles.inputWrapper}
+            style={[
+              styles.inputWrapper,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
+              },
+            ]}
           >
             <Ionicons
               name="lock-closed-outline"
               size={20}
-              color="#00E5FF"
+              color={colors.accent}
               style={styles.inputIcon}
             />
 
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  color: colors.text,
+                },
+              ]}
               placeholder="Password"
-              placeholderTextColor="#7A8A94"
+              placeholderTextColor={
+                colors.secondaryText
+              }
               value={password}
               onChangeText={setPassword}
               secureTextEntry={
@@ -175,7 +228,9 @@ export default function LoginScreen() {
                     : 'eye-outline'
                 }
                 size={20}
-                color="#BDBDBD"
+                color={
+                  colors.secondaryText
+                }
               />
             </TouchableOpacity>
           </View>
@@ -190,7 +245,12 @@ export default function LoginScreen() {
             style={styles.forgotWrapper}
           >
             <Text
-              style={styles.forgotText}
+              style={[
+                styles.forgotText,
+                {
+                  color: colors.accent,
+                },
+              ]}
             >
               Forgot Password?
             </Text>
@@ -199,7 +259,13 @@ export default function LoginScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleSignIn}
-            style={styles.signInButton}
+            style={[
+              styles.signInButton,
+              {
+                backgroundColor:
+                  colors.accent,
+              },
+            ]}
           >
             <Text
               style={styles.signInText}
@@ -212,17 +278,35 @@ export default function LoginScreen() {
             style={styles.dividerRow}
           >
             <View
-              style={styles.dividerLine}
+              style={[
+                styles.dividerLine,
+                {
+                  backgroundColor:
+                    colors.border,
+                },
+              ]}
             />
 
             <Text
-              style={styles.dividerText}
+              style={[
+                styles.dividerText,
+                {
+                  color:
+                    colors.secondaryText,
+                },
+              ]}
             >
               OR
             </Text>
 
             <View
-              style={styles.dividerLine}
+              style={[
+                styles.dividerLine,
+                {
+                  backgroundColor:
+                    colors.border,
+                },
+              ]}
             />
           </View>
 
@@ -232,7 +316,15 @@ export default function LoginScreen() {
               // Google authentication
               // will be connected later.
             }}
-            style={styles.socialButton}
+            style={[
+              styles.socialButton,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
+              },
+            ]}
           >
             <AntDesign
               name="google"
@@ -242,7 +334,12 @@ export default function LoginScreen() {
             />
 
             <Text
-              style={styles.socialText}
+              style={[
+                styles.socialText,
+                {
+                  color: colors.text,
+                },
+              ]}
             >
               Continue with Google
             </Text>
@@ -254,17 +351,30 @@ export default function LoginScreen() {
               // Apple authentication
               // will be connected later.
             }}
-            style={styles.socialButton}
+            style={[
+              styles.socialButton,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
+              },
+            ]}
           >
             <AntDesign
               name="apple"
               size={21}
-              color="#FFFFFF"
+              color={colors.text}
               style={styles.socialIcon}
             />
 
             <Text
-              style={styles.socialText}
+              style={[
+                styles.socialText,
+                {
+                  color: colors.text,
+                },
+              ]}
             >
               Continue with Apple
             </Text>
@@ -272,7 +382,13 @@ export default function LoginScreen() {
 
           <View style={styles.footerRow}>
             <Text
-              style={styles.footerText}
+              style={[
+                styles.footerText,
+                {
+                  color:
+                    colors.secondaryText,
+                },
+              ]}
             >
               Don't have an account?{' '}
             </Text>
@@ -284,7 +400,13 @@ export default function LoginScreen() {
               }
             >
               <Text
-                style={styles.footerLink}
+                style={[
+                  styles.footerLink,
+                  {
+                    color:
+                      colors.accent,
+                  },
+                ]}
               >
                 Create Account
               </Text>
@@ -299,7 +421,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000000',
   },
 
   keyboardView: {
@@ -330,7 +451,6 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#FFFFFF',
     fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
@@ -338,7 +458,6 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    color: '#BDBDBD',
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -352,7 +471,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#333333',
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -364,7 +482,6 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: 15,
   },
 
@@ -374,14 +491,12 @@ const styles = StyleSheet.create({
   },
 
   forgotText: {
-    color: '#00E5FF',
     fontSize: 13,
     fontWeight: '600',
   },
 
   signInButton: {
     height: 56,
-    backgroundColor: '#00E5FF',
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -389,7 +504,7 @@ const styles = StyleSheet.create({
   },
 
   signInText: {
-    color: '#000000',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -404,11 +519,9 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#333333',
   },
 
   dividerText: {
-    color: '#7A8A94',
     fontSize: 13,
     marginHorizontal: 14,
   },
@@ -417,7 +530,6 @@ const styles = StyleSheet.create({
     height: 56,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#333333',
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,7 +541,6 @@ const styles = StyleSheet.create({
   },
 
   socialText: {
-    color: '#FFFFFF',
     fontSize: 14,
   },
 
@@ -442,12 +553,10 @@ const styles = StyleSheet.create({
   },
 
   footerText: {
-    color: '#BDBDBD',
     fontSize: 12,
   },
 
   footerLink: {
-    color: '#00E5FF',
     fontSize: 12,
     fontWeight: '700',
   },

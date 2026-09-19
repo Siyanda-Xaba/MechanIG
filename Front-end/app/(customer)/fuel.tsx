@@ -37,6 +37,16 @@ export default function CustomerFuel() {
   const recentActivity =
     fuelData?.recentActivity ?? []
 
+  const fuelLevelColor =
+    fuelData?.fuelLevel === null ||
+    fuelData?.fuelLevel === undefined
+      ? colors.secondaryText
+      : fuelData.fuelLevel <= 20
+        ? colors.danger
+        : fuelData.fuelLevel <= 50
+          ? colors.warning
+          : colors.success
+
   function handleFuelRequest(
     requestType: FuelRequestType
   ) {
@@ -243,7 +253,7 @@ export default function CustomerFuel() {
                 <MaterialCommunityIcons
                   name="gas-station-outline"
                   size={34}
-                  color={colors.accent}
+                  color={fuelLevelColor}
                 />
               </View>
 
@@ -274,7 +284,7 @@ export default function CustomerFuel() {
                       styles.statValue,
                       {
                         color:
-                          colors.text,
+                          fuelLevelColor,
                       },
                     ]}
                   >

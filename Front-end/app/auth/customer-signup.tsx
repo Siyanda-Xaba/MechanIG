@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import StableScrollView from '../../src/components/StableScrollView'
+import { useTheme } from '../../src/theme/ThemeContext'
 
 type Step = 1 | 2 | 3
 
@@ -60,12 +61,15 @@ function InputField({
   keyboardType = 'default',
   rightElement,
 }: InputFieldProps) {
+  const { colors } = useTheme()
+  const styles = createStyles(colors)
+
   return (
     <View style={styles.inputWrapper}>
       <Ionicons
         name={icon}
         size={18}
-        color="#888888"
+        color={colors.secondaryText}
         style={styles.inputIcon}
       />
 
@@ -77,7 +81,7 @@ function InputField({
         <TextInput
           style={styles.input}
           placeholder={placeholder}
-          placeholderTextColor="#666666"
+          placeholderTextColor={colors.secondaryText}
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
@@ -96,6 +100,9 @@ function DropdownField({
   placeholder,
   onPress,
 }: DropdownFieldProps) {
+  const { colors } = useTheme()
+  const styles = createStyles(colors)
+
   return (
     <TouchableOpacity
       style={styles.inputWrapper}
@@ -105,7 +112,7 @@ function DropdownField({
       <Ionicons
         name={icon}
         size={18}
-        color="#888888"
+        color={colors.secondaryText}
         style={styles.inputIcon}
       />
 
@@ -128,7 +135,7 @@ function DropdownField({
       <Ionicons
         name="chevron-down"
         size={18}
-        color="#888888"
+        color={colors.secondaryText}
       />
     </TouchableOpacity>
   )
@@ -136,6 +143,8 @@ function DropdownField({
 
 export default function CustomerSignUpScreen() {
   const router = useRouter()
+  const { colors } = useTheme()
+  const styles = createStyles(colors)
 
   const [
     step,
@@ -277,7 +286,7 @@ export default function CustomerSignUpScreen() {
     if (password.length === 0) {
       return {
         label: '',
-        color: '#444444',
+        color: colors.border,
         bars: 0,
       }
     }
@@ -285,7 +294,7 @@ export default function CustomerSignUpScreen() {
     if (password.length < 6) {
       return {
         label: 'Weak',
-        color: '#FF3B30',
+        color: colors.danger,
         bars: 1,
       }
     }
@@ -293,14 +302,14 @@ export default function CustomerSignUpScreen() {
     if (password.length < 10) {
       return {
         label: 'Medium',
-        color: '#FFB020',
+        color: colors.warning,
         bars: 2,
       }
     }
 
     return {
       label: 'Strong',
-      color: '#7CFF4F',
+      color: colors.success,
       bars: 3,
     }
   }
@@ -502,7 +511,7 @@ export default function CustomerSignUpScreen() {
           <Ionicons
             name="arrow-back"
             size={24}
-            color="#FFFFFF"
+            color={colors.text}
           />
         </TouchableOpacity>
 
@@ -534,7 +543,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="person-outline"
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <Text
@@ -686,7 +695,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={20}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <View
@@ -716,7 +725,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="lock-closed-outline"
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
             </View>
           </View>
@@ -730,7 +739,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="car-outline"
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <Text
@@ -882,7 +891,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="barcode-outline"
                 size={18}
-                color="#888888"
+                color={colors.secondaryText}
                 style={styles.inputIcon}
               />
 
@@ -898,7 +907,7 @@ export default function CustomerSignUpScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter VIN number"
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={colors.secondaryText}
                   value={vinNumber}
                   onChangeText={setVinNumber}
                   autoCapitalize="characters"
@@ -916,7 +925,7 @@ export default function CustomerSignUpScreen() {
                 <Ionicons
                   name="scan-outline"
                   size={14}
-                  color="#00E5FF"
+                  color={colors.accent}
                 />
 
                 <Text
@@ -935,7 +944,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="speedometer-outline"
                 size={18}
-                color="#888888"
+                color={colors.secondaryText}
                 style={styles.inputIcon}
               />
 
@@ -952,7 +961,7 @@ export default function CustomerSignUpScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="e.g. 45,000"
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={colors.secondaryText}
                   value={mileage}
                   onChangeText={setMileage}
                   keyboardType="numeric"
@@ -993,7 +1002,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="lock-closed-outline"
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <Text
@@ -1018,7 +1027,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="lock-closed-outline"
                 size={18}
-                color="#888888"
+                color={colors.secondaryText}
                 style={styles.inputIcon}
               />
 
@@ -1034,7 +1043,7 @@ export default function CustomerSignUpScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your password"
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={colors.secondaryText}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={
@@ -1058,7 +1067,7 @@ export default function CustomerSignUpScreen() {
                       : 'eye-outline'
                   }
                   size={20}
-                  color="#888888"
+                  color={colors.secondaryText}
                 />
               </TouchableOpacity>
             </View>
@@ -1096,7 +1105,7 @@ export default function CustomerSignUpScreen() {
                               bar <=
                               strength.bars
                                 ? strength.color
-                                : '#333333',
+                                : colors.border,
                           },
                         ]}
                       />
@@ -1112,7 +1121,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="lock-closed-outline"
                 size={18}
-                color="#888888"
+                color={colors.secondaryText}
                 style={styles.inputIcon}
               />
 
@@ -1128,7 +1137,7 @@ export default function CustomerSignUpScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Re-enter your password"
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={colors.secondaryText}
                   value={confirmPassword}
                   onChangeText={
                     setConfirmPassword
@@ -1154,7 +1163,7 @@ export default function CustomerSignUpScreen() {
                       : 'eye-outline'
                   }
                   size={20}
-                  color="#888888"
+                  color={colors.secondaryText}
                 />
               </TouchableOpacity>
             </View>
@@ -1191,8 +1200,8 @@ export default function CustomerSignUpScreen() {
                       size={16}
                       color={
                         requirement.met
-                          ? '#7CFF4F'
-                          : '#666666'
+                          ? colors.success
+                          : colors.secondaryText
                       }
                     />
 
@@ -1216,7 +1225,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="mail-outline"
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <Text
@@ -1288,7 +1297,7 @@ export default function CustomerSignUpScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter 6-digit code"
-                  placeholderTextColor="#666666"
+                  placeholderTextColor={colors.secondaryText}
                   value={verificationCode}
                   onChangeText={
                     setVerificationCode
@@ -1320,7 +1329,7 @@ export default function CustomerSignUpScreen() {
               <Ionicons
                 name="shield-outline"
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <View
@@ -1383,10 +1392,10 @@ export default function CustomerSignUpScreen() {
                   setTwoFAEnabled
                 }
                 trackColor={{
-                  false: '#444444',
-                  true: '#00E5FF',
+                  false: colors.border,
+                  true: colors.accent,
                 }}
-                thumbColor="#FFFFFF"
+                thumbColor={colors.text}
               />
             </View>
 
@@ -1406,7 +1415,7 @@ export default function CustomerSignUpScreen() {
                     : 'square-outline'
                 }
                 size={18}
-                color="#00E5FF"
+                color={colors.accent}
               />
 
               <Text
@@ -1512,10 +1521,13 @@ export default function CustomerSignUpScreen() {
   )
 }
 
-const styles = StyleSheet.create({
+type ThemeColors = ReturnType<typeof useTheme>['colors']
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
 
   scrollContent: {
@@ -1542,7 +1554,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -1550,7 +1562,7 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    color: '#AAAAAA',
+    color: colors.secondaryText,
     fontSize: 13,
     textAlign: 'center',
     marginTop: 4,
@@ -1574,30 +1586,30 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 1.5,
-    borderColor: '#555555',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
     zIndex: 2,
   },
 
   stepCircleActive: {
-    backgroundColor: '#00E5FF',
-    borderColor: '#00E5FF',
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
 
   stepNumber: {
-    color: '#888888',
+    color: colors.secondaryText,
     fontWeight: 'bold',
     fontSize: 13,
   },
 
   stepNumberActive: {
-    color: '#000000',
+    color: colors.text,
   },
 
   stepLabel: {
-    color: '#777777',
+    color: colors.secondaryText,
     fontSize: 10,
     textAlign: 'center',
     marginTop: 6,
@@ -1605,7 +1617,7 @@ const styles = StyleSheet.create({
   },
 
   stepLabelActive: {
-    color: '#00E5FF',
+    color: colors.accent,
     fontWeight: 'bold',
   },
 
@@ -1615,12 +1627,12 @@ const styles = StyleSheet.create({
     left: '50%',
     right: '-50%',
     height: 2,
-    backgroundColor: '#444444',
+    backgroundColor: colors.border,
     zIndex: 1,
   },
 
   stepConnectorActive: {
-    backgroundColor: '#00E5FF',
+    backgroundColor: colors.accent,
   },
 
   section: {
@@ -1635,14 +1647,14 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 13,
     marginLeft: 8,
   },
 
   sectionSubtitle: {
-    color: '#888888',
+    color: colors.secondaryText,
     fontSize: 12,
     marginBottom: 16,
   },
@@ -1658,9 +1670,10 @@ const styles = StyleSheet.create({
 
   inputWrapper: {
     flexDirection: 'row',
+    backgroundColor: colors.card,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1676,31 +1689,31 @@ const styles = StyleSheet.create({
   },
 
   inputLabel: {
-    color: '#999999',
+    color: colors.secondaryText,
     fontSize: 11,
   },
 
   input: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 13,
     paddingVertical: 2,
   },
 
   placeholderText: {
-    color: '#666666',
+    color: colors.secondaryText,
     fontSize: 13,
     paddingVertical: 2,
   },
 
   helperText: {
-    color: '#777777',
+    color: colors.secondaryText,
     fontSize: 11,
     marginTop: -10,
     marginBottom: 14,
   },
 
   unitText: {
-    color: '#00E5FF',
+    color: colors.accent,
     fontSize: 12,
   },
 
@@ -1708,23 +1721,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#00E5FF',
+    borderColor: colors.accent,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
 
   scanButtonText: {
-    color: '#00E5FF',
+    color: colors.accent,
     fontSize: 11,
     marginLeft: 4,
   },
 
   privacyBox: {
     flexDirection: 'row',
+    backgroundColor: colors.card,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#00E5FF',
+    borderColor: colors.accent,
     borderRadius: 8,
     padding: 12,
     marginTop: 6,
@@ -1737,13 +1751,13 @@ const styles = StyleSheet.create({
   },
 
   privacyTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 12,
     fontWeight: 'bold',
   },
 
   privacySubtitle: {
-    color: '#999999',
+    color: colors.secondaryText,
     fontSize: 11,
   },
 
@@ -1769,15 +1783,16 @@ const styles = StyleSheet.create({
   },
 
   requirementsBox: {
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 12,
     marginBottom: 20,
   },
 
   requirementsTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 12,
     fontWeight: 'bold',
     marginBottom: 8,
@@ -1790,7 +1805,7 @@ const styles = StyleSheet.create({
   },
 
   requirementText: {
-    color: '#AAAAAA',
+    color: colors.secondaryText,
     fontSize: 11,
     marginLeft: 8,
     flex: 1,
@@ -1798,28 +1813,28 @@ const styles = StyleSheet.create({
 
   smallButton: {
     borderWidth: 1,
-    borderColor: '#00E5FF',
+    borderColor: colors.accent,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
 
   smallButtonText: {
-    color: '#00E5FF',
+    color: colors.accent,
     fontSize: 11,
     fontWeight: 'bold',
   },
 
   smallButtonDisabled: {
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: colors.border,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
 
   smallButtonDisabledText: {
-    color: '#666666',
+    color: colors.secondaryText,
     fontSize: 11,
     fontWeight: 'bold',
   },
@@ -1837,35 +1852,36 @@ const styles = StyleSheet.create({
   },
 
   twoFATitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 11,
     fontWeight: 'bold',
   },
 
   twoFASubtitle: {
-    color: '#888888',
+    color: colors.secondaryText,
     fontSize: 11,
     marginTop: 2,
   },
 
   twoFAToggleRow: {
     flexDirection: 'row',
+    backgroundColor: colors.card,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
 
   twoFAToggleLabel: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 12,
     fontWeight: 'bold',
   },
 
   twoFAToggleSubtitle: {
-    color: '#888888',
+    color: colors.secondaryText,
     fontSize: 10,
     marginTop: 2,
   },
@@ -1877,14 +1893,14 @@ const styles = StyleSheet.create({
   },
 
   termsText: {
-    color: '#AAAAAA',
+    color: colors.secondaryText,
     fontSize: 11,
     marginLeft: 8,
     flex: 1,
   },
 
   termsLink: {
-    color: '#00E5FF',
+    color: colors.accent,
   },
 
   buttonRow: {
@@ -1895,7 +1911,7 @@ const styles = StyleSheet.create({
   backOutlineButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#00E5FF',
+    borderColor: colors.accent,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -1903,14 +1919,14 @@ const styles = StyleSheet.create({
   },
 
   backOutlineButtonText: {
-    color: '#00E5FF',
+    color: colors.accent,
     fontWeight: 'bold',
     fontSize: 13,
   },
 
   continueButton: {
     flex: 1,
-    backgroundColor: '#00E5FF',
+    backgroundColor: colors.accent,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -1921,7 +1937,7 @@ const styles = StyleSheet.create({
   },
 
   continueButtonText: {
-    color: '#000000',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 13,
   },
@@ -1937,12 +1953,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#444444',
+    backgroundColor: colors.border,
     marginHorizontal: 4,
   },
 
   dotActive: {
-    backgroundColor: '#00E5FF',
+    backgroundColor: colors.accent,
     width: 16,
   },
 
@@ -1952,13 +1968,14 @@ const styles = StyleSheet.create({
   },
 
   loginText: {
-    color: '#AAAAAA',
+    color: colors.secondaryText,
     fontSize: 12,
   },
 
   loginLink: {
-    color: '#00E5FF',
+    color: colors.accent,
     fontSize: 12,
     fontWeight: 'bold',
   },
-})
+  })
+}

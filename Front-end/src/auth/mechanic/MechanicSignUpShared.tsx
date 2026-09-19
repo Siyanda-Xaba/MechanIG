@@ -14,10 +14,19 @@ import {
   type ViewStyle,
 } from 'react-native'
 
-export const CYAN = '#00E5FF'
-export const BORDER = '#333333'
-export const MUTED = '#888888'
-export const GREEN = '#7CFF4F'
+import { darkColors } from '../../theme/colors'
+
+// Legacy export names are kept because the existing mechanic signup
+// screens import them. Their values now come from the shared theme.
+export const CYAN = darkColors.accent
+export const BORDER = darkColors.border
+export const MUTED = darkColors.secondaryText
+export const GREEN = darkColors.success
+
+const BACKGROUND = darkColors.background
+const CARD = darkColors.card
+const TEXT = darkColors.text
+const SECONDARY_TEXT = darkColors.secondaryText
 
 export type MechanicSignUpStep =
   | 1
@@ -77,7 +86,7 @@ export function FieldRow({
         <TextInput
           style={styles.fieldInput}
           placeholder={placeholder}
-          placeholderTextColor="#666666"
+          placeholderTextColor={SECONDARY_TEXT}
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
@@ -137,7 +146,7 @@ export function DropdownRow({
       <Ionicons
         name="chevron-down"
         size={18}
-        color="#888888"
+        color={MUTED}
       />
     </TouchableOpacity>
   )
@@ -162,7 +171,7 @@ export function UploadRow({
         <Ionicons
           name="document-text-outline"
           size={18}
-          color="#888888"
+          color={MUTED}
         />
       </View>
 
@@ -181,7 +190,7 @@ export function UploadRow({
       <Ionicons
         name="cloud-upload-outline"
         size={18}
-        color="#888888"
+        color={MUTED}
       />
     </TouchableOpacity>
   )
@@ -210,7 +219,7 @@ export function PasswordRow({
         <Ionicons
           name="lock-closed-outline"
           size={18}
-          color="#888888"
+          color={MUTED}
         />
       </View>
 
@@ -222,7 +231,7 @@ export function PasswordRow({
         <TextInput
           style={styles.fieldInput}
           placeholder={placeholder}
-          placeholderTextColor="#666666"
+          placeholderTextColor={SECONDARY_TEXT}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={!visible}
@@ -241,7 +250,7 @@ export function PasswordRow({
               : 'eye-outline'
           }
           size={20}
-          color="#888888"
+          color={MUTED}
         />
       </TouchableOpacity>
     </View>
@@ -343,7 +352,7 @@ export function SignUpHeader({
         <Ionicons
           name="arrow-back"
           size={24}
-          color="#FFFFFF"
+          color={TEXT}
         />
       </TouchableOpacity>
 
@@ -400,12 +409,12 @@ export function SignUpFooter({
 export const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: BACKGROUND,
   },
 
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: BACKGROUND,
   },
 
   scrollContent: {
@@ -432,7 +441,7 @@ export const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -440,7 +449,7 @@ export const styles = StyleSheet.create({
   },
 
   subtitle: {
-    color: '#AAAAAA',
+    color: SECONDARY_TEXT,
     fontSize: 13,
     textAlign: 'center',
     marginTop: 4,
@@ -464,10 +473,10 @@ export const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 1.5,
-    borderColor: '#555555',
+    borderColor: BORDER,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0D0D0D',
+    backgroundColor: BACKGROUND,
     zIndex: 2,
   },
 
@@ -477,17 +486,17 @@ export const styles = StyleSheet.create({
   },
 
   stepNumber: {
-    color: '#888888',
+    color: MUTED,
     fontWeight: 'bold',
     fontSize: 13,
   },
 
   stepNumberActive: {
-    color: '#000000',
+    color: TEXT,
   },
 
   stepLabel: {
-    color: '#777777',
+    color: MUTED,
     fontSize: 10,
     textAlign: 'center',
     marginTop: 6,
@@ -505,7 +514,7 @@ export const styles = StyleSheet.create({
     left: '50%',
     right: '-50%',
     height: 2,
-    backgroundColor: '#444444',
+    backgroundColor: BORDER,
     zIndex: 1,
   },
 
@@ -525,14 +534,14 @@ export const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontWeight: 'bold',
     fontSize: 13,
     marginLeft: 8,
   },
 
   sectionSubtitle: {
-    color: '#888888',
+    color: MUTED,
     fontSize: 12,
     marginBottom: 16,
   },
@@ -550,11 +559,12 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: BORDER,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 14,
+    backgroundColor: CARD,
   },
 
   fieldIcon: {
@@ -568,18 +578,18 @@ export const styles = StyleSheet.create({
   },
 
   fieldLabel: {
-    color: '#999999',
+    color: SECONDARY_TEXT,
     fontSize: 11,
   },
 
   fieldInput: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontSize: 13,
     paddingVertical: 2,
   },
 
   fieldPlaceholder: {
-    color: '#666666',
+    color: MUTED,
     fontSize: 13,
     paddingVertical: 2,
   },
@@ -607,17 +617,17 @@ export const styles = StyleSheet.create({
   dropdown: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: BORDER,
     borderRadius: 8,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0D0D0D',
+    backgroundColor: CARD,
   },
 
   dropdownSelectedText: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontSize: 13,
     flex: 1,
     marginRight: 10,
@@ -625,14 +635,15 @@ export const styles = StyleSheet.create({
 
   requirementsBox: {
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: BORDER,
     borderRadius: 8,
     padding: 12,
     marginBottom: 20,
+    backgroundColor: CARD,
   },
 
   requirementsTitle: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontSize: 12,
     fontWeight: 'bold',
     marginBottom: 8,
@@ -645,7 +656,7 @@ export const styles = StyleSheet.create({
   },
 
   requirementText: {
-    color: '#AAAAAA',
+    color: SECONDARY_TEXT,
     fontSize: 11,
     marginLeft: 8,
     flex: 1,
@@ -668,7 +679,7 @@ export const styles = StyleSheet.create({
   },
 
   verificationSubtext: {
-    color: '#888888',
+    color: MUTED,
     fontSize: 11,
     marginTop: 2,
   },
@@ -677,11 +688,12 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: BORDER,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 14,
+    backgroundColor: CARD,
   },
 
   verificationInputArea: {
@@ -705,14 +717,14 @@ export const styles = StyleSheet.create({
 
   verifyCodeButton: {
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: BORDER,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
 
   verifyCodeText: {
-    color: '#666666',
+    color: MUTED,
     fontSize: 11,
     fontWeight: 'bold',
   },
@@ -721,10 +733,11 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: BORDER,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    backgroundColor: CARD,
   },
 
   twoFactorTextArea: {
@@ -753,7 +766,7 @@ export const styles = StyleSheet.create({
 
   agreeText: {
     flex: 1,
-    color: '#AAAAAA',
+    color: SECONDARY_TEXT,
     fontSize: 11,
   },
 
@@ -777,7 +790,7 @@ export const styles = StyleSheet.create({
   },
 
   continueText: {
-    color: '#000000',
+    color: TEXT,
     fontSize: 13,
     fontWeight: 'bold',
   },
@@ -808,7 +821,7 @@ export const styles = StyleSheet.create({
   },
 
   footerText: {
-    color: '#AAAAAA',
+    color: SECONDARY_TEXT,
     fontSize: 12,
   },
 
@@ -830,7 +843,7 @@ export const styles = StyleSheet.create({
   dropdownModal: {
     width: '100%',
     maxHeight: '80%',
-    backgroundColor: '#0D0D0D',
+    backgroundColor: CARD,
     borderWidth: 1,
     borderColor: CYAN,
     borderRadius: 12,
@@ -838,7 +851,7 @@ export const styles = StyleSheet.create({
   },
 
   modalTitle: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
@@ -846,7 +859,7 @@ export const styles = StyleSheet.create({
   },
 
   modalSubtext: {
-    color: '#888888',
+    color: MUTED,
     fontSize: 11,
     textAlign: 'center',
     marginTop: -8,
@@ -856,7 +869,7 @@ export const styles = StyleSheet.create({
   dropdownOption: {
     minHeight: 46,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
+    borderBottomColor: BORDER,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -864,7 +877,7 @@ export const styles = StyleSheet.create({
   },
 
   dropdownOptionText: {
-    color: '#FFFFFF',
+    color: TEXT,
     fontSize: 13,
   },
 
@@ -878,7 +891,7 @@ export const styles = StyleSheet.create({
   },
 
   modalDoneText: {
-    color: '#000000',
+    color: TEXT,
     fontSize: 13,
     fontWeight: 'bold',
   },

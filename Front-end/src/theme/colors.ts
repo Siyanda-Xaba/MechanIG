@@ -1,17 +1,17 @@
 export const darkColors = {
-  background: '#000000',
-  card: '#010101',
+  background: '#071322',
+  card: '#0E1927',
 
-  text: '#FFFFFF',
-  secondaryText: '#BDBDBD',
+  text: '#F0F5F8',
+  secondaryText: '#B3BCCA',
 
-  accent: '#00E5FF',
-  highlight: '#01E2FE',
-  electricBlue: '#008CFF',
+  accent: '#1368DC',
+  highlight: '#1368DC',
+  electricBlue: '#1368DC',
 
-  border: '#333333',
+  border: '#1D2836',
 
-  success: '#7CFF4F',
+  success: '#A2C581',
   warning: '#FFB020',
   danger: '#FF3B30',
 }
