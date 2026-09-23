@@ -18,7 +18,13 @@ export default function Index() {
 import WelcomeScreen from './AuthenticationScreens/WelcomeScreen';
 import LoginScreen from './AuthenticationScreens/LoginScreen';
 import SignUp from './SignUpScreens/SignUp';
+import HomeScreen from './AdminScreens/HomeScreen';
+import MechanicScreen from './AdminScreens/MechanicScreen';
+import ProifleScreen from './AdminScreens/ProifleScreen';
+import UserScreen from './AdminScreens/UserScreen';
+import OperationsScreen from './AdminScreens/OperationsScreen';
+
 
 export default function Index() {
-  return <SignUp navigation={{ navigate: () => {} }} />;
+  return < OperationsScreen navigation={{ navigate: () => {} }} />;
 }
