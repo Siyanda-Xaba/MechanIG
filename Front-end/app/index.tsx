@@ -16,7 +16,9 @@ export default function Index() {
 */}
 // app/index.tsx — TEMPORARY, for previewing only
 import WelcomeScreen from './AuthenticationScreens/WelcomeScreen';
+import LoginScreen from './AuthenticationScreens/LoginScreen';
+import SignUp from './SignUpScreens/SignUp';
 
 export default function Index() {
-  return <WelcomeScreen navigation={{ navigate: () => {} }} />;
+  return <SignUp navigation={{ navigate: () => {} }} />;
 }

@@ -18,7 +18,7 @@ export default function WelcomeScreen({ navigation }) {
       {/* Logo + tagline */}
       <View style={styles.logoContainer}>
         <Image
-          source={require('../assets/images/MechanicIQLogo.jpeg')}
+          source={require('../../assets/images/MechanicIQLogo.jpeg')}
           style={styles.logo}
           resizeMode="contain"
         />
