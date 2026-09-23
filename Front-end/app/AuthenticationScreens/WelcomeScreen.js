@@ -75,7 +75,7 @@ export default function WelcomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E1E1E', // dark background to match the design
+    backgroundColor: '#0a0a0a', // dark background to match the design
     alignItems: 'center',
     paddingTop: 40,
     paddingHorizontal: 20,
