@@ -79,6 +79,26 @@ const developmentMechanicDiagnostics = [
   },
 ]
 
+function requireDiagnosticId(
+  diagnosticId
+) {
+  if (!diagnosticId) {
+    throw new Error(
+      'A valid diagnostic record is required.'
+    )
+  }
+}
+
+function requireSessionId(
+  sessionId
+) {
+  if (!sessionId) {
+    throw new Error(
+      'A valid diagnostic session is required.'
+    )
+  }
+}
+
 /**
  * Later this function will load diagnostic records
  * assigned to the authenticated mechanic from the
@@ -123,4 +143,137 @@ export async function getMechanicDiagnosticsData() {
           'completed'
       ).length,
   }
+}
+
+/**
+ * Starts a mechanic-performed diagnostic session.
+ *
+ * This is backend-owned because the session must
+ * remain linked to the authoritative mechanic,
+ * customer, vehicle, job and/or booking records.
+ *
+ * @param {{
+ *   diagnosticId: string,
+ *   mode: import('./diagnosticsTypes').MechanicDiagnosticMode
+ * }} input
+ *
+ * @returns {Promise<import('./diagnosticsTypes').MechanicDiagnosticSession>}
+ */
+export async function startMechanicDiagnosticSession(
+  input
+) {
+  requireDiagnosticId(
+    input?.diagnosticId
+  )
+
+  if (!input?.mode) {
+    throw new Error(
+      'Choose a diagnostic mode before starting.'
+    )
+  }
+
+  // Later:
+  // POST /mechanic/diagnostics/:diagnosticId/sessions
+  //
+  // Backend responsibilities:
+  // - confirm the authenticated mechanic has access
+  // - confirm the diagnostic/customer/vehicle linkage
+  // - create the authoritative session ID
+  // - record the selected diagnostic mode
+  // - return the created session
+  //
+  // Do not fabricate a production session locally.
+
+  throw new Error(
+    'Starting a diagnostic session is not available until the mechanic diagnostics backend is connected.'
+  )
+}
+
+/**
+ * Adds a mechanic-entered inspection finding.
+ *
+ * Manual findings are not OBD values. They must
+ * remain clearly separate from authoritative vehicle
+ * readings and diagnostic trouble codes.
+ *
+ * @param {{
+ *   sessionId: string,
+ *   title: string,
+ *   description?: string | null,
+ *   severity: import('./diagnosticsTypes').MechanicDiagnosticSeverity
+ * }} input
+ */
+export async function addMechanicDiagnosticFinding(
+  input
+) {
+  requireSessionId(
+    input?.sessionId
+  )
+
+  if (!input?.title?.trim()) {
+    throw new Error(
+      'A finding title is required.'
+    )
+  }
+
+  if (!input?.severity) {
+    throw new Error(
+      'A finding severity is required.'
+    )
+  }
+
+  // Later:
+  // POST /mechanic/diagnostic-sessions/:sessionId/findings
+  //
+  // Backend responsibilities:
+  // - validate session ownership/status
+  // - persist the mechanic-entered finding
+  // - timestamp and return the authoritative finding
+  //
+  // This endpoint must never be used for OBD readings
+  // or DTCs.
+
+  throw new Error(
+    'Saving diagnostic findings is not available until the mechanic diagnostics backend is connected.'
+  )
+}
+
+/**
+ * Completes an active mechanic diagnostic session.
+ *
+ * @param {{
+ *   sessionId: string,
+ *   mechanicSummary: string
+ * }} input
+ */
+export async function completeMechanicDiagnosticSession(
+  input
+) {
+  requireSessionId(
+    input?.sessionId
+  )
+
+  if (
+    !input?.mechanicSummary?.trim()
+  ) {
+    throw new Error(
+      'A mechanic summary is required before completing the diagnostic.'
+    )
+  }
+
+  // Later:
+  // POST /mechanic/diagnostic-sessions/:sessionId/complete
+  //
+  // Backend responsibilities:
+  // - validate the session can be completed
+  // - persist the mechanic summary
+  // - preserve authoritative OBD readings/DTCs
+  // - mark the diagnostic/session complete
+  // - update the linked customer/job records
+  // - notify the customer where appropriate
+  // - return the authoritative completed session
+
+  throw new Error(
+    'Completing a diagnostic session is not available until the mechanic diagnostics backend is connected.'
+  )
 }

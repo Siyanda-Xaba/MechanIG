@@ -2,6 +2,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import {
   ActivityIndicator,
@@ -27,6 +28,7 @@ const diagnosticFilters = [
 ]
 
 export default function MechanicDiagnostics() {
+  const router = useRouter()
   const { colors } = useTheme()
 
   const {
@@ -117,7 +119,7 @@ export default function MechanicDiagnostics() {
                 },
               ]}
             >
-              Review assigned vehicle diagnostics
+              Perform and review vehicle diagnostics
             </Text>
           </View>
 
@@ -412,6 +414,16 @@ export default function MechanicDiagnostics() {
                   key={diagnostic.id}
                   diagnostic={diagnostic}
                   colors={colors}
+                  onOpenWorkspace={() => {
+                    router.push({
+                      pathname:
+                        '/mechanic-diagnostic/[diagnosticId]',
+                      params: {
+                        diagnosticId:
+                          diagnostic.id,
+                      },
+                    })
+                  }}
                 />
               )
             )}
@@ -425,6 +437,7 @@ export default function MechanicDiagnostics() {
 function DiagnosticCard({
   diagnostic,
   colors,
+  onOpenWorkspace,
 }) {
   const severityColor =
     getSeverityColor(
@@ -705,6 +718,38 @@ function DiagnosticCard({
             </Text>
           </View>
         </>
+      ) : null}
+
+      {diagnostic.status !==
+      MECHANIC_DIAGNOSTIC_STATUSES.COMPLETED ? (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onOpenWorkspace}
+          style={[
+            styles.workspaceButton,
+            {
+              backgroundColor:
+                colors.accent,
+            },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="stethoscope"
+            size={18}
+            color="#FFFFFF"
+          />
+
+          <Text
+            style={
+              styles.workspaceButtonText
+            }
+          >
+            {diagnostic.status ===
+            MECHANIC_DIAGNOSTIC_STATUSES.IN_REVIEW
+              ? 'Continue Diagnostic'
+              : 'Perform Diagnostic'}
+          </Text>
+        </TouchableOpacity>
       ) : null}
     </View>
   )
@@ -1151,5 +1196,21 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12.5,
     lineHeight: 18,
+  },
+
+  workspaceButton: {
+    minHeight: 44,
+    marginTop: 16,
+    borderRadius: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  workspaceButtonText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
 })
