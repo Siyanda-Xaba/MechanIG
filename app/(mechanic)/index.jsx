@@ -5,6 +5,7 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
+  Alert,
   Image,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import ProfileAvatar from '../../src/components/ProfileAvatar'
 import StableScrollView from '../../src/components/StableScrollView'
 import { useMechanicHome } from '../../src/mechanic/MechanicHomeContext'
+import { useMechanicNotifications } from '../../src/mechanic/useMechanicNotifications'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useUser } from '../../src/users/UserContext'
 
@@ -35,8 +37,25 @@ export default function MechanicHome() {
     refreshHomeData,
   } = useMechanicHome()
 
+  const {
+    notificationsData,
+  } = useMechanicNotifications()
+
   const firstName =
     user?.firstName ?? 'Mechanic'
+
+  const unreadNotificationCount =
+    notificationsData?.unreadCount ?? 0
+
+  function showBackendActionNotice(
+    title,
+    message
+  ) {
+    Alert.alert(
+      title,
+      message
+    )
+  }
 
   function formatEarnings() {
     if (!homeData?.earnings) {
@@ -104,6 +123,56 @@ export default function MechanicHome() {
                   : firstName}
               </Text>
             </View>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => {
+                router.push(
+                  '/notifications'
+                )
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Open notifications"
+              style={[
+                styles.notificationButton,
+                {
+                  backgroundColor:
+                    colors.card,
+                  borderColor:
+                    colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={21}
+                color={colors.accent}
+              />
+
+              {unreadNotificationCount >
+              0 ? (
+                <View
+                  style={[
+                    styles.notificationBadge,
+                    {
+                      backgroundColor:
+                        colors.accent,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={
+                      styles.notificationBadgeText
+                    }
+                  >
+                    {unreadNotificationCount >
+                    9
+                      ? '9+'
+                      : unreadNotificationCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.75}
@@ -405,12 +474,13 @@ export default function MechanicHome() {
               }
             >
               <MechanicQuickAction
-                icon="briefcase-outline"
-                title="View Jobs"
-                description="Manage assigned jobs"
+                icon="calendar-plus"
+                title="New Booking"
+                description="Create workshop or mobile service booking"
                 onPress={() => {
-                  router.push(
-                    '/(mechanic)/jobs'
+                  showBackendActionNotice(
+                    'New Booking',
+                    'Booking creation will be enabled when customer selection, scheduling, service location and backend booking contracts are connected. MechanIQ will not create a fake booking locally.'
                   )
                 }}
                 backgroundColor={
@@ -429,12 +499,13 @@ export default function MechanicHome() {
               />
 
               <MechanicQuickAction
-                icon="engine-outline"
-                title="Diagnostics"
-                description="Review vehicle diagnostics"
+                icon="calendar-clock-outline"
+                title="Update Availability"
+                description="Manage when you can take new work"
                 onPress={() => {
-                  router.push(
-                    '/(mechanic)/diagnostics'
+                  showBackendActionNotice(
+                    'Update Availability',
+                    'Availability changes will be enabled when the mechanic availability backend is connected. MechanIQ will not simulate availability changes locally.'
                   )
                 }}
                 backgroundColor={
@@ -453,12 +524,13 @@ export default function MechanicHome() {
               />
 
               <MechanicQuickAction
-                icon="account-group-outline"
-                title="Customers"
-                description="View customer records"
+                icon="clipboard-text-outline"
+                title="Create Estimate"
+                description="Prepare pricing for linked service work"
                 onPress={() => {
-                  router.push(
-                    '/(mechanic)/customers'
+                  showBackendActionNotice(
+                    'Create Estimate',
+                    'Estimate creation will be enabled when job-linked pricing and customer approval contracts are connected to the MechanIQ backend.'
                   )
                 }}
                 backgroundColor={
@@ -477,12 +549,13 @@ export default function MechanicHome() {
               />
 
               <MechanicQuickAction
-                icon="account-cog-outline"
-                title="Profile"
-                description="Manage workshop details"
+                icon="clipboard-plus-outline"
+                title="Add Walk-in Job"
+                description="Start intake for unscheduled workshop work"
                 onPress={() => {
-                  router.push(
-                    '/(mechanic)/profile'
+                  showBackendActionNotice(
+                    'Add Walk-in Job',
+                    'Walk-in job intake will be enabled when customer and vehicle lookup, service intake and mechanic job creation are connected to the MechanIQ backend. MechanIQ will not invent customer or vehicle records locally.'
                   )
                 }}
                 backgroundColor={
@@ -1242,6 +1315,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '800',
   },
 
   greetingContainer: {
