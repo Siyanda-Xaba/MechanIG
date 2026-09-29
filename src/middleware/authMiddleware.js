@@ -1,4 +1,4 @@
-import { store } from "../data/store.js";
+import { getUserByToken } from "../services/authService.js";
 
 export default function authMiddleware(req, res, next) {
   try {
@@ -20,30 +20,15 @@ export default function authMiddleware(req, res, next) {
       });
     }
 
-    const session = store.sessions.get(token);
-
-    if (!session) {
+    const user = getUserByToken(token);
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: "Invalid or expired authentication token",
       });
     }
 
-    const user = store.users.get(session.userId);
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User associated with this session was not found",
-      });
-    }
-
-    // Make authenticated user available to controllers
     req.user = user;
-
-    // Also make the session available if needed
-    req.session = session;
-
     next();
   } catch (error) {
     next(error);

@@ -1,5 +1,9 @@
 # MechanIQ live tracking
 
+## Firebase setup
+
+The backend now uses **Firebase Authentication** and **Cloud Firestore**; Prisma is no longer a dependency. Create a Firebase service account in the Firebase Console and use one of the credential options in `.env.example`. Do not put the JSON service-account file in the repository. Firebase Authentication email/password must be enabled in the Firebase Console.
+
 The backend provides a single live-tracking contract for browser React and React Native clients. Both platforms can use `socket.io-client`; React Native needs no browser-only APIs for this feature.
 
 ## HTTP snapshot API
