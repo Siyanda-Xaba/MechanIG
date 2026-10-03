@@ -503,9 +503,8 @@ export default function MechanicHome() {
                 title="Update Availability"
                 description="Manage when you can take new work"
                 onPress={() => {
-                  showBackendActionNotice(
-                    'Update Availability',
-                    'Availability changes will be enabled when the mechanic availability backend is connected. MechanIQ will not simulate availability changes locally.'
+                  router.push(
+                    '/mechanic-availability'
                   )
                 }}
                 backgroundColor={
