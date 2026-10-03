@@ -526,9 +526,8 @@ export default function MechanicHome() {
                 title="Create Estimate"
                 description="Prepare pricing for linked service work"
                 onPress={() => {
-                  showBackendActionNotice(
-                    'Create Estimate',
-                    'Estimate creation will be enabled when job-linked pricing and customer approval contracts are connected to the MechanIQ backend.'
+                  router.push(
+                    '/mechanic-estimate'
                   )
                 }}
                 backgroundColor={
