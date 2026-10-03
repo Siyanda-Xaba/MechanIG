@@ -5,7 +5,6 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  Alert,
   Image,
   StyleSheet,
   Text,
@@ -46,16 +45,6 @@ export default function MechanicHome() {
 
   const unreadNotificationCount =
     notificationsData?.unreadCount ?? 0
-
-  function showBackendActionNotice(
-    title,
-    message
-  ) {
-    Alert.alert(
-      title,
-      message
-    )
-  }
 
   function formatEarnings() {
     if (!homeData?.earnings) {
@@ -550,9 +539,8 @@ export default function MechanicHome() {
                 title="Add Walk-in Job"
                 description="Start intake for unscheduled workshop work"
                 onPress={() => {
-                  showBackendActionNotice(
-                    'Add Walk-in Job',
-                    'Walk-in job intake will be enabled when customer and vehicle lookup, service intake and mechanic job creation are connected to the MechanIQ backend. MechanIQ will not invent customer or vehicle records locally.'
+                  router.push(
+                    '/mechanic-walk-in'
                   )
                 }}
                 backgroundColor={
