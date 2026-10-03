@@ -478,9 +478,8 @@ export default function MechanicHome() {
                 title="New Booking"
                 description="Create workshop or mobile service booking"
                 onPress={() => {
-                  showBackendActionNotice(
-                    'New Booking',
-                    'Booking creation will be enabled when customer selection, scheduling, service location and backend booking contracts are connected. MechanIQ will not create a fake booking locally.'
+                  router.push(
+                    '/mechanic-new-booking'
                   )
                 }}
                 backgroundColor={
