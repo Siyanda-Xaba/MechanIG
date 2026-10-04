@@ -24,10 +24,15 @@ const developmentMechanicJobs = [
     serviceLocationType: 'mobile',
 
     serviceLocation: {
-      label: 'Customer Location',
-      address: null,
-      latitude: null,
-      longitude: null,
+      label: 'Development Test Location',
+
+      // Development-only public location used to
+      // exercise map/navigation UI before backend
+      // service locations are connected.
+      address:
+        'V&A Waterfront, Cape Town, South Africa',
+      latitude: -33.9023639,
+      longitude: 18.4242444,
     },
 
     status: 'accepted',
@@ -44,6 +49,7 @@ const developmentMechanicJobs = [
 
     allowedActions: [
       'start-trip',
+      'open-map',
     ],
 
     priority: 'normal',
@@ -231,7 +237,8 @@ const developmentMechanicJobs = [
     diagnosticId: null,
 
     customerName: 'Customer',
-    vehicleLabel: 'Mercedes-Benz C-Class',
+    vehicleLabel:
+      'Mercedes-Benz C-Class',
 
     serviceType: 'Vehicle Service',
 

@@ -9,6 +9,7 @@ import {
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -202,6 +203,53 @@ export default function MechanicJobs() {
           ]
         )
         return
+
+      case MECHANIC_JOB_ACTIONS.OPEN_MAP: {
+        const latitude =
+          job.serviceLocation?.latitude
+
+        const longitude =
+          job.serviceLocation?.longitude
+
+        const hasCoordinates =
+          Number.isFinite(latitude) &&
+          Number.isFinite(longitude)
+
+        const address =
+          job.serviceLocation?.address
+            ?.trim() ?? ''
+
+        if (
+          !hasCoordinates &&
+          !address
+        ) {
+          Alert.alert(
+            'Location unavailable',
+            'A validated service address or coordinates are required before this job can be opened in Maps.'
+          )
+          return
+        }
+
+        const destination =
+          hasCoordinates
+            ? `${latitude},${longitude}`
+            : address
+
+        const mapUrl =
+          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            destination
+          )}`
+
+        Linking.openURL(mapUrl).catch(
+          () => {
+            Alert.alert(
+              'Unable to open Maps',
+              'The service location could not be opened on this device.'
+            )
+          }
+        )
+        return
+      }
 
       case MECHANIC_JOB_ACTIONS.MARK_ARRIVED:
         Alert.alert(
