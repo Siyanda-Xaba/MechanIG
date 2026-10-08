@@ -2,6 +2,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import {
   useMemo,
   useState,
@@ -41,6 +42,7 @@ const customerFilterLabels = {
 
 export default function MechanicCustomers() {
   const { colors } = useTheme()
+  const router = useRouter()
 
   const {
     customersData,
@@ -261,6 +263,62 @@ export default function MechanicCustomers() {
             colors={colors}
           />
         </View>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Open customer messages"
+          onPress={() => {
+            router.push('/mechanic-messages')
+          }}
+          style={[
+            styles.messagesEntry,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.messagesEntryIcon,
+              {
+                backgroundColor: `${colors.accent}18`,
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="message-text-outline"
+              size={23}
+              color={colors.accent}
+            />
+          </View>
+
+          <View style={styles.messagesEntryContent}>
+            <Text
+              style={[
+                styles.messagesEntryTitle,
+                { color: colors.text },
+              ]}
+            >
+              Messages
+            </Text>
+            <Text
+              style={[
+                styles.messagesEntrySubtitle,
+                { color: colors.secondaryText },
+              ]}
+            >
+              View customer conversations
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={colors.secondaryText}
+          />
+        </TouchableOpacity>
 
         <View
           style={[
@@ -1077,6 +1135,40 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     fontWeight: '600',
     textAlign: 'center',
+  },
+
+  messagesEntry: {
+    minHeight: 70,
+    borderWidth: 1,
+    borderRadius: 15,
+    paddingHorizontal: 13,
+    paddingVertical: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  messagesEntryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  messagesEntryContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  messagesEntryTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  messagesEntrySubtitle: {
+    marginTop: 4,
+    fontSize: 11,
   },
 
   searchContainer: {
