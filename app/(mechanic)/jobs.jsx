@@ -2,6 +2,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import {
   useMemo,
   useState,
@@ -36,6 +37,7 @@ const jobFilters = [
 
 export default function MechanicJobs() {
   const { colors } = useTheme()
+  const router = useRouter()
 
   const {
     jobsData,
@@ -110,6 +112,15 @@ export default function MechanicJobs() {
     await performJobAction({
       jobId: job.id,
       action,
+    })
+  }
+
+  function handleCreateEstimate(job) {
+    router.push({
+      pathname: '/mechanic-estimate',
+      params: {
+        jobId: job.id,
+      },
     })
   }
 
@@ -658,6 +669,9 @@ export default function MechanicJobs() {
                   onJobAction={
                     handleJobAction
                   }
+                  onCreateEstimate={
+                    handleCreateEstimate
+                  }
                 />
               )
             )}
@@ -674,6 +688,7 @@ function JobCard({
   isLoadingLocation,
   isJobActionInProgress,
   onJobAction,
+  onCreateEstimate,
 }) {
   const statusColor =
     getStatusColor(
@@ -693,6 +708,12 @@ function JobCard({
   const isMobileJob =
     job.serviceLocationType ===
     'mobile'
+
+  const canCreateEstimate = [
+    'pending',
+    'accepted',
+    'in-progress',
+  ].includes(job.status)
 
   return (
     <View
@@ -925,7 +946,8 @@ function JobCard({
       ) : null}
 
       {allowedActions.length >
-      0 ? (
+        0 ||
+      canCreateEstimate ? (
         <View
           style={
             styles.actionsContainer
@@ -958,6 +980,42 @@ function JobCard({
               )
             }
           )}
+
+          {canCreateEstimate ? (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                onCreateEstimate(job)
+              }
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor:
+                    'transparent',
+                  borderColor:
+                    colors.accent,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="file-document-edit-outline"
+                size={18}
+                color={colors.accent}
+              />
+
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  {
+                    color:
+                      colors.accent,
+                  },
+                ]}
+              >
+                Create Estimate
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : null}
     </View>

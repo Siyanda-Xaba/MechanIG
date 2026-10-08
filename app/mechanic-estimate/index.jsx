@@ -2,8 +2,12 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
 import {
+  useLocalSearchParams,
+  useRouter,
+} from 'expo-router'
+import {
+  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -151,6 +155,15 @@ export default function MechanicEstimateScreen() {
     useRouter()
 
   const {
+    jobId: routeJobId,
+  } = useLocalSearchParams()
+
+  const normalizedRouteJobId =
+    Array.isArray(routeJobId)
+      ? routeJobId[0]
+      : routeJobId
+
+  const {
     colors,
   } = useTheme()
 
@@ -220,6 +233,43 @@ export default function MechanicEstimateScreen() {
         ),
       [jobs]
     )
+
+  useEffect(() => {
+    if (!normalizedRouteJobId) {
+      return
+    }
+
+    const routeJob =
+      eligibleJobs.find(
+        (job) =>
+          job.id ===
+          normalizedRouteJobId
+      )
+
+    if (!routeJob) {
+      return
+    }
+
+    setSelectedJobId(
+      (currentJobId) =>
+        currentJobId === routeJob.id
+          ? currentJobId
+          : routeJob.id
+    )
+
+    if (routeJob.currency) {
+      setCurrency(
+        (currentCurrency) =>
+          currentCurrency ===
+          routeJob.currency
+            ? currentCurrency
+            : routeJob.currency
+      )
+    }
+  }, [
+    eligibleJobs,
+    normalizedRouteJobId,
+  ])
 
   const selectedJob =
     useMemo(
