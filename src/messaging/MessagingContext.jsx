@@ -29,6 +29,10 @@ import {
 } from './messagingOutboxSync'
 
 import {
+  subscribeMessagingLiveUpdates,
+} from './messagingLiveUpdates'
+
+import {
   getMessagingConversations,
   getMessagingMessages,
   openMessagingConversation,
@@ -143,12 +147,20 @@ export function MessagingProvider({
   const messageRequestRef =
     useRef(0)
 
+  // Live refresh never replaces a conversation's initial load.
+  // Refs keep background polling callbacks pointed at the active chat
+  // without resubscribing on every screen render.
+  const activeConversationIdRef = useRef(null)
+  const loadedConversationIdRef = useRef(null)
+
   const outboxRequestRef = useRef(0)
   const outboxSyncOperationRef = useRef(0)
 
   const resetMessagingState =
     useCallback(() => {
       messageRequestRef.current += 1
+      activeConversationIdRef.current = null
+      loadedConversationIdRef.current = null
       outboxRequestRef.current += 1
       outboxSyncOperationRef.current += 1
 
@@ -547,6 +559,11 @@ export function MessagingProvider({
       const requestId =
         ++messageRequestRef.current
 
+      // A new load owns the initial page. Background refreshes must not
+      // populate an earlier chat or interrupt this loading state.
+      activeConversationIdRef.current = conversationId
+      loadedConversationIdRef.current = null
+
       try {
         setActiveConversationId(
           conversationId
@@ -574,6 +591,7 @@ export function MessagingProvider({
           return null
         }
 
+        loadedConversationIdRef.current = conversationId
         setMessagesPage(data)
 
         return data
@@ -606,6 +624,99 @@ export function MessagingProvider({
         }
       }
     }, [])
+
+  // Read-only foreground polling. The backend remains authoritative;
+  // these callbacks never create messages or delivery acknowledgments.
+  // Updates are applied silently so an open chat does not flicker into
+  // a loading state every time the polling interval runs.
+  useEffect(() => {
+    const unsubscribe = subscribeMessagingLiveUpdates({
+      getActiveConversationId: () => {
+        const conversationId = activeConversationIdRef.current
+
+        // Wait for the initial fetch before asking for live updates.
+        return conversationId &&
+          loadedConversationIdRef.current === conversationId
+          ? conversationId
+          : null
+      },
+      onConversations: (data) => {
+        const accountId = auth.currentUser?.uid
+
+        if (
+          !accountId ||
+          data.conversations.some(
+            (conversation) =>
+              conversation.customerUserId !== accountId &&
+              conversation.mechanicUserId !== accountId
+          )
+        ) {
+          return
+        }
+
+        setConversationsData(data)
+        setConversationsError(null)
+      },
+      onMessages: (conversationId, latestPage) => {
+        if (
+          !auth.currentUser?.uid ||
+          activeConversationIdRef.current !== conversationId ||
+          loadedConversationIdRef.current !== conversationId
+        ) {
+          return
+        }
+
+        setMessagesPage((currentPage) => {
+          if (
+            !currentPage ||
+            activeConversationIdRef.current !== conversationId ||
+            loadedConversationIdRef.current !== conversationId
+          ) {
+            return currentPage
+          }
+
+          // Merge by authoritative message ID. Preserve any previously
+          // loaded older messages and the pagination cursor while updating
+          // delivery/read statuses from the latest backend records.
+          const messagesById = new Map(
+            currentPage.messages.map(
+              (message) => [message.id, message]
+            )
+          )
+
+          for (const message of latestPage.messages) {
+            messagesById.set(message.id, message)
+          }
+
+          const mergedMessages = Array.from(messagesById.values())
+            .sort((left, right) => {
+              const leftTime = Date.parse(left.createdAt)
+              const rightTime = Date.parse(right.createdAt)
+
+              if (Number.isNaN(leftTime) || Number.isNaN(rightTime)) {
+                return left.id.localeCompare(right.id)
+              }
+
+              return leftTime - rightTime || left.id.localeCompare(right.id)
+            })
+
+          return {
+            ...currentPage,
+            messages: mergedMessages,
+          }
+        })
+
+        setMessagesError(null)
+      },
+      onError: () => {
+        // A background refresh failure must not discard previously
+        // confirmed messages. Explicit screen loads retain their
+        // existing loading/error/retry behavior.
+      },
+    })
+
+    return unsubscribe
+  }, [])
 
   const openConversation =
     useCallback(async (input) => {
