@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import StableScrollView from '../../src/components/StableScrollView';
 import { useMechanicRequest } from '../../src/customer/useMechanicRequest';
+import { SERVICE_REQUEST_STATUS_LABELS } from '../../src/serviceRequests/serviceTrackingTypes';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useUser } from '../../src/users/UserContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
@@ -54,6 +55,17 @@ export default function MechanicRequestScreen() {
             issueDescription: issueDescription.trim() || null,
         });
     };
+    // A backend-confirmed request reference is required before we expose tracking.
+    // Do not assume a newly created request is still pending: use the returned status.
+    const confirmedRequestId = typeof mechanicRequest?.id === 'string' &&
+        mechanicRequest.id.trim().length > 0
+        ? mechanicRequest.id.trim()
+        : null;
+    const rawRequestStatus = mechanicRequest?.requestStatus ?? mechanicRequest?.status;
+    const confirmedStatusLabel = SERVICE_REQUEST_STATUS_LABELS[rawRequestStatus] ??
+        'Status unavailable';
+    const isClosedRequest = rawRequestStatus === 'rejected' ||
+        rawRequestStatus === 'cancelled';
     if (mechanicRequest) {
         return (_jsxs(SafeAreaView, { style: [
                 styles.centeredPage,
@@ -75,7 +87,7 @@ export default function MechanicRequestScreen() {
                         {
                             color: colors.secondaryText,
                         },
-                    ], children: "Your mechanic request has been created and is awaiting confirmation." }), _jsxs(View, { style: [
+                    ], children: "Your mechanic request was received. Track it to see confirmed updates." }), _jsxs(View, { style: [
                         styles.statusCard,
                         {
                             backgroundColor: colors.card,
@@ -89,19 +101,30 @@ export default function MechanicRequestScreen() {
                             ], children: "Request Status" }), _jsx(Text, { style: [
                                 styles.statusValue,
                                 {
-                                    color: colors.warning,
+                                    color: isClosedRequest ? colors.danger : colors.text,
                                 },
-                            ], children: "Pending" }), _jsx(Text, { style: [
+                            ], children: confirmedStatusLabel }), _jsx(Text, { style: [
                                 styles.requestId,
                                 {
                                     color: colors.secondaryText,
                                 },
-                            ], children: mechanicRequest.id })] }), _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.replace('/(customer)'), style: [
+                            ], children: confirmedRequestId ?? 'Request reference unavailable' })] }), confirmedRequestId ? (_jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.push({
+                        pathname: '/service-tracking/[requestId]',
+                        params: { requestId: confirmedRequestId },
+                    }), style: [
                         styles.doneButton,
                         {
                             backgroundColor: colors.accent,
                         },
-                    ], children: _jsx(Text, { style: styles.doneButtonText, children: "Back to Home" }) })] }));
+                    ], children: [_jsx(MaterialCommunityIcons, { name: "map-marker-path", size: 18, color: "#000000" }), _jsx(Text, { style: styles.doneButtonText, children: "Track Service" })] })) : null, _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.replace('/(customer)'), style: [
+                        styles.backHomeButton,
+                        {
+                            borderColor: colors.border,
+                        },
+                    ], children: _jsx(Text, { style: [
+                            styles.doneButtonText,
+                            { color: colors.text },
+                        ], children: "Back to Home" }) })] }));
     }
     return (_jsx(SafeAreaView, { style: [
             styles.safeArea,
@@ -448,12 +471,24 @@ const styles = StyleSheet.create({
         minHeight: 46,
         marginTop: 18,
         borderRadius: 10,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 8,
     },
     doneButtonText: {
         color: '#000000',
         fontSize: 12,
         fontWeight: '800',
+    },
+    backHomeButton: {
+        width: '100%',
+        maxWidth: 320,
+        minHeight: 46,
+        marginTop: 10,
+        borderWidth: 1,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
