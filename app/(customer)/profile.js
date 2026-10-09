@@ -30,7 +30,14 @@ export default function CustomerProfile() {
         ? `${user.firstName} ${user.lastName}`.trim()
         : 'Driver';
     const quickActions = profileData?.quickActions ?? [];
-    const settings = profileData?.settings ?? [];
+    const settings = [
+        {
+            id: 'messages',
+            title: 'Messages',
+            description: 'Chat with mechanics about your services and bookings.',
+        },
+        ...(profileData?.settings ?? []).filter((setting) => setting.id !== 'messages'),
+    ];
     const recentActivity = profileData?.recentActivity ?? [];
     function handleProfileImagePress() {
         clearProfileImageError();
@@ -63,6 +70,9 @@ export default function CustomerProfile() {
         switch (setting.id) {
             case 'personal-information':
                 router.push('/personal-information');
+                return;
+            case 'messages':
+                router.push('/customer-messages');
                 return;
             case 'notifications':
                 router.push('/notification-preferences');
@@ -388,6 +398,8 @@ function getSettingIcon(id) {
     switch (id) {
         case 'personal-information':
             return 'account-outline';
+        case 'messages':
+            return 'message-text-outline';
         case 'notifications':
             return 'bell-outline';
         case 'security':
