@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import { fetchMarketplaceJson, MARKETPLACE_REQUEST_TIMEOUTS } from './marketplaceRequest';
 
 const MARKETPLACE_ACTIVITY_KEY = 'mechaniq-marketplace-activity';
 const developmentMarketplaceData = {
@@ -11,6 +12,7 @@ const developmentMarketplaceData = {
         'Tyres',
         'Fluids',
     ],
+    // Development display products: compatibility is unknown until verified.
     recommendedProducts: [
         {
             id: 'product-001',
@@ -21,7 +23,7 @@ const developmentMarketplaceData = {
             rating: 4.7,
             reviewCount: 128,
             imageUrl: null,
-            compatibleWithSelectedVehicle: true,
+            compatibleWithSelectedVehicle: null,
             sellerId: null,
         },
         {
@@ -33,7 +35,7 @@ const developmentMarketplaceData = {
             rating: 4.8,
             reviewCount: 96,
             imageUrl: null,
-            compatibleWithSelectedVehicle: true,
+            compatibleWithSelectedVehicle: null,
             sellerId: null,
         },
         {
@@ -45,7 +47,7 @@ const developmentMarketplaceData = {
             rating: 4.8,
             reviewCount: 72,
             imageUrl: null,
-            compatibleWithSelectedVehicle: true,
+            compatibleWithSelectedVehicle: null,
             sellerId: null,
         },
         {
@@ -57,7 +59,7 @@ const developmentMarketplaceData = {
             rating: 4.6,
             reviewCount: 63,
             imageUrl: null,
-            compatibleWithSelectedVehicle: true,
+            compatibleWithSelectedVehicle: null,
             sellerId: null,
         },
     ],
@@ -115,11 +117,14 @@ async function getLiveNearbyStores() {
     if (!permission.granted) return [];
     const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const { getPictureSearchEndpoint } = await import('../config/pictureSearchApi');
-    const response = await fetch(getPictureSearchEndpoint('/api/v1/nearby-stores'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
-    });
-    const payload = await response.json().catch(() => null);
+    const { response, payload } = await fetchMarketplaceJson(
+        getPictureSearchEndpoint('/api/v1/nearby-stores'),
+        {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+        },
+        MARKETPLACE_REQUEST_TIMEOUTS.NEARBY_STORES
+    );
     if (!response.ok) throw new Error(payload?.error || 'Nearby stores could not be loaded.');
     return payload.stores || [];
 }
@@ -206,11 +211,14 @@ export async function recognizeMarketplacePart(picture, vehicle) {
     formData.append('model', vehicle?.model || '');
     formData.append('year', String(vehicle?.year || ''));
     formData.append('engine', vehicle?.engineSize || '');
-    const response = await fetch(getPictureSearchEndpoint('/api/v1/part-searches'), {
-        method: 'POST',
-        body: formData,
-    });
-    const payload = await response.json().catch(() => null);
+    const { response, payload } = await fetchMarketplaceJson(
+        getPictureSearchEndpoint('/api/v1/part-searches'),
+        {
+            method: 'POST',
+            body: formData,
+        },
+        MARKETPLACE_REQUEST_TIMEOUTS.PICTURE_RECOGNITION
+    );
     if (!response.ok) {
         throw new Error(payload?.error || 'Picture search could not be completed.');
     }
@@ -228,32 +236,38 @@ export async function recognizeMarketplacePart(picture, vehicle) {
 export async function checkMarketplacePartCompatibility(input) {
     const { getPictureSearchEndpoint } = await import('../config/pictureSearchApi');
     const vehicle = input.vehicle || {};
-    const response = await fetch(getPictureSearchEndpoint('/api/v1/part-searches/offers'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            partName: input.confirmedPartName,
-            make: vehicle.make || '',
-            model: vehicle.model || '',
-            year: String(vehicle.year || ''),
-            engine: vehicle.engineSize || '',
-        }),
-    });
-    const payload = await response.json().catch(() => null);
+    const { response, payload } = await fetchMarketplaceJson(
+        getPictureSearchEndpoint('/api/v1/part-searches/offers'),
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                partName: input.confirmedPartName,
+                make: vehicle.make || '',
+                model: vehicle.model || '',
+                year: String(vehicle.year || ''),
+                engine: vehicle.engineSize || '',
+            }),
+        },
+        MARKETPLACE_REQUEST_TIMEOUTS.RETAILER_OFFERS
+    );
     if (!response.ok) {
         throw new Error(payload?.error || 'Live retailer deals could not be loaded.');
     }
-    const matches = input.catalogueMatches || [];
-    const offers = payload.offers || [];
+    const matches = Array.isArray(input.catalogueMatches) ? input.catalogueMatches : [];
+    const offers = Array.isArray(payload?.offers) ? payload.offers : [];
+    // A catalogue match or retailer offer does not prove that a part fits.
+    // Only an explicit, authoritative backend fitment check (e.g. VIN/OEM)
+    // may set isCompatible to true or false in a future integration.
     return {
-        isCompatible: matches.length > 0 ? true : null,
+        isCompatible: null,
         message: matches.length > 0
-            ? `${matches.length} verified catalogue option${matches.length === 1 ? '' : 's'} found for this vehicle. Confirm the OEM number or VIN before purchase.`
+            ? `${matches.length} catalogue option${matches.length === 1 ? '' : 's'} found. Compatibility is not verified. Confirm the OEM part number or VIN with the seller before purchase.`
             : offers.length > 0
-                ? `${offers.length} live retailer deal${offers.length === 1 ? '' : 's'} found for this vehicle and part search. Fitment needs VIN or OEM-number confirmation.`
-                : 'No live retailer deals were found. Try a more specific part name or OEM number.',
+                ? `${offers.length} retailer deal${offers.length === 1 ? '' : 's'} found. Compatibility is not verified. Confirm the OEM part number or VIN before purchase.`
+                : 'No retailer deals were found. Compatibility is not verified. Try a more specific part name or OEM number.',
         catalogueMatches: matches,
         offers,
-        notice: payload.notice || null,
+        notice: payload?.notice || null,
     };
 }
