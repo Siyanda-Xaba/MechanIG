@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../src/components/StableScrollView';
 import FuelMap from '../src/components/FuelMap';
+import FuelDeliveryTimeline from '../src/customer/FuelDeliveryTimeline';
 import { useFuelDeliveryTracking } from '../src/customer/useFuelDeliveryTracking';
 import { useForegroundLocation } from '../src/location/useForegroundLocation';
 import { useTheme } from '../src/theme/ThemeContext';
@@ -198,7 +199,7 @@ export default function FuelDeliveryTrackingScreen() {
                                                         {
                                                             color: colors.text,
                                                         },
-                                                    ], children: tracking.destinationLabel })] })] })) : null] }), _jsx(View, { style: styles.mapSection, children: _jsx(FuelMap, { customerLocation: destinationLocation, deliveryVehicleLocation: driverLocation, routeCoordinates: tracking.routeCoordinates, isLoading: isLoading, errorMessage: mapError, height: 350 }) }), tracking.driver ? (_jsxs(View, { style: [
+                                                    ], children: tracking.destinationLabel })] })] })) : null] }), _jsx(View, { style: styles.timelineSection, children: _jsx(FuelDeliveryTimeline, { status: tracking.status }) }), _jsx(View, { style: styles.mapSection, children: _jsx(FuelMap, { customerLocation: destinationLocation, deliveryVehicleLocation: driverLocation, routeCoordinates: tracking.routeCoordinates, isLoading: isLoading, errorMessage: mapError, height: 350 }) }), tracking.driver ? (_jsxs(View, { style: [
                                 styles.driverCard,
                                 {
                                     backgroundColor: colors.card,
@@ -398,6 +399,9 @@ const styles = StyleSheet.create({
         marginTop: 2,
         fontSize: 11,
         fontWeight: '600',
+    },
+    timelineSection: {
+        marginTop: 16,
     },
     mapSection: {
         marginTop: 16,
