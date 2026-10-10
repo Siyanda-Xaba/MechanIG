@@ -529,6 +529,9 @@ export default function MechanicProfile() {
               0
             }
             colors={colors}
+            onPress={() =>
+              router.push('/mechanic-reviews')
+            }
           />
         </View>
 
@@ -1160,9 +1163,22 @@ function SummaryCard({
   label,
   value,
   colors,
+  onPress,
 }) {
+  const CardContainer = onPress
+    ? TouchableOpacity
+    : View
+
   return (
-    <View
+    <CardContainer
+      {...(onPress
+        ? {
+            activeOpacity: 0.75,
+            onPress,
+            accessibilityRole: 'button',
+            accessibilityLabel: 'View customer reviews',
+          }
+        : {})}
       style={[
         styles.summaryCard,
         {
@@ -1201,7 +1217,15 @@ function SummaryCard({
       >
         {label}
       </Text>
-    </View>
+      {onPress ? (
+        <Ionicons
+          name="chevron-forward"
+          size={13}
+          color={colors.secondaryText}
+          style={styles.summaryCardChevron}
+        />
+      ) : null}
+    </CardContainer>
   )
 }
 
@@ -1659,6 +1683,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     textAlign: 'center',
+  },
+
+  summaryCardChevron: {
+    position: 'absolute',
+    right: 6,
+    top: 8,
   },
 
   sectionCard: {

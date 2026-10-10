@@ -187,6 +187,28 @@ export default function ServiceTrackingScreen() {
   const hasJob =
     Boolean(tracking?.jobId)
 
+  // Display the review entry only for a job whose
+  // completed state was confirmed by the backend.
+  // The review screen independently checks eligibility.
+  const canOpenReview =
+    Boolean(tracking?.jobId) &&
+    tracking?.jobStatus === 'completed' &&
+    !isRejected &&
+    !isCancelled
+
+  const handleOpenReview = () => {
+    if (!canOpenReview || !tracking?.jobId) {
+      return
+    }
+
+    router.push({
+      pathname: '/service-review/[jobId]',
+      params: {
+        jobId: tracking.jobId,
+      },
+    })
+  }
+
   return (
     <SafeAreaView
       style={[
@@ -573,6 +595,31 @@ export default function ServiceTrackingScreen() {
                   }
                   colors={colors}
                 />
+
+                {canOpenReview ? (
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    accessibilityRole="button"
+                    accessibilityLabel="Leave a review for this completed service"
+                    onPress={handleOpenReview}
+                    style={[
+                      styles.reviewButton,
+                      {
+                        backgroundColor: colors.accent,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="star-outline"
+                      size={20}
+                      color="#000000"
+                    />
+
+                    <Text style={styles.reviewButtonText}>
+                      Leave a Review
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ) : null}
 
@@ -827,6 +874,22 @@ const styles = StyleSheet.create({
 
   cardTitle: {
     fontSize: 15,
+    fontWeight: '800',
+  },
+
+  reviewButton: {
+    minHeight: 46,
+    marginTop: 20,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+
+  reviewButtonText: {
+    color: '#000000',
+    fontSize: 12,
     fontWeight: '800',
   },
 
