@@ -21,6 +21,7 @@ import StableScrollView from '../src/components/StableScrollView'
 import { useCustomerNotificationPreferences } from '../src/customer/useCustomerNotificationPreferences'
 import { useUpdateCustomerNotificationPreferences } from '../src/customer/useUpdateCustomerNotificationPreferences'
 import { useMechanicNotificationPreferences } from '../src/mechanic/useMechanicNotificationPreferences'
+import { usePushNotificationRegistration } from '../src/notifications/usePushNotificationRegistration'
 import { useUpdateMechanicNotificationPreferences } from '../src/mechanic/useUpdateMechanicNotificationPreferences'
 import { useTheme } from '../src/theme/ThemeContext'
 import { useUser } from '../src/users/UserContext'
@@ -199,6 +200,14 @@ export default function NotificationPreferencesScreen() {
 
   const mechanicUpdate =
     useUpdateMechanicNotificationPreferences()
+
+  const {
+    enablePushNotifications,
+    isRegisteringPushNotifications,
+    isPushDeviceRegistered,
+    pushRegistrationError,
+    clearPushRegistrationError,
+  } = usePushNotificationRegistration()
 
   const notificationPreferences =
     isMechanic
@@ -899,6 +908,138 @@ export default function NotificationPreferencesScreen() {
               </Text>
             </View>
 
+            <View
+              style={[
+                styles.pushRegistrationCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <View style={styles.pushRegistrationHeading}>
+                <MaterialCommunityIcons
+                  name="bell-outline"
+                  size={21}
+                  color={colors.accent}
+                />
+                <Text
+                  style={[
+                    styles.pushRegistrationTitle,
+                    { color: colors.text },
+                  ]}
+                >
+                  Push Notifications on This Device
+                </Text>
+              </View>
+
+              <Text
+                style={[
+                  styles.pushRegistrationDescription,
+                  { color: colors.secondaryText },
+                ]}
+              >
+                Enable push delivery for this device after
+                the notification backend is connected.
+                This is separate from saving your category
+                preferences and requires your permission.
+              </Text>
+
+              {pushRegistrationError ? (
+                <View
+                  style={[
+                    styles.pushRegistrationError,
+                    { borderColor: colors.danger },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.pushRegistrationErrorText,
+                      { color: colors.danger },
+                    ]}
+                  >
+                    {pushRegistrationError}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={clearPushRegistrationError}
+                    accessibilityRole="button"
+                    accessibilityLabel="Dismiss push notification error"
+                    style={styles.pushRegistrationDismiss}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={18}
+                      color={colors.danger}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isPushDeviceRegistered
+                    ? 'Push notifications registered on this device'
+                    : 'Enable push notifications on this device'
+                }
+                disabled={
+                  isRegisteringPushNotifications ||
+                  isPushDeviceRegistered ||
+                  isUpdatingNotificationPreferences
+                }
+                onPress={enablePushNotifications}
+                style={[
+                  styles.pushRegistrationButton,
+                  {
+                    borderColor: isPushDeviceRegistered
+                      ? colors.success
+                      : colors.accent,
+                    opacity: isRegisteringPushNotifications
+                      ? 0.6
+                      : 1,
+                  },
+                ]}
+              >
+                {isRegisteringPushNotifications ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.accent}
+                  />
+                ) : (
+                  <MaterialCommunityIcons
+                    name={
+                      isPushDeviceRegistered
+                        ? 'check-circle-outline'
+                        : 'bell-ring-outline'
+                    }
+                    size={19}
+                    color={
+                      isPushDeviceRegistered
+                        ? colors.success
+                        : colors.accent
+                    }
+                  />
+                )}
+                <Text
+                  style={[
+                    styles.pushRegistrationButtonText,
+                    {
+                      color: isPushDeviceRegistered
+                        ? colors.success
+                        : colors.accent,
+                    },
+                  ]}
+                >
+                  {isRegisteringPushNotifications
+                    ? 'Registering Device...'
+                    : isPushDeviceRegistered
+                    ? 'Registered on This Device'
+                    : 'Enable Push Notifications'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
               activeOpacity={0.75}
               disabled={
@@ -1148,6 +1289,66 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 9,
     lineHeight: 15,
+  },
+
+  pushRegistrationCard: {
+    marginTop: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+
+  pushRegistrationHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+
+  pushRegistrationTitle: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  pushRegistrationDescription: {
+    marginTop: 8,
+    fontSize: 10,
+    lineHeight: 16,
+  },
+
+  pushRegistrationError: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 9,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  pushRegistrationErrorText: {
+    flex: 1,
+    fontSize: 10,
+    lineHeight: 15,
+  },
+
+  pushRegistrationDismiss: {
+    padding: 6,
+  },
+
+  pushRegistrationButton: {
+    minHeight: 44,
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+
+  pushRegistrationButtonText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
 
   saveButton: {
