@@ -46,6 +46,10 @@ export default function NotificationsScreen() {
     isLoadingNotifications,
     notificationsError,
     refreshNotifications,
+    markNotificationRead,
+    isMarkingNotificationRead,
+    notificationReadError,
+    clearNotificationReadError,
   } = activeNotifications
 
   const notifications =
@@ -189,6 +193,18 @@ export default function NotificationsScreen() {
   function handleNotificationPress(
     notification
   ) {
+    // Never block a notification's navigation on a failed
+    // backend read update. The hooks change the read state
+    // only when the backend explicitly confirms success.
+    if (
+      !notification.isRead &&
+      !isMarkingNotificationRead
+    ) {
+      void markNotificationRead(
+        notification.id
+      )
+    }
+
     if (isMechanic) {
       handleMechanicNotification(
         notification
@@ -429,6 +445,57 @@ export default function NotificationsScreen() {
           ) : null}
         </View>
 
+        {notificationReadError ? (
+          <View
+            accessibilityRole="alert"
+            style={[
+              styles.readErrorBanner,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.danger,
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={19}
+              color={colors.danger}
+            />
+
+            <Text
+              style={[
+                styles.readErrorText,
+                {
+                  color: colors.text,
+                },
+              ]}
+            >
+              {notificationReadError}
+              {' '}Read status was not changed.
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss notification read error"
+              onPress={
+                clearNotificationReadError
+              }
+              style={
+                styles.readErrorDismiss
+              }
+            >
+              <Ionicons
+                name="close"
+                size={19}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {notifications.length ===
         0 ? (
           <View
@@ -566,9 +633,12 @@ export default function NotificationsScreen() {
                       }
                       activeOpacity={0.75}
                       disabled={
-                        notification.action ===
-                        null
+                        !notification.action &&
+                        (notification.isRead ||
+                          isMarkingNotificationRead)
                       }
+                      accessibilityRole="button"
+                      accessibilityLabel={`${notification.title}. ${notification.isRead ? 'Read' : 'Unread'}. ${notification.action ? 'Open related screen' : 'Mark as read'}`}
                       onPress={() =>
                         handleNotificationPress(
                           notification
@@ -876,6 +946,27 @@ const styles =
       color: '#FFFFFF',
       fontSize: 10,
       fontWeight: '800',
+    },
+
+    readErrorBanner: {
+      marginTop: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderRadius: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+
+    readErrorText: {
+      flex: 1,
+      fontSize: 11,
+      lineHeight: 16,
+    },
+
+    readErrorDismiss: {
+      padding: 4,
     },
 
     sectionHeader: {

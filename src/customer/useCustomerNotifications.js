@@ -9,8 +9,16 @@ import {
 } from './customerNotificationService';
 
 import {
+    markNotificationAsRead,
+} from '../notifications/notificationReadService';
+
+import {
     useUser,
 } from '../users/UserContext';
+
+import {
+    auth,
+} from '../firebase/firebase';
 
 export function useCustomerNotifications() {
     const {
@@ -31,6 +39,16 @@ export function useCustomerNotifications() {
     const [
         notificationsError,
         setNotificationsError,
+    ] = useState(null);
+
+    const [
+        isMarkingNotificationRead,
+        setIsMarkingNotificationRead,
+    ] = useState(false);
+
+    const [
+        notificationReadError,
+        setNotificationReadError,
     ] = useState(null);
 
     const customerId =
@@ -70,6 +88,112 @@ export function useCustomerNotifications() {
             }
         }, [customerId]);
 
+    const markNotificationRead =
+        useCallback(async (notificationId) => {
+            if (!customerId) {
+                setNotificationReadError(
+                    'A customer account is required to update notifications.'
+                );
+
+                return false;
+            }
+
+            if (
+                typeof notificationId !== 'string' ||
+                !notificationId.trim()
+            ) {
+                setNotificationReadError(
+                    'A valid notification ID is required.'
+                );
+
+                return false;
+            }
+
+            try {
+                setIsMarkingNotificationRead(true);
+                setNotificationReadError(null);
+
+                const firebaseUser =
+                    auth.currentUser;
+
+                if (!firebaseUser) {
+                    throw new Error(
+                        'You must be signed in to update notifications.'
+                    );
+                }
+
+                const confirmed =
+                    await markNotificationAsRead(
+                        notificationId,
+                        {
+                            getIdToken: () =>
+                                firebaseUser.getIdToken(),
+                        }
+                    );
+
+                if (!confirmed) {
+                    throw new Error(
+                        'The notification read update was not confirmed.'
+                    );
+                }
+
+                setNotificationsData(
+                    (currentData) => {
+                        if (
+                            !currentData ||
+                            !Array.isArray(
+                                currentData.notifications
+                            )
+                        ) {
+                            return currentData;
+                        }
+
+                        const updatedNotifications =
+                            currentData.notifications.map(
+                                (notification) =>
+                                    notification.id ===
+                                    notificationId
+                                        ? {
+                                              ...notification,
+                                              isRead: true,
+                                          }
+                                        : notification
+                            );
+
+                        return {
+                            ...currentData,
+                            notifications:
+                                updatedNotifications,
+                            unreadCount:
+                                updatedNotifications.filter(
+                                    (notification) =>
+                                        !notification.isRead
+                                ).length,
+                        };
+                    }
+                );
+
+                return true;
+            }
+            catch (error) {
+                setNotificationReadError(
+                    error instanceof Error
+                        ? error.message
+                        : 'Unable to mark the notification as read.'
+                );
+
+                return false;
+            }
+            finally {
+                setIsMarkingNotificationRead(false);
+            }
+        }, [customerId]);
+
+    const clearNotificationReadError =
+        useCallback(() => {
+            setNotificationReadError(null);
+        }, []);
+
     useEffect(() => {
         if (isLoadingUser) {
             return;
@@ -91,5 +215,13 @@ export function useCustomerNotifications() {
         notificationsError,
 
         refreshNotifications,
+
+        markNotificationRead,
+
+        isMarkingNotificationRead,
+
+        notificationReadError,
+
+        clearNotificationReadError,
     };
 }
