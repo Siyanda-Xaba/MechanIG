@@ -28,7 +28,7 @@ Both training and inference (backend API and mobile) use the **exact same prepro
 | **Feature Extraction**   | Mel Spectrogram                                 | `n_mels=128`, `n_fft=2048`, `hop_length=512`                                 |
 | **Spectrogram Shape**    | `(128, 216)`                                    | 128 frequency bins $\times$ 216 time frames                                  |
 | **Normalization**        | `[0.0, 1.0]`                                    | Decibels scaled via `(mel_db + 80.0) / 80.0` clipped between 0 and 1         |
-| **Confidence Threshold** | `30% (0.30)`                                    | Scores below threshold are flagged as `inconclusive` to prevent false alarms |
+| **Confidence Threshold** | `12% (0.12)`                                    | Scores below threshold are flagged as `inconclusive` to prevent false alarms |
 
 All supported audio formats are decoded first into raw audio, resampled, checked for volume energy, segmented into overlapping 5-second windows, and converted into standard mel spectrogram arrays.
 
@@ -161,7 +161,7 @@ curl -X POST "http://127.0.0.1:8000/predict" \
 {
   "filename": "engine_recording.m4a",
   "status": "detected",
-  "overall_message": "Detected possible EngineKnock sound with 78.4% confidence.",
+  "overall_message": "Detected possible EngineKnock sound.",
   "audio_info": {
     "duration_seconds": 8.5,
     "volume_rms": 0.1245,
@@ -171,8 +171,6 @@ curl -X POST "http://127.0.0.1:8000/predict" \
     {
       "rank": 1,
       "class_name": "EngineKnock",
-      "confidence": 0.784,
-      "confidence_percentage": "78.4%",
       "title": "Engine Mechanical Knock / Tap",
       "description": "Deep, metallic, repetitive tapping or knocking from the engine block that speeds up with engine RPM.",
       "symptoms": "Rhythmic thumping or metallic tap inside the engine bay, often worsening under load or acceleration.",
@@ -181,8 +179,6 @@ curl -X POST "http://127.0.0.1:8000/predict" \
     {
       "rank": 2,
       "class_name": "CVJoints",
-      "confidence": 0.121,
-      "confidence_percentage": "12.1%",
       "title": "Constant Velocity (CV) Joint Wear",
       "description": "Repetitive clicking, snapping, or popping noise, most noticeable when turning or accelerating.",
       "symptoms": "Clicking or popping sounds when making sharp turns in a parking lot or intersection.",
@@ -198,7 +194,7 @@ curl -X POST "http://127.0.0.1:8000/predict" \
 {
   "filename": "idle_sound.m4a",
   "status": "inconclusive",
-  "overall_message": "No distinct mechanical fault detected with sufficient confidence (highest candidate: EngineKnock at 18.7%). The sound may be normal engine idle or obscured by ambient noise.",
+  "overall_message": "No distinct mechanical fault detected. The sound may be normal engine idle or obscured by ambient noise.",
   "audio_info": {
     "duration_seconds": 9.71,
     "volume_rms": 0.1674,
@@ -347,7 +343,7 @@ export default function MechanicDiagnosisScreen({ audioUri }) {
           {diagnosis.top_results.map((item) => (
             <View key={item.rank} style={styles.faultCard}>
               <Text style={styles.faultTitle}>
-                {item.rank}. {item.title} ({item.confidence_percentage})
+                {item.rank}. {item.title}
               </Text>
               <Text style={styles.faultDesc}>{item.description}</Text>
               <Text style={styles.adviceHeader}>Recommended Action:</Text>

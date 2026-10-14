@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
 try:
     from .config import SUPPORTED_AUDIO_EXTENSIONS
@@ -18,6 +19,14 @@ except ImportError:
 app = FastAPI(
     title="Mechanic Sound Detection API",
     description="Backend API for diagnosing vehicle mechanical sounds recorded via React Native and mobile apps.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

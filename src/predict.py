@@ -81,30 +81,24 @@ def predict_audio(
     if highest_confidence < CONFIDENCE_THRESHOLD:
         status = "inconclusive"
         overall_message = (
-            f"No distinct mechanical fault detected with sufficient confidence "
-            f"(highest candidate: {primary_fault} at {highest_confidence * 100:.1f}%). "
+            "No distinct mechanical fault detected. "
             "The sound may be normal engine idle or obscured by ambient noise."
         )
     else:
         status = "detected"
-        overall_message = (
-            f"Detected possible {primary_fault} sound "
-            f"with {highest_confidence * 100:.1f}% confidence."
-        )
+        overall_message = f"Detected possible {primary_fault} sound."
 
-    # 7. Format top results with user-friendly descriptions and mechanic recommendations.
+    # 7. Format top results with user-friendly descriptions and mechanic recommendations
+    # without exposing raw confidence statistics.
     top_results = []
     for rank, idx in enumerate(top_indexes, start=1):
         c_name = class_names[idx]
-        conf = float(averaged_probabilities[idx])
         advice = FAULT_DESCRIPTIONS.get(c_name, {})
 
         top_results.append(
             {
                 "rank": rank,
                 "class_name": c_name,
-                "confidence": round(conf, 4),
-                "confidence_percentage": f"{conf * 100:.1f}%",
                 "title": advice.get("title", c_name),
                 "description": advice.get("description", ""),
                 "symptoms": advice.get("symptoms", ""),

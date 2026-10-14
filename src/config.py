@@ -35,7 +35,7 @@ MIN_ENERGY_THRESHOLD = 0.003
 
 # Minimum confidence required for a top prediction. If the model's highest
 # confidence is below this value, the diagnosis is marked as inconclusive.
-CONFIDENCE_THRESHOLD = 0.30
+CONFIDENCE_THRESHOLD = 0.12
 
 # Mel spectrogram settings.
 # These values must stay the same during training and prediction.
