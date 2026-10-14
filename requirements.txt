@@ -1,0 +1,20 @@
+# Core audio processing
+librosa
+soundfile
+audioread
+numpy
+scipy
+matplotlib
+numpy
+audioread
+
+# Machine learning & model export
+tensorflow
+
+# API & backend serving
+fastapi
+uvicorn
+python-multipart
+soundfile
+tensorflow
+uvicorn
