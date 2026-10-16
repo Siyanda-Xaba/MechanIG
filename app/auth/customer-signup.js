@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../../src/components/StableScrollView';
 import { getFirebaseAuthErrorMessage, registerWithEmail, } from '../../src/auth/authService';
 import { useTheme } from '../../src/theme/ThemeContext';
-import { useUser } from '../../src/users/UserContext';
 function InputField({ icon, label, value, onChangeText, placeholder, keyboardType = 'default', rightElement, }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
@@ -24,7 +23,6 @@ export default function CustomerSignUpScreen() {
     const router = useRouter();
     const { colors } = useTheme();
     const styles = createStyles(colors);
-    const { setUser } = useUser();
     const [step, setStep,] = useState(1);
     const [fullName, setFullName,] = useState('');
     const [email, setEmail,] = useState('');
@@ -160,7 +158,7 @@ export default function CustomerSignUpScreen() {
         const lastName = nameParts.slice(1).join(' ');
         try {
             setIsSubmitting(true);
-            const user = await registerWithEmail({
+            await registerWithEmail({
                 email,
                 password,
                 role: 'customer',
@@ -192,11 +190,10 @@ export default function CustomerSignUpScreen() {
                     profileImageUrl: null,
                 },
             });
-            setUser(user);
-            Alert.alert('Account created', 'Your account has been created. We sent a verification link to your email address.', [
+            Alert.alert('Account created', 'Your account has been created. We sent a verification link to your email address. Please verify your email before signing in.', [
                 {
-                    text: 'Continue',
-                    onPress: () => router.replace('/(customer)'),
+                    text: 'Go to Login',
+                    onPress: () => router.replace('/auth/login'),
                 },
             ]);
         }

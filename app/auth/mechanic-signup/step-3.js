@@ -8,12 +8,10 @@ import { useMechanicSignUp } from '../../../src/auth/mechanic/MechanicSignUpCont
 import { getFirebaseAuthErrorMessage, registerWithEmail, } from '../../../src/auth/authService';
 import StableScrollView from '../../../src/components/StableScrollView';
 import { CYAN, GREEN, PasswordRow, SignUpFooter, SignUpHeader, styles, } from '../../../src/auth/mechanic/MechanicSignUpShared';
-import { useUser } from '../../../src/users/UserContext';
 
 export default function MechanicSignUpStep3() {
     const router = useRouter();
     const { step1Data, step2Data, resetMechanicSignUp, } = useMechanicSignUp();
-    const { setUser } = useUser();
     const [password, setPassword,] = useState('');
     const [confirmPassword, setConfirmPassword,] = useState('');
     const [passwordVisible, setPasswordVisible,] = useState(false);
@@ -105,7 +103,7 @@ export default function MechanicSignUpStep3() {
         try {
             setIsSubmitting(true);
 
-            const user = await registerWithEmail({
+            await registerWithEmail({
                 email: step1Data.email,
                 password,
                 role: 'mechanic',
@@ -127,16 +125,15 @@ export default function MechanicSignUpStep3() {
                 },
             });
 
-            setUser(user);
             resetMechanicSignUp();
 
             Alert.alert(
                 'Account created',
-                'Your mechanic account has been created. We sent a verification link to your email address.',
+                'Your mechanic account has been created. We sent a verification link to your email address. Please verify your email before signing in.',
                 [
                     {
-                        text: 'Continue',
-                        onPress: () => router.replace('/(mechanic)'),
+                        text: 'Go to Login',
+                        onPress: () => router.replace('/auth/login'),
                     },
                 ]
             );
