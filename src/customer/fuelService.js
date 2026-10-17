@@ -1,115 +1,168 @@
-const developmentFuelData = {
-    fuelLevel: 34,
-    estimatedRangeKm: 238,
-    fuelType: 'Petrol 95',
-    // Temporary frontend development options.
-    // Production-compatible fuel types must come
-    // from validated vehicle/backend data.
-    compatibleFuelTypes: [
-        'Petrol 93',
-        'Petrol 95',
-    ],
-    nearestStation: {
-        id: 'station-development-001',
-        name: 'Nearest Fuel Station',
-        address: null,
-        latitude: null,
-        longitude: null,
-        distanceKm: 3.2,
-        isOpen: null,
-    },
+/**
+ * Customer Fuel Service
+ *
+ * Fuel information must come from authoritative sources:
+ *
+ * - Supported OBD/vehicle readings
+ * - Validated backend records
+ * - Verified fuel station providers
+ * - Confirmed customer delivery history
+ *
+ * Never present development values as real readings,
+ * station availability, or delivery activity.
+ */
+
+const unavailableFuelData = {
+    // Requires an actual vehicle reading.
+    fuelLevel: null,
+
+    // Requires authoritative vehicle data or
+    // a calculation based on verified inputs.
+    estimatedRangeKm: null,
+
+    // Must come from validated vehicle information
+    // or an authoritative backend record.
+    fuelType: null,
+
+    // Fuel compatibility must be verified before
+    // specific options are recommended.
+    compatibleFuelTypes: [],
+
+    // Nearby stations must come from a real
+    // location-based station provider.
+    nearestStation: null,
+
+    // Delivery state must come from the backend.
     activeDeliveryId: null,
     activeDeliveryStatus: null,
-    recentActivity: [
-        {
-            id: 'fuel-activity-001',
-            title: 'Fuel Top-up Scheduled',
-            description: 'Power Shield top-up set',
-            occurredAt: 'Today, 08:31',
-            status: 'Scheduled',
-        },
-        {
-            id: 'fuel-activity-002',
-            title: 'Fuel Delivered',
-            description: 'Fuel delivery completed',
-            occurredAt: 'Yesterday, 17:45',
-            status: 'Completed',
-        },
-    ],
+
+    // Display only confirmed fuel activity.
+    recentActivity: [],
 };
+
+/**
+ * Retrieve fuel information for the
+ * currently selected vehicle.
+ *
+ * Future backend integration will use vehicleId
+ * to retrieve vehicle-specific fuel information.
+ *
+ * Missing information is represented by null
+ * or an empty collection, never invented values.
+ */
 export async function getCustomerFuelData(vehicleId) {
-    // Later this will call the MechanIQ backend
-    // using the selected vehicle ID.
+    // Future backend integration:
     //
-    // The backend will provide:
-    // - verified fuel level where available
-    // - estimated range
-    // - current/default fuel type
-    // - compatible fuel types
-    // - nearby fuel stations
-    // - active delivery status
-    // - fuel activity history
+    // - Verify the authenticated customer.
+    // - Verify ownership of the selected vehicle.
+    // - Retrieve supported fuel readings.
+    // - Retrieve verified vehicle fuel type.
+    // - Retrieve validated fuel compatibility.
+    // - Retrieve nearby stations from a provider.
+    // - Retrieve actual delivery status.
+    // - Retrieve confirmed fuel activity.
+    //
+    // Real readings should include their source
+    // and measurement timestamp.
+    //
+    // Cached readings must be identified as cached
+    // and must not be presented as live information.
+
     void vehicleId;
-    return developmentFuelData;
+
+    return {
+        ...unavailableFuelData,
+        compatibleFuelTypes: [],
+        recentActivity: [],
+    };
 }
+
+/**
+ * Retrieve confirmed fuel activity history
+ * for the selected vehicle.
+ *
+ * No synthetic delivery or fuel purchase
+ * records are generated.
+ */
 export async function getFuelHistory(vehicleId) {
-    // Later this will call the MechanIQ backend
-    // for the selected vehicle's complete fuel
-    // activity history.
+    // Future:
     //
-    // This development response stays in the
-    // service layer and does not simulate
-    // cross-user or delivery lifecycle state.
+    // Retrieve persistent history records
+    // belonging to the authenticated customer
+    // and selected vehicle.
+    //
+    // Records must originate from genuine
+    // customer activity or backend transactions.
+
     void vehicleId;
-    return developmentFuelData.recentActivity;
-}
-export async function getSavedFuelLocations() {
-    // Later this will call the MechanIQ backend
-    // for the authenticated customer's saved
-    // fuel delivery locations.
-    //
-    // Saved locations are customer-owned data
-    // and must come from persistent backend
-    // storage.
-    //
-    // We intentionally return no development
-    // locations here because addresses and
-    // coordinates must not be fabricated.
+
     return [];
 }
-export async function createFuelDeliveryRequest(input) {
-    // This action must be completed by the
-    // MechanIQ backend.
+
+/**
+ * Retrieve the authenticated customer's
+ * saved fuel delivery locations.
+ */
+export async function getSavedFuelLocations() {
+    // Future:
     //
-    // The backend will eventually:
-    // - validate the authenticated customer
-    // - validate the selected vehicle
-    // - validate fuel compatibility
-    // - validate delivery coverage
-    // - calculate authoritative pricing
-    // - create the delivery request
-    // - assign a delivery ID
-    // - begin the delivery lifecycle
+    // Retrieve customer-owned saved locations
+    // from persistent backend storage.
     //
-    // Do not create a fake delivery ID or
-    // locally simulate a successful request.
-    void input;
-    throw new Error('Fuel delivery requests are not available until the delivery backend is connected.');
+    // Addresses and coordinates must never
+    // be fabricated.
+
+    return [];
 }
+
+/**
+ * Request fuel delivery.
+ *
+ * This operation requires a real backend.
+ */
+export async function createFuelDeliveryRequest(input) {
+    // The backend must:
+    //
+    // - Authenticate the customer.
+    // - Validate the selected vehicle.
+    // - Validate fuel compatibility.
+    // - Validate delivery coverage.
+    // - Retrieve authoritative pricing.
+    // - Confirm provider availability.
+    // - Create the actual delivery request.
+    // - Return a real delivery identifier.
+    //
+    // Do not create a fake delivery ID
+    // or simulate a successful transaction.
+
+    void input;
+
+    throw new Error(
+        'Fuel delivery requests are not available until the delivery backend is connected.'
+    );
+}
+
+/**
+ * Retrieve authoritative tracking information
+ * for an existing fuel delivery.
+ */
 export async function getFuelDeliveryTracking(deliveryId) {
-    // This contract is intentionally backend-only.
-    //
     // The delivery backend will eventually provide:
-    // - authoritative delivery lifecycle status
-    // - assigned driver details
-    // - live driver coordinates
-    // - delivery destination coordinates
-    // - ETA
-    // - route/polyline coordinates
-    // - last tracking update timestamp
     //
-    // Driver movement, ETA, and route data must not
-    // be fabricated locally.
+    // - Authoritative delivery lifecycle status.
+    // - Assigned driver information.
+    // - Verified driver location.
+    // - Delivery destination.
+    // - Estimated arrival time.
+    // - Route information.
+    // - Last tracking update timestamp.
+    //
+    // Never fabricate driver movement,
+    // delivery status, routes, or ETA.
+
     void deliveryId;
-    throw new Error('Live fuel delivery tracking is not available until the delivery backend is connected.');
+
+    throw new Error(
+        'Live fuel delivery tracking is not available until the delivery backend is connected.'
+    );
 }
