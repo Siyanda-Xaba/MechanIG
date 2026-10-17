@@ -11,6 +11,7 @@ import {
 
 import NetInfo from '@react-native-community/netinfo';
 import { onAuthStateChanged } from 'firebase/auth';
+import { AppState } from 'react-native';
 
 import { auth } from '../firebase/firebase';
 import { readUserProfile } from './userService';
@@ -31,6 +32,24 @@ const SUPPORTED_ROLES = [
 
 function isSupportedRole(role) {
     return SUPPORTED_ROLES.includes(role);
+}
+
+/**
+ * An explicit authorization rejection is not a network
+ * outage. Do not use an offline role to bypass it.
+ */
+function isAuthorizationFailure(error) {
+    const code = String(error?.code ?? '')
+        .toLowerCase()
+        .replace(/_/g, '-');
+
+    return (
+        code.includes('permission-denied') ||
+        code.includes('unauthenticated') ||
+        code.includes('user-disabled') ||
+        code.includes('invalid-user-token') ||
+        code.includes('user-token-expired')
+    );
 }
 
 function readProfileWithTimeout(firebaseUser) {
@@ -57,6 +76,10 @@ function readProfileWithTimeout(firebaseUser) {
 }
 
 async function canUseOfflineFallback(error) {
+    if (isAuthorizationFailure(error)) {
+        return false;
+    }
+
     if (error?.code === 'PROFILE_TIMEOUT') {
         return true;
     }
@@ -94,7 +117,11 @@ export function UserProvider({ children }) {
     const requestVersionRef = useRef(0);
 
     const restoreUser = useCallback(
-        async (firebaseUser, requestVersion) => {
+        async (
+            firebaseUser,
+            requestVersion,
+            preserveCachedRoleOnReadFailure = false
+        ) => {
             const isCurrentRequest = () =>
                 requestVersion ===
                     requestVersionRef.current &&
@@ -194,6 +221,43 @@ export function UserProvider({ children }) {
                 ).catch(() => {});
             } catch (error) {
                 if (!isCurrentRequest()) {
+                    return;
+                }
+
+                /*
+                 * A denied request is different from an
+                 * unreachable server. Never keep a cached
+                 * role after explicit authorization failure.
+                 */
+                if (isAuthorizationFailure(error)) {
+                    setUser(null);
+                    setIsOfflineProfile(false);
+                    setUserError(
+                        'Your MechanIQ account could not be authorized.'
+                    );
+                    return;
+                }
+
+                /*
+                 * During reconnection, a rejected profile
+                 * read does not prove the cached role is
+                 * invalid. Keep it ONLY for this same,
+                 * previously verified Firebase session.
+                 *
+                 * A successful but missing/invalid profile
+                 * is handled above and always clears access.
+                 * Backend actions still require server-side
+                 * authorization; this role is navigation-only.
+                 */
+                if (
+                    preserveCachedRoleOnReadFailure &&
+                    firebaseUser.emailVerified &&
+                    auth.currentUser?.uid === firebaseUser.uid &&
+                    auth.currentUser?.emailVerified === true
+                ) {
+                    setUserError(
+                        'Profile verification is temporarily unavailable. Using your previously verified account role.'
+                    );
                     return;
                 }
 
@@ -307,7 +371,9 @@ export function UserProvider({ children }) {
         };
     }, [restoreUser]);
 
-    const refreshUser = useCallback(async () => {
+    const refreshUser = useCallback(async (
+        { preserveCachedRoleOnReadFailure = false } = {}
+    ) => {
         const requestVersion =
             ++requestVersionRef.current;
 
@@ -315,9 +381,98 @@ export function UserProvider({ children }) {
 
         await restoreUser(
             auth.currentUser,
-            requestVersion
+            requestVersion,
+            preserveCachedRoleOnReadFailure
         );
     }, [restoreUser]);
+
+    /*
+     * A cached role is only a temporary navigation hint.
+     * Revalidate it as soon as internet access is confirmed,
+     * including when the app returns from the background.
+     *
+     * This listener lives in UserProvider because the provider
+     * sits outside ConnectivityProvider in the root layout.
+     */
+    useEffect(() => {
+        if (!isOfflineProfile || !user?.id) {
+            return;
+        }
+
+        const cachedUid = user.id;
+        let isActive = true;
+        let isRevalidating = false;
+        let wasOnline = false;
+
+        async function revalidateCachedProfile() {
+            if (
+                !isActive ||
+                isRevalidating ||
+                auth.currentUser?.uid !== cachedUid ||
+                !auth.currentUser?.emailVerified
+            ) {
+                return;
+            }
+
+            isRevalidating = true;
+
+            try {
+                await refreshUser({
+                    preserveCachedRoleOnReadFailure: true,
+                });
+            } finally {
+                isRevalidating = false;
+            }
+        }
+
+        const unsubscribeNetwork = NetInfo.addEventListener(
+            (network) => {
+                if (!isActive) {
+                    return;
+                }
+
+                const isOnline =
+                    network.isConnected === true &&
+                    network.isInternetReachable === true;
+
+                if (isOnline && !wasOnline) {
+                    void revalidateCachedProfile();
+                }
+
+                wasOnline = isOnline;
+            }
+        );
+
+        const appStateSubscription = AppState.addEventListener(
+            'change',
+            (nextState) => {
+                if (nextState !== 'active') {
+                    return;
+                }
+
+                void NetInfo.fetch()
+                    .then((network) => {
+                        if (
+                            isActive &&
+                            network.isConnected === true &&
+                            network.isInternetReachable === true
+                        ) {
+                            void revalidateCachedProfile();
+                        }
+                    })
+                    .catch(() => {
+                        // Keep the cached role if connectivity
+                        // cannot be confirmed.
+                    });
+            }
+        );
+
+        return () => {
+            isActive = false;
+            unsubscribeNetwork();
+            appStateSubscription.remove();
+        };
+    }, [isOfflineProfile, refreshUser, user?.id]);
 
     function updateUser(updates) {
         setUser((currentUser) => {
