@@ -301,9 +301,11 @@ export default function MechanicHome() {
               <DashboardStatCard
                 icon="check-circle-outline"
                 title="Jobs Completed"
-                value={String(
-                  homeData.jobsCompleted
-                )}
+                value={
+                  homeData.jobsCompleted != null
+                    ? String(homeData.jobsCompleted)
+                    : 'N/A'
+                }
                 backgroundColor={
                   colors.card
                 }
@@ -322,9 +324,11 @@ export default function MechanicHome() {
               <DashboardStatCard
                 icon="briefcase-clock-outline"
                 title="Pending Jobs"
-                value={String(
-                  homeData.pendingJobs
-                )}
+                value={
+                  homeData.pendingJobs != null
+                    ? String(homeData.pendingJobs)
+                    : 'N/A'
+                }
                 backgroundColor={
                   colors.card
                 }
@@ -343,9 +347,11 @@ export default function MechanicHome() {
               <DashboardStatCard
                 icon="calendar-check-outline"
                 title="Bookings"
-                value={String(
-                  homeData.bookings
-                )}
+                value={
+                  homeData.bookings != null
+                    ? String(homeData.bookings)
+                    : 'N/A'
+                }
                 backgroundColor={
                   colors.card
                 }

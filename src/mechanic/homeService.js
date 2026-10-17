@@ -1,107 +1,76 @@
-const developmentMechanicHomeData = {
-  jobsCompleted: 24,
-  pendingJobs: 5,
-  bookings: 8,
+/**
+ * MechanIQ Mechanic Home Service
+ *
+ * Dashboard information must come from
+ * authoritative backend records associated
+ * with the authenticated mechanic.
+ *
+ * Never present development values as
+ * genuine jobs, bookings, ratings, earnings,
+ * appointments, alerts, or business activity.
+ *
+ * A null statistic means that the value
+ * has not been verified or retrieved.
+ *
+ * Null must not be interpreted as zero.
+ */
 
-  rating: 4.8,
+const unavailableMechanicHomeData = {
+  // Requires confirmed completed job records.
+  jobsCompleted: null,
 
-  earnings: {
-    amount: 12450,
-    currency: 'ZAR',
-  },
+  // Requires confirmed pending job records.
+  pendingJobs: null,
 
-  schedule: [
-    {
-      id: 'schedule-001',
-      jobId: null,
-      customerId: null,
+  // Requires confirmed booking records.
+  bookings: null,
 
-      title: 'Vehicle Service',
-      customerName: 'Customer',
-      vehicleLabel: 'BMW 320i',
+  // Requires authoritative customer ratings.
+  rating: null,
 
-      date: 'Today',
-      time: '09:30',
+  // Requires verified financial records.
+  // Do not display R0 when earnings are unknown.
+  earnings: null,
 
-      status: 'accepted',
-    },
+  // Do not generate fictitious appointments.
+  schedule: [],
 
-    {
-      id: 'schedule-002',
-      jobId: null,
-      customerId: null,
+  // Do not generate fictitious service alerts.
+  serviceAlerts: [],
 
-      title: 'Diagnostics',
-      customerName: 'Customer',
-      vehicleLabel: 'Volkswagen Polo',
-
-      date: 'Today',
-      time: '13:00',
-
-      status: 'pending',
-    },
-  ],
-
-  serviceAlerts: [
-    {
-      id: 'alert-001',
-
-      title: 'Diagnostic Review',
-      description:
-        'A vehicle diagnostic requires mechanic review.',
-
-      severity: 'warning',
-
-      customerId: null,
-      vehicleId: null,
-      diagnosticId: null,
-    },
-  ],
-
-  recentActivity: [
-    {
-      id: 'activity-001',
-
-      title: 'Job Completed',
-      description:
-        'Vehicle service marked as completed.',
-
-      time: 'Today, 08:45',
-      status: 'Completed',
-
-      action: null,
-    },
-
-    {
-      id: 'activity-002',
-
-      title: 'New Booking',
-      description:
-        'A new workshop booking was received.',
-
-      time: 'Yesterday, 16:20',
-      status: 'Pending',
-
-      action: null,
-    },
-  ],
+  // Do not generate fictitious business activity.
+  recentActivity: [],
 }
 
 /**
- * Later this function will call the MechanIQ backend
- * using the authenticated mechanic session.
+ * Retrieve Mechanic Home dashboard information.
  *
- * Dashboard counts, ratings, earnings, bookings,
- * schedule entries, alerts and activity must come
- * from backend-authoritative records.
+ * Future backend integration must:
  *
- * Temporary development entries intentionally do not
- * contain fake customer, job, vehicle or diagnostic IDs.
- * Navigation actions should only receive those IDs when
- * corresponding backend records actually exist.
+ * - Authenticate the mechanic.
+ * - Verify the mechanic's role.
+ * - Retrieve mechanic-specific job totals.
+ * - Retrieve confirmed bookings.
+ * - Retrieve authoritative customer ratings.
+ * - Retrieve verified earnings.
+ * - Retrieve scheduled work.
+ * - Retrieve genuine service alerts.
+ * - Retrieve recorded business activity.
+ *
+ * Backend responses should include timestamps
+ * so cached information can be distinguished
+ * from current information.
+ *
+ * Until the backend is connected, unavailable
+ * values are returned instead of fabricated data.
  *
  * @returns {Promise<import('./homeTypes').MechanicHomeData>}
  */
 export async function getMechanicHomeData() {
-  return developmentMechanicHomeData
+  return {
+    ...unavailableMechanicHomeData,
+    schedule: [],
+    serviceAlerts: [],
+    recentActivity: [],
+  }
 }
