@@ -274,65 +274,51 @@ export function VehicleProvider({ children }) {
         }
     }, []);
 
+    /*
+     * Keep vehicle state isolated by authenticated account.
+     * A profile revalidation for the SAME UID must not reset
+     * the customer's currently selected vehicle.
+     *
+     * This single effect also refreshes vehicles when the
+     * connection changes, avoiding duplicate initial requests.
+     */
     useEffect(() => {
         if (isLoadingUser) {
             return;
         }
 
-        /*
-         * Invalidate any outstanding request before
-         * switching accounts.
-         *
-         * This prevents vehicle data from the previous
-         * account being applied to the next account.
-         */
-        requestVersionRef.current += 1;
+        const accountChanged = accountIdRef.current !== accountId;
 
-        accountIdRef.current = accountId;
+        if (accountChanged) {
+            /*
+             * Invalidate outstanding requests before applying
+             * another account's vehicle information.
+             */
+            requestVersionRef.current += 1;
+            accountIdRef.current = accountId;
+            selectedVehicleRef.current = null;
 
-        selectedVehicleRef.current = null;
-
-        setVehicles([]);
-        setSelectedVehicle(null);
-
-        setIsOfflineVehicles(false);
-        setVehiclesError(null);
-        setLastVehiclesSyncedAt(null);
+            setVehicles([]);
+            setSelectedVehicle(null);
+            setIsOfflineVehicles(false);
+            setVehiclesError(null);
+            setLastVehiclesSyncedAt(null);
+        }
 
         if (!accountId) {
             setIsLoadingVehicles(false);
             return;
         }
 
+        /*
+         * On account changes, load that account's vehicles.
+         * On connectivity changes or completed revalidation,
+         * refresh without discarding the current selection.
+         */
         void refreshVehicles();
     }, [
         accountId,
-        isLoadingUser,
-        refreshVehicles,
-    ]);
-
-    /*
-     * Refresh when connectivity changes.
-     *
-     * Offline:
-     *   Use cached vehicle information.
-     *
-     * Online:
-     *   Retrieve the latest data from Firebase.
-     */
-    useEffect(() => {
-        if (
-            isLoadingUser ||
-            !accountId ||
-            accountIdRef.current !== accountId
-        ) {
-            return;
-        }
-
-        void refreshVehicles();
-    }, [
         isOffline,
-        accountId,
         isLoadingUser,
         refreshVehicles,
     ]);
