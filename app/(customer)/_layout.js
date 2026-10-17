@@ -9,6 +9,7 @@ import {
 } from '@expo/vector-icons';
 
 import { Tabs } from 'expo-router';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RoleRouteGuard } from '../../src/auth/RoleRouteGuard';
@@ -18,6 +19,8 @@ import { CustomerFuelProvider } from '../../src/customer/CustomerFuelContext';
 import { CustomerHomeProvider } from '../../src/customer/CustomerHomeContext';
 import { CustomerMarketplaceProvider } from '../../src/customer/CustomerMarketplaceContext';
 import { CustomerProfileProvider } from '../../src/customer/CustomerProfileContext';
+
+import OfflineStatusBanner from '../../src/offline/OfflineStatusBanner';
 
 import { useTheme } from '../../src/theme/ThemeContext';
 
@@ -143,6 +146,18 @@ export default function CustomerLayout() {
         ],
     });
 
+    const customerNavigation = _jsxs(View, {
+        style: {
+            flex: 1,
+        },
+
+        children: [
+            tabs,
+
+            _jsx(OfflineStatusBanner, {}),
+        ],
+    });
+
     return _jsx(RoleRouteGuard, {
         role: 'customer',
 
@@ -151,7 +166,7 @@ export default function CustomerLayout() {
                 children: _jsx(CustomerFuelProvider, {
                     children: _jsx(CustomerMarketplaceProvider, {
                         children: _jsx(CustomerProfileProvider, {
-                            children: tabs,
+                            children: customerNavigation,
                         }),
                     }),
                 }),
