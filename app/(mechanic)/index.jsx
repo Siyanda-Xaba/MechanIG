@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import ProfileAvatar from '../../src/components/ProfileAvatar'
 import StableScrollView from '../../src/components/StableScrollView'
+import { useTimeGreeting } from '../../src/hooks/useTimeGreeting'
 import { useMechanicHome } from '../../src/mechanic/MechanicHomeContext'
 import { useMechanicNotifications } from '../../src/mechanic/useMechanicNotifications'
 import { useTheme } from '../../src/theme/ThemeContext'
@@ -23,6 +24,7 @@ import { useUser } from '../../src/users/UserContext'
 export default function MechanicHome() {
   const router = useRouter()
   const { colors } = useTheme()
+  const greeting = useTimeGreeting()
 
   const {
     user,
@@ -95,7 +97,7 @@ export default function MechanicHome() {
                   },
                 ]}
               >
-                Good Morning,
+                {greeting},
               </Text>
 
               <Text

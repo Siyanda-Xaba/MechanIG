@@ -13,6 +13,7 @@ import Vehicle3DViewer from '../../src/components/Vehicle3DViewer';
 import VehicleHealthRing from '../../src/components/VehicleHealthRing';
 import { useCustomerHome } from '../../src/customer/CustomerHomeContext';
 import { useCustomerNotifications } from '../../src/customer/useCustomerNotifications';
+import { useTimeGreeting } from '../../src/hooks/useTimeGreeting';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useUser } from '../../src/users/UserContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
@@ -20,6 +21,7 @@ import { getVehicleModelSource } from '../../src/vehicles/modelRegistry';
 export default function CustomerHome() {
     const router = useRouter();
     const { colors } = useTheme();
+    const greeting = useTimeGreeting();
     const [isVehicleSelectorOpen, setIsVehicleSelectorOpen,] = useState(false);
     const [isVehicleModelInteracting, setIsVehicleModelInteracting,] = useState(false);
     const { user, isLoadingUser, } = useUser();
@@ -95,7 +97,7 @@ export default function CustomerHome() {
                                                 {
                                                     color: colors.secondaryText,
                                                 },
-                                            ], children: "Good Morning," }), _jsx(Text, { numberOfLines: 1, style: [
+                                            ], children: `${greeting},` }), _jsx(Text, { numberOfLines: 1, style: [
                                                 styles.userName,
                                                 {
                                                     color: colors.text,
