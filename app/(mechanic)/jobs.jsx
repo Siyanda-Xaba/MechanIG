@@ -82,7 +82,7 @@ export default function MechanicJobs() {
 
   function getFilterCount(filter) {
     if (!jobsData) {
-      return 0
+      return '--'
     }
 
     switch (filter) {
