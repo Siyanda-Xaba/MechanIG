@@ -45,6 +45,7 @@ export default function MechanicJobs() {
     jobsError,
     refreshJobs,
 
+    activeJobAction,
     jobActionError,
     clearJobActionError,
     performJobAction,
@@ -600,6 +601,66 @@ export default function MechanicJobs() {
               </Text>
             </TouchableOpacity>
           </View>
+        ) : !jobsData ? (
+          <View
+            style={[
+              styles.stateCard,
+              {
+                backgroundColor:
+                  colors.card,
+                borderColor:
+                  colors.border,
+              },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="briefcase-alert-outline"
+              size={30}
+              color={colors.warning}
+            />
+
+            <Text
+              style={[
+                styles.stateTitle,
+                { color: colors.text },
+              ]}
+            >
+              Job information unavailable
+            </Text>
+
+            <Text
+              style={[
+                styles.stateText,
+                {
+                  color:
+                    colors.secondaryText,
+                },
+              ]}
+            >
+              Assigned jobs have not been verified.
+              Please try refreshing.
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={refreshJobs}
+              style={[
+                styles.retryButton,
+                {
+                  backgroundColor:
+                    colors.accent,
+                },
+              ]}
+            >
+              <Text
+                style={
+                  styles.retryButtonText
+                }
+              >
+                Try Again
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : filteredJobs.length ===
           0 ? (
           <View
@@ -663,6 +724,9 @@ export default function MechanicJobs() {
                   isLoadingLocation={
                     isLoadingLocation
                   }
+                  hasActiveJobAction={
+                    Boolean(activeJobAction)
+                  }
                   isJobActionInProgress={
                     isJobActionInProgress
                   }
@@ -686,6 +750,7 @@ function JobCard({
   job,
   colors,
   isLoadingLocation,
+  hasActiveJobAction,
   isJobActionInProgress,
   onJobAction,
   onCreateEstimate,
@@ -704,6 +769,11 @@ function JobCard({
 
   const allowedActions =
     job.allowedActions ?? []
+
+  // A mechanic job transition or location lookup locks all job actions.
+  // The context remains the authoritative guard against duplicate requests.
+  const areActionsDisabled =
+    hasActiveJobAction || isLoadingLocation
 
   const isMobileJob =
     job.serviceLocationType ===
@@ -970,6 +1040,9 @@ function JobCard({
                   action={action}
                   colors={colors}
                   isBusy={isBusy}
+                  disabled={
+                    areActionsDisabled
+                  }
                   onPress={() =>
                     onJobAction(
                       job,
@@ -984,6 +1057,9 @@ function JobCard({
           {canCreateEstimate ? (
             <TouchableOpacity
               activeOpacity={0.8}
+              disabled={
+                areActionsDisabled
+              }
               onPress={() =>
                 onCreateEstimate(job)
               }
@@ -994,6 +1070,10 @@ function JobCard({
                     'transparent',
                   borderColor:
                     colors.accent,
+                  opacity:
+                    areActionsDisabled
+                      ? 0.6
+                      : 1,
                 },
               ]}
             >
@@ -1187,10 +1267,14 @@ function MobileJobTravelCard({
         />
       </View>
 
-      {!job.serviceLocation
-        ?.latitude ||
-      !job.serviceLocation
-        ?.longitude ? (
+      {!(
+        Number.isFinite(
+          job.serviceLocation?.latitude
+        ) &&
+        Number.isFinite(
+          job.serviceLocation?.longitude
+        )
+      ) ? (
         <Text
           style={[
             styles.routeNotice,
@@ -1250,6 +1334,7 @@ function JobActionButton({
   action,
   colors,
   isBusy,
+  disabled,
   onPress,
 }) {
   const actionDefinition =
@@ -1261,7 +1346,7 @@ function JobActionButton({
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      disabled={isBusy}
+      disabled={disabled || isBusy}
       onPress={onPress}
       style={[
         styles.actionButton,
@@ -1275,7 +1360,7 @@ function JobActionButton({
           borderColor:
             actionDefinition.color,
 
-          opacity: isBusy
+          opacity: disabled || isBusy
             ? 0.6
             : 1,
         },

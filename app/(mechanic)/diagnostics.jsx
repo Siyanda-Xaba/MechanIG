@@ -60,23 +60,35 @@ export default function MechanicDiagnostics() {
   ])
 
   function getFilterCount(filter) {
+    // Unretrieved counts are unknown, not zero.
     if (!diagnosticsData) {
-      return 0
+      return '--'
     }
+
+    let count
 
     switch (filter) {
       case MECHANIC_DIAGNOSTIC_STATUSES.PENDING_REVIEW:
-        return diagnosticsData.totalPendingReview
+        count = diagnosticsData.totalPendingReview
+        break
 
       case MECHANIC_DIAGNOSTIC_STATUSES.IN_REVIEW:
-        return diagnosticsData.totalInReview
+        count = diagnosticsData.totalInReview
+        break
 
       case MECHANIC_DIAGNOSTIC_STATUSES.COMPLETED:
-        return diagnosticsData.totalCompleted
+        count = diagnosticsData.totalCompleted
+        break
 
       default:
-        return 0
+        return '--'
     }
+
+    // A verified count of zero is legitimate; a missing
+    // or malformed count must never become a fake zero.
+    return Number.isInteger(count) && count >= 0
+      ? count
+      : '--'
   }
 
   return (
@@ -292,7 +304,7 @@ export default function MechanicDiagnostics() {
               Loading diagnostics...
             </Text>
           </View>
-        ) : diagnosticsError ? (
+        ) : diagnosticsError || !diagnosticsData ? (
           <View
             style={[
               styles.stateCard,
@@ -330,7 +342,8 @@ export default function MechanicDiagnostics() {
                 },
               ]}
             >
-              {diagnosticsError}
+              {diagnosticsError ||
+                'Verified mechanic diagnostic records are currently unavailable.'}
             </Text>
 
             <TouchableOpacity

@@ -31,6 +31,14 @@ export const MECHANIC_AVAILABILITY_STATUSES = {
  */
 
 /**
+ * Verified mechanic identity and business information.
+ *
+ * The complete verification summary is null when
+ * the authoritative verification status is unknown.
+ *
+ * Individual boolean values must only come from
+ * confirmed verification records.
+ *
  * @typedef {{
  *   status: MechanicVerificationStatus,
  *   identityVerified: boolean,
@@ -40,14 +48,30 @@ export const MECHANIC_AVAILABILITY_STATUSES = {
  */
 
 /**
+ * Mechanic performance statistics.
+ *
+ * Null indicates unavailable or unverified data.
+ *
+ * Zero must only be returned when the backend
+ * confirms that the actual count is zero.
+ *
  * @typedef {{
  *   rating: number | null,
- *   reviewCount: number,
- *   completedJobs: number
+ *   reviewCount: number | null,
+ *   completedJobs: number | null
  * }} MechanicPerformanceSummary
  */
 
 /**
+ * Mechanic availability information.
+ *
+ * The complete availability summary is null when
+ * authoritative availability information cannot
+ * be retrieved.
+ *
+ * The 'not-configured' status must only be used
+ * when configuration is confirmed to be absent.
+ *
  * @typedef {{
  *   status: MechanicAvailabilityStatus,
  *   isAcceptingJobs: boolean,
@@ -56,6 +80,8 @@ export const MECHANIC_AVAILABILITY_STATUSES = {
  */
 
 /**
+ * Frontend-owned Profile navigation setting.
+ *
  * @typedef {{
  *   id: string,
  *   title: string,
@@ -74,17 +100,25 @@ export const MECHANIC_AVAILABILITY_STATUSES = {
  */
 
 /**
- * Mechanic identity, contact, business and professional
- * details are intentionally not duplicated here.
+ * Mechanic identity, contact, business and
+ * professional details belong to UserContext.
  *
- * Those fields belong to the authenticated user profile
- * loaded through UserContext.
+ * Verification, performance and availability
+ * information must be authoritative.
+ *
+ * Null indicates unavailable backend information.
+ *
+ * An empty recentActivity array indicates that
+ * the backend confirmed there are no activities.
+ *
+ * Frontend-owned settings remain available
+ * independently of backend profile data.
  *
  * @typedef {{
- *   verification: MechanicVerificationSummary,
+ *   verification: MechanicVerificationSummary | null,
  *   performance: MechanicPerformanceSummary,
- *   availability: MechanicAvailabilitySummary,
+ *   availability: MechanicAvailabilitySummary | null,
  *   settings: MechanicProfileSetting[],
- *   recentActivity: MechanicProfileActivity[]
+ *   recentActivity: MechanicProfileActivity[] | null
  * }} MechanicProfileData
  */

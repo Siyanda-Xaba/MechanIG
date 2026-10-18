@@ -590,7 +590,13 @@ export default function MechanicHome() {
                 },
               ]}
             >
-              {homeData.schedule.length ===
+              {homeData.dataAvailability?.schedule !== true ? (
+                <EmptySection
+                  icon="calendar-blank-outline"
+                  message="Schedule unavailable until mechanic data is connected."
+                  color={colors.secondaryText}
+                />
+              ) : homeData.schedule.length ===
               0 ? (
                 <EmptySection
                   icon="calendar-blank-outline"
@@ -739,7 +745,13 @@ export default function MechanicHome() {
                 },
               ]}
             >
-              {homeData.serviceAlerts
+              {homeData.dataAvailability?.serviceAlerts !== true ? (
+                <EmptySection
+                  icon="bell-check-outline"
+                  message="Service alerts unavailable until mechanic data is connected."
+                  color={colors.secondaryText}
+                />
+              ) : homeData.serviceAlerts
                 .length === 0 ? (
                 <EmptySection
                   icon="bell-check-outline"
@@ -857,7 +869,13 @@ export default function MechanicHome() {
                 },
               ]}
             >
-              {homeData.recentActivity
+              {homeData.dataAvailability?.recentActivity !== true ? (
+                <EmptySection
+                  icon="history"
+                  message="Recent activity unavailable until mechanic data is connected."
+                  color={colors.secondaryText}
+                />
+              ) : homeData.recentActivity
                 .length === 0 ? (
                 <EmptySection
                   icon="history"

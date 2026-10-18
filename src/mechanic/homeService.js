@@ -1,76 +1,80 @@
 /**
  * MechanIQ Mechanic Home Service
  *
- * Dashboard information must come from
- * authoritative backend records associated
- * with the authenticated mechanic.
+ * Dashboard information must come from authoritative backend
+ * records associated with the authenticated mechanic.
  *
- * Never present development values as
- * genuine jobs, bookings, ratings, earnings,
- * appointments, alerts, or business activity.
+ * Never present development values as genuine jobs, bookings,
+ * ratings, earnings, appointments, alerts, or business activity.
  *
- * A null statistic means that the value
- * has not been verified or retrieved.
- *
+ * A null statistic means its value has not been verified.
  * Null must not be interpreted as zero.
+ *
+ * Collection availability is tracked separately from collection data:
+ * - false: the backend has not confirmed the collection contents.
+ * - true: an authorized backend response confirmed the collection,
+ *         including when the array is genuinely empty.
+ *
+ * An empty array without confirmed availability does NOT mean
+ * that the mechanic has no scheduled work, alerts, or activity.
  */
 
 const unavailableMechanicHomeData = {
-  // Requires confirmed completed job records.
   jobsCompleted: null,
-
-  // Requires confirmed pending job records.
   pendingJobs: null,
-
-  // Requires confirmed booking records.
   bookings: null,
-
-  // Requires authoritative customer ratings.
   rating: null,
-
-  // Requires verified financial records.
-  // Do not display R0 when earnings are unknown.
   earnings: null,
 
-  // Do not generate fictitious appointments.
   schedule: [],
-
-  // Do not generate fictitious service alerts.
   serviceAlerts: [],
-
-  // Do not generate fictitious business activity.
   recentActivity: [],
+
+  dataAvailability: {
+    schedule: false,
+    serviceAlerts: false,
+    recentActivity: false,
+  },
 }
 
 /**
  * Retrieve Mechanic Home dashboard information.
  *
- * Future backend integration must:
- *
- * - Authenticate the mechanic.
- * - Verify the mechanic's role.
- * - Retrieve mechanic-specific job totals.
- * - Retrieve confirmed bookings.
- * - Retrieve authoritative customer ratings.
- * - Retrieve verified earnings.
- * - Retrieve scheduled work.
- * - Retrieve genuine service alerts.
- * - Retrieve recorded business activity.
- *
- * Backend responses should include timestamps
- * so cached information can be distinguished
- * from current information.
- *
- * Until the backend is connected, unavailable
- * values are returned instead of fabricated data.
+ * @param {string} mechanicId
+ * The authenticated mechanic's user ID.
  *
  * @returns {Promise<import('./homeTypes').MechanicHomeData>}
+ *
+ * Future backend integration must:
+ * - Authenticate the requesting user and verify the mechanic role.
+ * - Verify the requested mechanic ID belongs to that user.
+ * - Retrieve verified job counts, bookings, ratings, and earnings.
+ * - Retrieve genuine scheduled work, service alerts, and activity.
+ * - Mark each collection as available ONLY after an authoritative,
+ *   successful response for the current mechanic.
+ * - Return retrieval timestamps for freshness/caching information.
+ *
+ * Frontend mechanic ID validation is NOT backend authorization.
  */
-export async function getMechanicHomeData() {
+export async function getMechanicHomeData(mechanicId) {
+  if (
+    typeof mechanicId !== 'string' ||
+    !mechanicId.trim()
+  ) {
+    throw new Error(
+      'An authenticated mechanic account is required to load dashboard information.'
+    )
+  }
+
+  // The backend isn't connected. Preserve unknown statistics and
+  // keep collections unverified; do not fabricate mechanic records.
   return {
     ...unavailableMechanicHomeData,
     schedule: [],
     serviceAlerts: [],
     recentActivity: [],
+    dataAvailability: {
+      ...unavailableMechanicHomeData.dataAvailability,
+    },
   }
 }

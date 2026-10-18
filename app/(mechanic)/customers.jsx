@@ -128,22 +128,22 @@ export default function MechanicCustomers() {
 
   function getFilterCount(filter) {
     if (!customersData) {
-      return 0
+      return '--'
     }
 
     switch (filter) {
       case CUSTOMER_FILTERS.ALL:
-        return customersData.totalCustomers
+        return customersData.totalCustomers ?? '--'
 
       case CUSTOMER_FILTERS.ACTIVE:
-        return customersData.activeCustomers
+        return customersData.activeCustomers ?? '--'
 
       case CUSTOMER_FILTERS.OPEN_JOBS:
         return customersData
-          .customersWithOpenJobs
+          .customersWithOpenJobs ?? '--'
 
       default:
-        return 0
+        return '--'
     }
   }
 
@@ -227,7 +227,7 @@ export default function MechanicCustomers() {
             label="Customers"
             value={
               customersData
-                ?.totalCustomers ?? 0
+                ?.totalCustomers ?? '--'
             }
             colors={colors}
           />
@@ -237,7 +237,7 @@ export default function MechanicCustomers() {
             label="Active"
             value={
               customersData
-                ?.activeCustomers ?? 0
+                ?.activeCustomers ?? '--'
             }
             colors={colors}
           />
@@ -248,7 +248,7 @@ export default function MechanicCustomers() {
             value={
               customersData
                 ?.customersWithOpenJobs ??
-              0
+              '--'
             }
             colors={colors}
           />
@@ -258,7 +258,7 @@ export default function MechanicCustomers() {
             label="Bookings"
             value={
               customersData
-                ?.upcomingBookings ?? 0
+                ?.upcomingBookings ?? '--'
             }
             colors={colors}
           />
@@ -486,7 +486,7 @@ export default function MechanicCustomers() {
               Loading customers...
             </Text>
           </View>
-        ) : customersError ? (
+        ) : customersError || !customersData ? (
           <View
             style={[
               styles.stateCard,
@@ -524,7 +524,8 @@ export default function MechanicCustomers() {
                 },
               ]}
             >
-              {customersError}
+              {customersError ??
+                'Verified customer records are unavailable.'}
             </Text>
 
             <TouchableOpacity
@@ -574,7 +575,9 @@ export default function MechanicCustomers() {
                 },
               ]}
             >
-              No Customers Found
+              {customersData.customers.length === 0
+                ? 'No Customers Yet'
+                : 'No Customers Found'}
             </Text>
 
             <Text
@@ -586,8 +589,9 @@ export default function MechanicCustomers() {
                 },
               ]}
             >
-              Try changing your search
-              or selected filter.
+              {customersData.customers.length === 0
+                ? 'Verified customer records will appear here once they are associated with your mechanic account.'
+                : 'Try changing your search or selected filter.'}
             </Text>
           </View>
         ) : (

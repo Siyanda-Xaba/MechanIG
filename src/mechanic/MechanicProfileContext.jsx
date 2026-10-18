@@ -3,10 +3,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 
 import { useUser } from '../users/UserContext'
+
 import {
   getMechanicProfileData,
 } from './profileService'
@@ -14,58 +16,159 @@ import {
 const MechanicProfileContext =
   createContext(undefined)
 
+const emptyProfileState = {
+  mechanicId: null,
+  data: null,
+  isLoading: false,
+  error: null,
+}
+
 export function MechanicProfileProvider({
   children,
 }) {
-  const { user } = useUser()
+  const { user, isLoadingUser } = useUser()
+
+  const mechanicId =
+    user?.role === 'mechanic' &&
+    typeof user.id === 'string' &&
+    user.id.trim()
+      ? user.id
+      : null
+
+  const currentScopeRef = useRef({
+    mechanicId,
+    isLoadingUser,
+  })
+
+  currentScopeRef.current = {
+    mechanicId,
+    isLoadingUser,
+  }
+
+  const requestVersionRef = useRef(0)
 
   const [
-    profileData,
-    setProfileData,
-  ] = useState(null)
-
-  const [
-    isLoadingProfile,
-    setIsLoadingProfile,
-  ] = useState(false)
-
-  const [
-    profileError,
-    setProfileError,
-  ] = useState(null)
+    profileState,
+    setProfileState,
+  ] = useState(emptyProfileState)
 
   const refreshProfileData =
     useCallback(async () => {
-      if (!user) {
-        setProfileData(null)
-        setProfileError(null)
-        return
+      const requestVersion =
+        ++requestVersionRef.current
+
+      const isCurrentRequest = () =>
+        requestVersion ===
+          requestVersionRef.current &&
+        currentScopeRef.current.mechanicId ===
+          mechanicId &&
+        currentScopeRef.current.isLoadingUser ===
+          false
+
+      if (
+        isLoadingUser ||
+        !mechanicId
+      ) {
+        setProfileState({
+          ...emptyProfileState,
+        })
+
+        return false
       }
+
+      setProfileState({
+        mechanicId,
+        data: null,
+        isLoading: true,
+        error: null,
+      })
 
       try {
-        setIsLoadingProfile(true)
-        setProfileError(null)
-
         const data =
           await getMechanicProfileData(
-            user.id
+            mechanicId
           )
 
-        setProfileData(data)
-      } catch {
-        setProfileData(null)
+        if (!isCurrentRequest()) {
+          return false
+        }
 
-        setProfileError(
-          'Unable to load mechanic profile information.'
-        )
-      } finally {
-        setIsLoadingProfile(false)
+        // A null activity collection means its contents have
+        // not been verified. An empty array means the backend
+        // confirmed there is no activity.
+        if (
+          !data ||
+          typeof data !== 'object' ||
+          Array.isArray(data) ||
+          !Array.isArray(data.settings) ||
+          !(
+            data.recentActivity === null ||
+            Array.isArray(data.recentActivity)
+          )
+        ) {
+          throw new Error(
+            'The mechanic profile service returned an invalid response.'
+          )
+        }
+
+        setProfileState({
+          mechanicId,
+          data,
+          isLoading: false,
+          error: null,
+        })
+
+        return true
+      } catch (error) {
+        if (!isCurrentRequest()) {
+          return false
+        }
+
+        setProfileState({
+          mechanicId,
+          data: null,
+          isLoading: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Unable to load mechanic profile information.',
+        })
+
+        return false
       }
-    }, [user])
+    }, [
+      mechanicId,
+      isLoadingUser,
+    ])
 
   useEffect(() => {
-    refreshProfileData()
+    void refreshProfileData()
+
+    return () => {
+      requestVersionRef.current += 1
+    }
   }, [refreshProfileData])
+
+  const isCurrentAccount =
+    !isLoadingUser &&
+    mechanicId !== null &&
+    profileState.mechanicId ===
+      mechanicId
+
+  const profileData =
+    isCurrentAccount
+      ? profileState.data
+      : null
+
+  const isLoadingProfile =
+    isCurrentAccount
+      ? profileState.isLoading
+      : false
+
+  const profileError =
+    isCurrentAccount
+      ? profileState.error
+      : null
 
   return (
     <MechanicProfileContext.Provider
@@ -83,7 +186,9 @@ export function MechanicProfileProvider({
 
 export function useMechanicProfile() {
   const context =
-    useContext(MechanicProfileContext)
+    useContext(
+      MechanicProfileContext
+    )
 
   if (!context) {
     throw new Error(

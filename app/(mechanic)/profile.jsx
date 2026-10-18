@@ -19,6 +19,7 @@ import ImageSourcePickerModal from '../../src/components/ImageSourcePickerModal'
 import ProfileAvatar from '../../src/components/ProfileAvatar'
 import StableScrollView from '../../src/components/StableScrollView'
 import { useMechanicProfile } from '../../src/mechanic/MechanicProfileContext'
+import { MECHANIC_PROFILE_SETTINGS } from '../../src/mechanic/profileService'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useProfileImageUpload } from '../../src/users/useProfileImageUpload'
 import { useUser } from '../../src/users/UserContext'
@@ -81,10 +82,10 @@ export default function MechanicProfile() {
     profileData?.availability ?? null
 
   const settings =
-    profileData?.settings ?? []
+    MECHANIC_PROFILE_SETTINGS
 
   const recentActivity =
-    profileData?.recentActivity ?? []
+    profileData?.recentActivity ?? null
 
   function handleProfileImagePress() {
     clearProfileImageError()
@@ -516,7 +517,7 @@ export default function MechanicProfile() {
             label="Completed"
             value={
               performance?.completedJobs ??
-              0
+              '—'
             }
             colors={colors}
           />
@@ -526,7 +527,7 @@ export default function MechanicProfile() {
             label="Reviews"
             value={
               performance?.reviewCount ??
-              0
+              '—'
             }
             colors={colors}
             onPress={() =>
@@ -562,7 +563,7 @@ export default function MechanicProfile() {
             isVerified={
               verification
                 ?.identityVerified ??
-              false
+              null
             }
             colors={colors}
           />
@@ -572,7 +573,7 @@ export default function MechanicProfile() {
             isVerified={
               verification
                 ?.tradeCertificateVerified ??
-              false
+              null
             }
             colors={colors}
           />
@@ -582,7 +583,7 @@ export default function MechanicProfile() {
             isVerified={
               verification
                 ?.businessVerified ??
-              false
+              null
             }
             colors={colors}
             isLast
@@ -772,11 +773,13 @@ export default function MechanicProfile() {
                 },
               ]}
             >
-              {availability
-                ?.serviceRadiusLabel ??
-                professionalDetails
-                  .serviceRadius ??
-                'Availability preferences have not been configured.'}
+              {availability?.serviceRadiusLabel ??
+                (availability?.status ===
+                'not-configured'
+                  ? 'Availability preferences have not been configured.'
+                  : availability
+                    ? 'Service radius unavailable.'
+                    : 'Verified availability preferences are unavailable.')}
             </Text>
           </View>
         </View>
@@ -918,7 +921,23 @@ export default function MechanicProfile() {
             },
           ]}
         >
-          {recentActivity.length ===
+          {recentActivity === null ? (
+            <View style={styles.emptyActivity}>
+              <MaterialCommunityIcons
+                name="history"
+                size={28}
+                color={colors.secondaryText}
+              />
+              <Text
+                style={[
+                  styles.emptyActivityText,
+                  { color: colors.secondaryText },
+                ]}
+              >
+                Recent profile activity is unavailable.
+              </Text>
+            </View>
+          ) : recentActivity.length ===
           0 ? (
             <View
               style={
@@ -1234,8 +1253,7 @@ function VerificationBadge({
   colors,
 }) {
   const status =
-    verification?.status ??
-    'not-verified'
+    verification?.status ?? null
 
   const color =
     status === 'verified'
@@ -1273,9 +1291,9 @@ function VerificationBadge({
           },
         ]}
       >
-        {formatVerificationStatus(
-          status
-        )}
+        {status
+          ? formatVerificationStatus(status)
+          : 'Status unavailable'}
       </Text>
     </View>
   )
@@ -1287,7 +1305,7 @@ function VerificationRow({
   colors,
   isLast = false,
 }) {
-  const color = isVerified
+  const color = isVerified === true
     ? colors.success
     : colors.secondaryText
 
@@ -1306,9 +1324,11 @@ function VerificationRow({
     >
       <MaterialCommunityIcons
         name={
-          isVerified
+          isVerified === true
             ? 'check-circle-outline'
-            : 'clock-outline'
+            : isVerified === false
+              ? 'clock-outline'
+              : 'help-circle-outline'
         }
         size={21}
         color={color}
@@ -1333,9 +1353,11 @@ function VerificationRow({
           },
         ]}
       >
-        {isVerified
+        {isVerified === true
           ? 'Verified'
-          : 'Not verified'}
+          : isVerified === false
+            ? 'Not verified'
+            : 'Unavailable'}
       </Text>
     </View>
   )
@@ -1440,8 +1462,11 @@ function formatAvailabilityStatus(
     case 'unavailable':
       return 'Unavailable'
 
-    default:
+    case 'not-configured':
       return 'Not Configured'
+
+    default:
+      return 'Status unavailable'
   }
 }
 

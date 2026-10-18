@@ -2,135 +2,107 @@ import {
   getMechanicHomeData,
 } from './homeService'
 
-const developmentProfileMetadata = {
-  verification: {
-    status: 'not-verified',
-
-    identityVerified: false,
-    tradeCertificateVerified: false,
-    businessVerified: false,
+/**
+ * These are frontend navigation options, not backend records.
+ * Account Settings must remain available even when profile
+ * metadata or mechanic performance cannot be retrieved.
+ */
+export const MECHANIC_PROFILE_SETTINGS = [
+  {
+    id: 'personal-information',
+    title: 'Personal Information',
+    description:
+      'View and update your personal and contact details.',
   },
-
-  availability: {
-    status: 'not-configured',
-
-    isAcceptingJobs: false,
-    serviceRadiusLabel: null,
+  {
+    id: 'business-information',
+    title: 'Workshop & Business',
+    description:
+      'Manage your workshop, business and professional details.',
   },
-
-  settings: [
-    {
-      id: 'personal-information',
-
-      title: 'Personal Information',
-
-      description:
-        'View and update your personal and contact details.',
-    },
-
-    {
-      id: 'business-information',
-
-      title: 'Workshop & Business',
-
-      description:
-        'Manage your workshop, business and professional details.',
-    },
-
-    {
-      id: 'availability',
-
-      title: 'Availability',
-
-      description:
-        'Manage job availability and service preferences.',
-    },
-
-    {
-      id: 'notifications',
-
-      title: 'Notifications',
-
-      description:
-        'Manage mechanic alerts and notification preferences.',
-    },
-
-    {
-      id: 'security',
-
-      title: 'Security',
-
-      description:
-        'Password, authentication and account security settings.',
-    },
-
-    {
-      id: 'help-support',
-
-      title: 'Help & Support',
-
-      description:
-        'Get help and contact MechanIQ support.',
-    },
-  ],
-
-  recentActivity: [],
-}
+  {
+    id: 'availability',
+    title: 'Availability',
+    description:
+      'Manage job availability and service preferences.',
+  },
+  {
+    id: 'notifications',
+    title: 'Notifications',
+    description:
+      'Manage mechanic alerts and notification preferences.',
+  },
+  {
+    id: 'security',
+    title: 'Security',
+    description:
+      'Password, authentication and account security settings.',
+  },
+  {
+    id: 'help-support',
+    title: 'Help & Support',
+    description:
+      'Get help and contact MechanIQ support.',
+  },
+]
 
 /**
- * Later this function will load mechanic profile metadata
- * from the MechanIQ backend for the authenticated mechanic.
+ * Retrieve metadata for the authenticated mechanic profile.
  *
- * Personal identity, contact information, workshop details,
- * business information and professional details are already
- * part of the authenticated user profile and must continue
- * to come through UserContext.
+ * Identity, contact, workshop and professional details belong to
+ * UserContext rather than being duplicated in this service.
  *
- * Verification status must only be marked as verified when
- * confirmed by the mechanic verification backend.
+ * Verification status, availability preferences, review counts,
+ * and profile activity have no connected authoritative provider
+ * yet. Return null for each unknown value, not invented defaults.
  *
- * Performance data is currently derived from the existing
- * Mechanic Home service so the frontend does not maintain
- * conflicting development statistics.
+ * Home statistics may be reused only when actually available for
+ * the same mechanic. An unavailable Home service must not prevent
+ * frontend Account Settings from being displayed.
  *
- * @param {string} userId
+ * Future backend integration must authenticate the requesting
+ * user, confirm the mechanic role and account association, and
+ * authorize access to verification and availability records.
+ *
+ * @param {string} mechanicId
  * @returns {Promise<import('./profileTypes').MechanicProfileData>}
  */
-export async function getMechanicProfileData(
-  userId
-) {
-  // userId is intentionally part of the
-  // backend-ready profile contract.
-  void userId
+export async function getMechanicProfileData(mechanicId) {
+  if (
+    typeof mechanicId !== 'string' ||
+    !mechanicId.trim()
+  ) {
+    throw new Error(
+      'An authenticated mechanic account is required to load profile information.'
+    )
+  }
 
-  const homeData =
-    await getMechanicHomeData()
+  let homeData = null
+
+  try {
+    homeData = await getMechanicHomeData(mechanicId)
+  } catch {
+    // Performance is unavailable, not zero. Other profile
+    // sections and frontend settings remain independent.
+  }
 
   return {
-    verification:
-      developmentProfileMetadata
-        .verification,
+    verification: null,
 
     performance: {
-      rating:
-        homeData.rating ?? null,
-
-      reviewCount: 0,
-
+      rating: Number.isFinite(homeData?.rating)
+        ? homeData.rating
+        : null,
+      reviewCount: null,
       completedJobs:
-        homeData.jobsCompleted ?? 0,
+        Number.isFinite(homeData?.jobsCompleted) &&
+        homeData.jobsCompleted >= 0
+          ? homeData.jobsCompleted
+          : null,
     },
 
-    availability:
-      developmentProfileMetadata
-        .availability,
-
-    settings:
-      developmentProfileMetadata
-        .settings,
-
-    recentActivity:
-      developmentProfileMetadata
-        .recentActivity,
+    availability: null,
+    settings: MECHANIC_PROFILE_SETTINGS,
+    recentActivity: null,
   }
 }
