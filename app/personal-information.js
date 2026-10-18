@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { auth } from '../src/firebase/firebase';
 import StableScrollView from '../src/components/StableScrollView';
 import { useTheme } from '../src/theme/ThemeContext';
 import { useUpdateUserProfile } from '../src/users/useUpdateUserProfile';
@@ -27,7 +28,7 @@ export default function PersonalInformationScreen() {
         setForm({
             firstName: user.firstName,
             lastName: user.lastName,
-            email: user.email,
+            email: auth.currentUser?.email ?? user.email,
             phone: user.phone,
         });
     }, [user]);
@@ -169,7 +170,7 @@ export default function PersonalInformationScreen() {
                                 backgroundColor: colors.card,
                                 borderColor: colors.border,
                             },
-                        ], children: [_jsx(ProfileField, { label: "First Name", value: form.firstName, error: formErrors.firstName, placeholder: "First name", onChangeText: (value) => updateField('firstName', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger }), _jsx(ProfileField, { label: "Last Name", value: form.lastName, error: formErrors.lastName, placeholder: "Last name", onChangeText: (value) => updateField('lastName', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger }), _jsx(ProfileField, { label: "Email Address", value: form.email, error: formErrors.email, placeholder: "Email address", keyboardType: "email-address", autoCapitalize: "none", onChangeText: (value) => updateField('email', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger }), _jsx(ProfileField, { label: "Phone Number", value: form.phone, error: formErrors.phone, placeholder: "Phone number", keyboardType: "phone-pad", autoCapitalize: "none", onChangeText: (value) => updateField('phone', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger })] }), updateProfileError ? (_jsxs(View, { style: [
+                        ], children: [_jsx(ProfileField, { label: "First Name", value: form.firstName, error: formErrors.firstName, placeholder: "First name", onChangeText: (value) => updateField('firstName', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger }), _jsx(ProfileField, { label: "Last Name", value: form.lastName, error: formErrors.lastName, placeholder: "Last name", onChangeText: (value) => updateField('lastName', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger }), _jsx(ProfileField, { label: "Email Address", value: form.email, error: formErrors.email, placeholder: "Email address", keyboardType: "email-address", autoCapitalize: "none", editable: false, textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger }), _jsx(ProfileField, { label: "Phone Number", value: form.phone, error: formErrors.phone, placeholder: "Phone number", keyboardType: "phone-pad", autoCapitalize: "none", onChangeText: (value) => updateField('phone', value), textColor: colors.text, secondaryTextColor: colors.secondaryText, borderColor: colors.border, dangerColor: colors.danger })] }), updateProfileError ? (_jsxs(View, { style: [
                             styles.errorCard,
                             {
                                 borderColor: colors.danger,
@@ -189,7 +190,7 @@ export default function PersonalInformationScreen() {
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "Changes are only applied to the shared user profile after the MechanIQ backend confirms the updated account information." })] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isUpdatingProfile, onPress: handleSave, style: [
+                                ], children: "You can update your name and phone number here. Email changes require additional verification and are not available yet." })] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isUpdatingProfile, onPress: handleSave, style: [
                             styles.saveButton,
                             {
                                 backgroundColor: colors.accent,
@@ -201,16 +202,17 @@ export default function PersonalInformationScreen() {
                                     ? 'Saving...'
                                     : 'Save Changes' })] })] }) }) }));
 }
-function ProfileField({ label, value, placeholder, error, keyboardType = 'default', autoCapitalize = 'words', onChangeText, textColor, secondaryTextColor, borderColor, dangerColor, }) {
+function ProfileField({ label, value, placeholder, error, keyboardType = 'default', autoCapitalize = 'words', editable = true, onChangeText, textColor, secondaryTextColor, borderColor, dangerColor, }) {
     return (_jsxs(View, { style: styles.field, children: [_jsx(Text, { style: [
                     styles.fieldLabel,
                     {
                         color: textColor,
                     },
-                ], children: label }), _jsx(TextInput, { value: value, onChangeText: onChangeText, placeholder: placeholder, placeholderTextColor: secondaryTextColor, keyboardType: keyboardType, autoCapitalize: autoCapitalize, style: [
+                ], children: label }), _jsx(TextInput, { value: value, editable: editable, onChangeText: onChangeText, placeholder: placeholder, placeholderTextColor: secondaryTextColor, keyboardType: keyboardType, autoCapitalize: autoCapitalize, style: [
                     styles.input,
                     {
                         color: textColor,
+                        opacity: editable ? 1 : 0.65,
                         borderColor: error
                             ? dangerColor
                             : borderColor,
