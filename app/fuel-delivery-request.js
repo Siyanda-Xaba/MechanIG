@@ -6,12 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../src/components/StableScrollView';
 import { useEffect, useMemo, useState, } from 'react';
 import { useFuelDeliveryRequest } from '../src/customer/useFuelDeliveryRequest';
+import { prepareAndSaveEmergencyRequest } from '../src/emergency/emergencyPreparationService';
+import { useUser } from '../src/users/UserContext';
 import { useForegroundLocation } from '../src/location/useForegroundLocation';
 import { useTheme } from '../src/theme/ThemeContext';
 import { useVehicle } from '../src/vehicles/VehicleContext';
 export default function FuelDeliveryRequestScreen() {
     const router = useRouter();
     const { colors } = useTheme();
+    const { user } = useUser();
     const params = useLocalSearchParams();
     const routeFuelType = Array.isArray(params.fuelType)
         ? params.fuelType[0]
@@ -75,8 +78,16 @@ export default function FuelDeliveryRequestScreen() {
     const { location, isLoadingLocation, locationError, refreshLocation, } = useForegroundLocation();
     const { isSubmittingRequest, requestError, submitFuelRequest, clearRequestError, } = useFuelDeliveryRequest();
     const [quantityText, setQuantityText,] = useState('');
+    const [contactName, setContactName] = useState('');
+    const [contactPhone, setContactPhone] = useState('');
+    const [locationDescription, setLocationDescription] = useState('');
+    const [reviewInput, setReviewInput] = useState(null);
+    const [isSavingEmergency, setIsSavingEmergency] = useState(false);
+    const [saveError, setSaveError] = useState(null);
+    const [savedEmergency, setSavedEmergency] = useState(null);
     const quantityLitres = Number(quantityText);
     const hasValidQuantity = Number.isFinite(quantityLitres) && quantityLitres > 0;
+    // Standard fuel delivery keeps its original validation and backend submission.
     const canSubmit = !isLoadingVehicles &&
         !isLoadingLocation &&
         !isSubmittingRequest &&
@@ -84,6 +95,83 @@ export default function FuelDeliveryRequestScreen() {
         selectedFuelType !== null &&
         location !== null &&
         hasValidQuantity;
+    // Emergency fuel may be saved as an incomplete local draft, even without GPS.
+    const canReviewEmergency = !isLoadingVehicles &&
+        !isSavingEmergency &&
+        user?.role === 'customer' &&
+        !savedEmergency;
+    const canProceed = isEmergency ? canReviewEmergency : canSubmit;
+
+    function prepareEmergencyInput() {
+        const vehicleYear = selectedVehicle?.year == null
+            ? null
+            : Number(selectedVehicle.year);
+
+        return {
+            serviceType: 'fuel',
+            owner: {
+                type: 'customer',
+                accountId: user?.id ?? '',
+            },
+            contact: {
+                name: contactName,
+                phoneNumber: contactPhone,
+            },
+            location: {
+                coordinates: location
+                    ? { latitude: location.latitude, longitude: location.longitude }
+                    : null,
+                description: locationDescription,
+            },
+            vehicle: selectedVehicle
+                ? {
+                    vehicleId: selectedVehicle.id ?? null,
+                    make: selectedVehicle.make ?? null,
+                    model: selectedVehicle.model ?? null,
+                    year: Number.isInteger(vehicleYear) && vehicleYear > 0
+                        ? vehicleYear
+                        : null,
+                }
+                : null,
+            details: {
+                fuelType: selectedFuelType,
+                quantityLitres: hasValidQuantity ? quantityLitres : null,
+            },
+        };
+    }
+
+    function handleReviewEmergency() {
+        if (!canReviewEmergency) {
+            return;
+        }
+        // Do not silently discard an invalid quantity entered by the Customer.
+        if (quantityText.trim() && !hasValidQuantity) {
+            setSaveError('Enter a valid fuel quantity or clear the field to save an incomplete draft.');
+            return;
+        }
+        setSaveError(null);
+        setReviewInput(prepareEmergencyInput());
+    }
+
+    async function handleSaveEmergency() {
+        if (!reviewInput || isSavingEmergency || savedEmergency) {
+            return;
+        }
+        setIsSavingEmergency(true);
+        setSaveError(null);
+        try {
+            // Secure local draft only: no backend request and no tracking ID.
+            const request = await prepareAndSaveEmergencyRequest(reviewInput, user);
+            setSavedEmergency(request);
+            setReviewInput(null);
+        } catch (error) {
+            setSaveError(error instanceof Error
+                ? error.message
+                : 'Unable to save the emergency fuel draft.');
+        } finally {
+            setIsSavingEmergency(false);
+        }
+    }
     async function handleSubmit() {
         if (!selectedVehicle ||
             !selectedFuelType ||
@@ -115,10 +203,14 @@ export default function FuelDeliveryRequestScreen() {
     }
     function handleFuelTypeSelect(fuelType) {
         clearRequestError();
+        setReviewInput(null);
+        setSaveError(null);
         setSelectedFuelType(fuelType);
     }
     function handleQuantityChange(value) {
         clearRequestError();
+        setReviewInput(null);
+        setSaveError(null);
         const sanitizedValue = value.replace(/[^0-9.]/g, '');
         const decimalParts = sanitizedValue.split('.');
         if (decimalParts.length > 2) {
@@ -158,7 +250,7 @@ export default function FuelDeliveryRequestScreen() {
                                 color: colors.secondaryText,
                             },
                         ], children: isEmergency
-                            ? 'Request urgent fuel assistance for your selected vehicle at your current location.'
+                            ? 'Prepare an urgent fuel request. Save it on this device even when GPS or internet is unavailable.'
                             : 'Request fuel for your selected vehicle at your current location.' }), isEmergency ? (_jsxs(View, { style: [
                             styles.emergencyNotice,
                             {
@@ -169,7 +261,7 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "Emergency fuel is for urgent fuel assistance. Service coverage and driver availability must still be confirmed by the backend." })] })) : null, _jsxs(View, { style: [
+                                ], children: "Saving an emergency fuel draft does not send a request or dispatch fuel. Review and submit it explicitly once a real delivery backend is available." })] })) : null, _jsxs(View, { style: [
                             styles.vehicleCard,
                             {
                                 backgroundColor: colors.card,
@@ -278,7 +370,34 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.danger,
                                     },
-                                ], children: "Enter a quantity greater than 0 litres." })) : null] }), _jsxs(View, { style: [
+                                ], children: "Enter a quantity greater than 0 litres." })) : null] }), isEmergency ? (_jsxs(View, { style: [
+                            styles.formCard,
+                            {
+                                backgroundColor: colors.card,
+                                borderColor: colors.border,
+                            },
+                        ], children: [_jsxs(View, { style: styles.sectionHeader, children: [
+                            _jsx(Ionicons, { name: 'person-outline', size: 22, color: colors.accent }),
+                            _jsx(Text, { style: [styles.sectionTitle, { color: colors.text }], children: 'Emergency Contact' }),
+                        ] }), _jsx(Text, { style: [styles.secondaryText, { color: colors.secondaryText }], children: 'Add contact details for when you are ready to submit. Missing details can remain in a saved draft.' }),
+                            _jsx(EmergencyTextField, {
+                                label: 'Contact Name',
+                                value: contactName,
+                                onChangeText: (text) => { setContactName(text); setReviewInput(null); setSaveError(null); },
+                                placeholder: 'Name of person requesting help',
+                                maxLength: 120,
+                                colors,
+                            }),
+                            _jsx(EmergencyTextField, {
+                                label: 'Phone Number',
+                                value: contactPhone,
+                                onChangeText: (text) => { setContactPhone(text); setReviewInput(null); setSaveError(null); },
+                                placeholder: 'Phone number responders can call',
+                                maxLength: 40,
+                                keyboardType: 'phone-pad',
+                                colors,
+                            }),
+                        ] })) : null, _jsxs(View, { style: [
                             styles.locationCard,
                             {
                                 backgroundColor: colors.card,
@@ -319,12 +438,25 @@ export default function FuelDeliveryRequestScreen() {
                                             {
                                                 color: colors.secondaryText,
                                             },
-                                        ], children: "Your device location will be sent securely with the delivery request." })] })) : (_jsx(Text, { style: [
+                                        ], children: isEmergency
+                                                ? 'GPS coordinates will be included only in your encrypted local draft until you explicitly submit it.'
+                                                : 'Your device location will be sent securely with the delivery request.' })] })) : (_jsx(Text, { style: [
                                     styles.secondaryText,
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "Location unavailable." }))] }), _jsxs(View, { style: [
+                                ], children: "Location unavailable." })), isEmergency ? (_jsxs(View, { children: [
+                                    _jsx(EmergencyTextField, {
+                                        label: 'Location Description (optional for saved drafts)',
+                                        value: locationDescription,
+                                        onChangeText: (text) => { setLocationDescription(text); setReviewInput(null); setSaveError(null); },
+                                        placeholder: 'Road name, nearest landmark, or other location details',
+                                        maxLength: 500,
+                                        multiline: true,
+                                        colors,
+                                    }),
+                                    _jsx(Text, { style: [styles.secondaryText, { color: colors.secondaryText }], children: 'GPS may be unavailable without a clear signal. Add a description if possible. A usable location will be required before actual submission.' }),
+                                ] })) : null] }), _jsxs(View, { style: [
                             styles.infoCard,
                             {
                                 borderColor: colors.border,
@@ -334,7 +466,9 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "Final pricing, service coverage, fuel compatibility, and driver availability will be confirmed by the MechanIQ delivery backend before a request is created." })] }), requestError ? (_jsxs(View, { style: [
+                                ], children: isEmergency
+                                    ? 'This form currently saves drafts locally only. Pricing, coverage, compatibility and driver availability must be verified by a connected backend before any delivery request is created.'
+                                    : 'Final pricing, service coverage, fuel compatibility, and driver availability will be confirmed by the MechanIQ delivery backend before a request is created.' })] }), requestError ? (_jsxs(View, { style: [
                             styles.errorCard,
                             {
                                 borderColor: colors.danger,
@@ -344,34 +478,82 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.danger,
                                     },
-                                ], children: requestError })] })) : null, _jsxs(TouchableOpacity, { activeOpacity: canSubmit
+                                ], children: requestError })] })) : null, isEmergency && saveError ? (_jsxs(View, { style: [styles.errorCard, { borderColor: colors.danger }], children: [
+                            _jsx(MaterialCommunityIcons, { name: 'alert-circle-outline', size: 20, color: colors.danger }),
+                            _jsx(Text, { style: [styles.errorText, { color: colors.danger }], children: saveError }),
+                        ] })) : null, isEmergency && reviewInput ? (_jsxs(View, { style: [styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.accent }], children: [
+                            _jsx(Text, { style: [styles.reviewTitle, { color: colors.text }], children: 'Review Emergency Fuel Draft' }),
+                            _jsx(Text, { style: [styles.reviewWarning, { color: colors.secondaryText }], children: 'Check these details before saving them securely on this device. Saving does NOT contact a provider.' }),
+                            _jsx(ReviewRow, { label: 'Vehicle', value: reviewInput.vehicle ? [reviewInput.vehicle.make, reviewInput.vehicle.model].filter(Boolean).join(' ') || 'Vehicle selected' : 'Not selected', colors }),
+                            _jsx(ReviewRow, { label: 'Fuel', value: reviewInput.details.fuelType || 'Not specified', colors }),
+                            _jsx(ReviewRow, { label: 'Quantity', value: reviewInput.details.quantityLitres == null ? 'Not specified' : `${reviewInput.details.quantityLitres} litres`, colors }),
+                            _jsx(ReviewRow, { label: 'Contact', value: reviewInput.contact.name || 'Not specified', colors }),
+                            _jsx(ReviewRow, { label: 'Phone', value: reviewInput.contact.phoneNumber || 'Not specified', colors }),
+                            _jsx(ReviewRow, { label: 'GPS', value: reviewInput.location.coordinates ? `${reviewInput.location.coordinates.latitude.toFixed(6)}, ${reviewInput.location.coordinates.longitude.toFixed(6)}` : 'Not available', colors }),
+                            _jsx(ReviewRow, { label: 'Location details', value: reviewInput.location.description || 'Not specified', colors }),
+                            _jsx(Text, { style: [styles.reviewWarning, { color: colors.secondaryText }], children: 'Missing details must be completed before actual backend submission. This draft is not a service request.' }),
+                            _jsxs(View, { style: styles.reviewActions, children: [
+                                _jsx(TouchableOpacity, { accessibilityRole: 'button', disabled: isSavingEmergency, onPress: () => { setReviewInput(null); setSaveError(null); }, style: [styles.reviewAction, { borderColor: colors.border }], children: _jsx(Text, { style: [styles.reviewActionText, { color: colors.text }], children: 'Edit Details' }) }),
+                                _jsx(TouchableOpacity, { accessibilityRole: 'button', disabled: isSavingEmergency, onPress: () => { void handleSaveEmergency(); }, style: [styles.reviewAction, { backgroundColor: colors.accent, opacity: isSavingEmergency ? 0.6 : 1 }], children: _jsx(Text, { style: [styles.reviewActionText, { color: '#000000' }], children: isSavingEmergency ? 'Saving...' : 'Confirm Save' }) }),
+                            ] }),
+                        ] })) : null, isEmergency && savedEmergency ? (_jsxs(View, { style: [styles.savedCard, { backgroundColor: colors.card, borderColor: colors.accent }], children: [
+                            _jsx(Ionicons, { name: 'checkmark-circle-outline', size: 27, color: colors.accent }),
+                            _jsx(Text, { style: [styles.reviewTitle, { color: colors.text }], children: 'Saved Locally — Not Submitted' }),
+                            _jsx(Text, { style: [styles.savedDescription, { color: colors.secondaryText }], children: 'Your emergency fuel draft is saved on this device. No fuel provider has been contacted, and there is no active delivery to track. Saved-request retrieval and explicit backend submission will be added next.' }),
+                            _jsx(TouchableOpacity, { accessibilityRole: 'button', onPress: () => router.back(), style: [styles.savedBackButton, { borderColor: colors.border }], children: _jsx(Text, { style: [styles.reviewActionText, { color: colors.text }], children: 'Return to Fuel' }) }),
+                        ] })) : null, (!isEmergency || (!reviewInput && !savedEmergency)) ? (_jsxs(TouchableOpacity, { activeOpacity: canProceed
                             ? 0.75
-                            : 1, disabled: !canSubmit, onPress: handleSubmit, style: [
+                            : 1, disabled: !canProceed, onPress: isEmergency ? handleReviewEmergency : handleSubmit, style: [
                             styles.submitButton,
                             {
-                                backgroundColor: canSubmit
+                                backgroundColor: canProceed
                                     ? isEmergency
                                         ? colors.danger
                                         : colors.accent
                                     : colors.border,
                             },
                         ], children: [_jsx(MaterialCommunityIcons, { name: isEmergency
-                                    ? 'alert-circle-outline'
-                                    : 'truck-delivery-outline', size: 20, color: canSubmit
+                                    ? 'content-save-outline'
+                                    : 'truck-delivery-outline', size: 20, color: canProceed
                                     ? '#000000'
                                     : colors.secondaryText }), _jsx(Text, { style: [
                                     styles.submitButtonText,
                                     {
-                                        color: canSubmit
+                                        color: canProceed
                                             ? '#000000'
                                             : colors.secondaryText,
                                     },
                                 ], children: isSubmittingRequest
                                     ? 'Submitting...'
                                     : isEmergency
-                                        ? 'Request Emergency Fuel'
-                                        : 'Request Fuel' })] })] }) }) }));
+                                        ? 'Review & Save Locally'
+                                        : 'Request Fuel' })] })) : null] }) }) }));
 }
+
+function EmergencyTextField({ label, value, onChangeText, placeholder, maxLength, keyboardType, multiline = false, colors }) {
+    return _jsxs(View, { style: styles.emergencyField, children: [
+        _jsx(Text, { style: [styles.emergencyFieldLabel, { color: colors.secondaryText }], children: label }),
+        _jsx(TextInput, {
+            value,
+            onChangeText,
+            placeholder,
+            maxLength,
+            keyboardType,
+            multiline,
+            textAlignVertical: multiline ? 'top' : 'center',
+            placeholderTextColor: colors.secondaryText,
+            style: [styles.emergencyInput, multiline ? styles.multilineInput : null, { borderColor: colors.border, color: colors.text }],
+        }),
+    ] });
+}
+
+function ReviewRow({ label, value, colors }) {
+    return _jsxs(View, { style: styles.reviewRow, children: [
+        _jsx(Text, { style: [styles.reviewLabel, { color: colors.secondaryText }], children: label }),
+        _jsx(Text, { selectable: true, style: [styles.reviewValue, { color: colors.text }], children: value }),
+    ] });
+}
+
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
@@ -592,5 +774,88 @@ const styles = StyleSheet.create({
     submitButtonText: {
         fontSize: 12,
         fontWeight: '700',
+    },
+    emergencyField: {
+        marginTop: 14,
+    },
+    emergencyFieldLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        marginBottom: 7,
+    },
+    emergencyInput: {
+        minHeight: 46,
+        borderWidth: 1,
+        borderRadius: 9,
+        paddingHorizontal: 12,
+        fontSize: 13,
+    },
+    multilineInput: {
+        minHeight: 88,
+        paddingTop: 12,
+        paddingBottom: 12,
+    },
+    reviewCard: {
+        marginTop: 16,
+        padding: 14,
+        borderWidth: 1,
+        borderRadius: 14,
+    },
+    reviewTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    reviewWarning: {
+        fontSize: 11,
+        lineHeight: 17,
+        marginTop: 10,
+        marginBottom: 8,
+    },
+    reviewRow: {
+        marginTop: 10,
+    },
+    reviewLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    reviewValue: {
+        marginTop: 3,
+        fontSize: 12,
+        lineHeight: 18,
+    },
+    reviewActions: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 14,
+    },
+    reviewAction: {
+        flex: 1,
+        minHeight: 44,
+        borderWidth: 1,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    reviewActionText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    savedCard: {
+        marginTop: 18,
+        padding: 16,
+        borderWidth: 1,
+        borderRadius: 14,
+        gap: 10,
+    },
+    savedDescription: {
+        fontSize: 11,
+        lineHeight: 17,
+    },
+    savedBackButton: {
+        minHeight: 42,
+        borderWidth: 1,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

@@ -5,9 +5,12 @@ import {
 } from "react/jsx-runtime";
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 
 import {
+    ActivityIndicator,
+    Alert,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -21,13 +24,182 @@ import FuelRecentActivityCard from '../../src/components/FuelRecentActivityCard'
 import StableScrollView from '../../src/components/StableScrollView';
 
 import { useCustomerFuel } from '../../src/customer/CustomerFuelContext';
+import { auth } from '../../src/firebase/firebase';
+import {
+    deleteEmergencyRequest,
+    loadEmergencyRequests,
+} from '../../src/emergency/emergencyStorage';
 import { useTheme } from '../../src/theme/ThemeContext';
+import { useUser } from '../../src/users/UserContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
 
 export default function CustomerFuel() {
     const router = useRouter();
 
     const { colors } = useTheme();
+    const { user, isLoadingUser } = useUser();
+
+    const [savedFuelRequests, setSavedFuelRequests] = useState([]);
+    const [savedRequestsOwnerId, setSavedRequestsOwnerId] = useState(null);
+    const [isLoadingSavedRequests, setIsLoadingSavedRequests] = useState(false);
+    const [savedRequestsError, setSavedRequestsError] = useState(null);
+    const [expandedRequestId, setExpandedRequestId] = useState(null);
+    const [deletingRequestId, setDeletingRequestId] = useState(null);
+    const activeOwnerRef = useRef(null);
+
+    const firebaseUser = auth.currentUser;
+    const canViewSavedRequests =
+        !isLoadingUser &&
+        !!firebaseUser &&
+        firebaseUser.emailVerified === true &&
+        !!user &&
+        user.id === firebaseUser.uid &&
+        user.emailVerified === true &&
+        user.role === 'customer';
+
+    // Filter by the live Firebase UID as well as the loaded owner to
+    // avoid showing another account's drafts during account changes.
+    const visibleFuelRequests =
+        canViewSavedRequests &&
+        savedRequestsOwnerId === firebaseUser.uid
+            ? savedFuelRequests
+            : [];
+
+    useFocusEffect(
+        useCallback(() => {
+            let active = true;
+            const currentFirebaseUser = auth.currentUser;
+            const accountId = currentFirebaseUser?.uid;
+            const ownerMatches =
+                !isLoadingUser &&
+                currentFirebaseUser?.emailVerified === true &&
+                !!user &&
+                user.id === accountId &&
+                user.emailVerified === true &&
+                user.role === 'customer';
+
+            activeOwnerRef.current = ownerMatches ? accountId : null;
+            setSavedFuelRequests([]);
+            setSavedRequestsOwnerId(null);
+            setExpandedRequestId(null);
+            setSavedRequestsError(null);
+            setIsLoadingSavedRequests(ownerMatches);
+
+            if (ownerMatches) {
+                loadEmergencyRequests({ type: 'customer', accountId })
+                    .then((requests) => {
+                        if (!active || activeOwnerRef.current !== accountId ||
+                            auth.currentUser?.uid !== accountId) {
+                            return;
+                        }
+
+                        setSavedFuelRequests(
+                            requests
+                                .filter((request) => request.serviceType === 'fuel')
+                                .sort((first, second) =>
+                                    second.createdAt.localeCompare(first.createdAt)
+                                )
+                        );
+                        setSavedRequestsOwnerId(accountId);
+                    })
+                    .catch((error) => {
+                        if (!active || activeOwnerRef.current !== accountId) {
+                            return;
+                        }
+
+                        setSavedRequestsError(
+                            error instanceof Error
+                                ? error.message
+                                : 'Unable to load saved emergency fuel requests.'
+                        );
+                    })
+                    .finally(() => {
+                        if (active && activeOwnerRef.current === accountId) {
+                            setIsLoadingSavedRequests(false);
+                        }
+                    });
+            }
+
+            return () => {
+                active = false;
+                activeOwnerRef.current = null;
+            };
+        }, [isLoadingUser, user?.id, user?.role, user?.emailVerified])
+    );
+
+    function formatRequestDate(value) {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime())
+            ? 'Date unavailable'
+            : date.toLocaleString();
+    }
+
+    function formatRequestStatus(status) {
+        if (status === 'saved') return 'Saved locally — Not submitted';
+        if (status === 'submission_failed') return 'Submission not confirmed';
+        if (status === 'submitting') return 'Submission status pending';
+        if (status === 'submitted') return 'Backend acknowledged';
+        if (status === 'cancelled') return 'Cancelled';
+        return 'Status unavailable';
+    }
+
+    function handleDeleteSavedRequest(request) {
+        Alert.alert(
+            'Delete saved emergency fuel request?',
+            'This removes the local copy only. It cannot cancel any request already received by a provider.',
+            [
+                { text: 'Keep', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const ownerId = savedRequestsOwnerId;
+                        if (
+                            !ownerId ||
+                            !canViewSavedRequests ||
+                            auth.currentUser?.uid !== ownerId ||
+                            activeOwnerRef.current !== ownerId
+                        ) {
+                            return;
+                        }
+
+                        setDeletingRequestId(request.localId);
+                        setSavedRequestsError(null);
+                        try {
+                            await deleteEmergencyRequest(
+                                { type: 'customer', accountId: ownerId },
+                                request.localId
+                            );
+                            if (
+                                activeOwnerRef.current !== ownerId ||
+                                auth.currentUser?.uid !== ownerId
+                            ) {
+                                return;
+                            }
+                            setSavedFuelRequests((current) =>
+                                current.filter((item) => item.localId !== request.localId)
+                            );
+                            setExpandedRequestId((current) =>
+                                current === request.localId ? null : current
+                            );
+                        } catch (error) {
+                            if (activeOwnerRef.current === ownerId) {
+                                setSavedRequestsError(
+                                    error instanceof Error
+                                        ? error.message
+                                        : 'Unable to delete this saved request.'
+                                );
+                            }
+                        } finally {
+                            if (activeOwnerRef.current === ownerId) {
+                                setDeletingRequestId(null);
+                            }
+                        }
+                    },
+                },
+            ]
+        );
+    }
 
     const {
         selectedVehicle,
@@ -477,6 +649,170 @@ export default function CustomerFuel() {
                     ],
                 }),
 
+                _jsxs(View, {
+                    style: [
+                        styles.savedRequestsCard,
+                        {
+                            backgroundColor: colors.card,
+                            borderColor: colors.border,
+                        },
+                    ],
+                    children: [
+                        _jsxs(View, {
+                            style: styles.savedRequestsHeading,
+                            children: [
+                                _jsx(MaterialCommunityIcons, {
+                                    name: 'content-save-outline',
+                                    size: 22,
+                                    color: colors.accent,
+                                }),
+                                _jsx(Text, {
+                                    style: [styles.savedRequestsTitle, { color: colors.text }],
+                                    children: 'Saved Emergency Fuel',
+                                }),
+                                _jsx(Text, {
+                                    style: [styles.savedRequestsCount, { color: colors.secondaryText }],
+                                    children: String(visibleFuelRequests.length),
+                                }),
+                            ],
+                        }),
+                        _jsx(Text, {
+                            style: [styles.savedRequestsHelp, { color: colors.secondaryText }],
+                            children:
+                                'Requests saved on this device have not been dispatched. Review or delete them here. Online submission is not yet available.',
+                        }),
+                        isLoadingSavedRequests
+                            ? _jsxs(View, {
+                                style: styles.savedRequestsLoading,
+                                children: [
+                                    _jsx(ActivityIndicator, {
+                                        size: 'small',
+                                        color: colors.accent,
+                                    }),
+                                    _jsx(Text, {
+                                        style: [styles.savedRequestsHelp, { color: colors.secondaryText }],
+                                        children: 'Loading saved requests...',
+                                    }),
+                                ],
+                            })
+                            : null,
+                        savedRequestsError
+                            ? _jsx(Text, {
+                                style: [styles.savedRequestsError, { color: colors.danger }],
+                                children: savedRequestsError,
+                            })
+                            : null,
+                        !isLoadingSavedRequests &&
+                        !savedRequestsError &&
+                        canViewSavedRequests &&
+                        visibleFuelRequests.length === 0
+                            ? _jsx(Text, {
+                                style: [styles.savedRequestsEmpty, { color: colors.secondaryText }],
+                                children: 'No saved emergency fuel requests yet.',
+                            })
+                            : null,
+                        !canViewSavedRequests && !isLoadingSavedRequests
+                            ? _jsx(Text, {
+                                style: [styles.savedRequestsEmpty, { color: colors.secondaryText }],
+                                children: 'Sign in with your verified Customer account to view saved requests.',
+                            })
+                            : null,
+                        ...visibleFuelRequests.map((request) => {
+                            const isExpanded = expandedRequestId === request.localId;
+                            const coordinates = request.location?.coordinates;
+                            const isDeleting = deletingRequestId === request.localId;
+                            const locationDescription = request.location?.description;
+                            const vehicle = request.vehicle;
+                            const vehicleText = vehicle
+                                ? [vehicle.make, vehicle.model, vehicle.year]
+                                    .filter((part) => part !== null && part !== undefined && part !== '')
+                                    .join(' ')
+                                : '';
+
+                            return _jsxs(View, {
+                                style: [styles.savedRequestItem, { borderColor: colors.border }],
+                                children: [
+                                    _jsx(Text, {
+                                        style: [styles.savedRequestStatus, { color: colors.accent }],
+                                        children: formatRequestStatus(request.status),
+                                    }),
+                                    _jsx(Text, {
+                                        style: [styles.savedRequestSummary, { color: colors.text }],
+                                        children:
+                                            `${request.details?.quantityLitres != null ? `${request.details.quantityLitres} litres` : 'Quantity pending'} · ${request.details?.fuelType ?? 'Fuel type pending'}`,
+                                    }),
+                                    _jsx(Text, {
+                                        style: [styles.savedRequestMeta, { color: colors.secondaryText }],
+                                        children: `Saved ${formatRequestDate(request.createdAt)}`,
+                                    }),
+                                    _jsxs(View, {
+                                        style: styles.savedRequestActions,
+                                        children: [
+                                            _jsx(TouchableOpacity, {
+                                                accessibilityRole: 'button',
+                                                activeOpacity: 0.75,
+                                                disabled: isDeleting,
+                                                onPress: () => setExpandedRequestId(
+                                                    isExpanded ? null : request.localId
+                                                ),
+                                                style: [styles.savedRequestAction, { borderColor: colors.accent }],
+                                                children: _jsx(Text, {
+                                                    style: [styles.savedRequestActionText, { color: colors.accent }],
+                                                    children: isExpanded ? 'Hide Details' : 'Review Details',
+                                                }),
+                                            }),
+                                            _jsx(TouchableOpacity, {
+                                                accessibilityRole: 'button',
+                                                activeOpacity: 0.75,
+                                                disabled: isDeleting,
+                                                onPress: () => handleDeleteSavedRequest(request),
+                                                style: [styles.savedRequestAction, { borderColor: colors.danger }],
+                                                children: _jsx(Text, {
+                                                    style: [styles.savedRequestActionText, { color: colors.danger }],
+                                                    children: isDeleting ? 'Deleting...' : 'Delete',
+                                                }),
+                                            }),
+                                        ],
+                                    }),
+                                    isExpanded
+                                        ? _jsxs(View, {
+                                            style: [styles.savedRequestDetails, { borderTopColor: colors.border }],
+                                            children: [
+                                                _jsx(Text, {
+                                                    style: [styles.savedRequestDetail, { color: colors.text }],
+                                                    children: `Vehicle: ${vehicleText || 'Not specified'}`,
+                                                }),
+                                                _jsx(Text, {
+                                                    style: [styles.savedRequestDetail, { color: colors.text }],
+                                                    children: `Contact: ${request.contact?.name || 'Not provided'}`,
+                                                }),
+                                                _jsx(Text, {
+                                                    style: [styles.savedRequestDetail, { color: colors.text }],
+                                                    children: `Phone: ${request.contact?.phoneNumber || 'Not provided'}`,
+                                                }),
+                                                _jsx(Text, {
+                                                    style: [styles.savedRequestDetail, { color: colors.text }],
+                                                    children: `Location: ${locationDescription || 'No description provided'}`,
+                                                }),
+                                                _jsx(Text, {
+                                                    style: [styles.savedRequestDetail, { color: colors.text }],
+                                                    children: coordinates
+                                                        ? `GPS: ${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`
+                                                        : 'GPS: Not available',
+                                                }),
+                                                _jsx(Text, {
+                                                    style: [styles.savedRequestDisclaimer, { color: colors.secondaryText }],
+                                                    children: 'Review only. No fuel provider has been contacted. Editing and backend submission are not available yet.',
+                                                }),
+                                            ],
+                                        })
+                                        : null,
+                                ],
+                            }, request.localId);
+                        }),
+                    ],
+                }),
+
                 _jsx(FuelRecentActivityCard, {
                     activities: recentActivity,
                     onViewAllPress: handleFuelHistory,
@@ -626,6 +962,99 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         rowGap: 12,
+    },
+
+    savedRequestsCard: {
+        marginTop: 16,
+        padding: 14,
+        borderWidth: 1,
+        borderRadius: 14,
+    },
+    savedRequestsHeading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    savedRequestsTitle: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    savedRequestsCount: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    savedRequestsHelp: {
+        marginTop: 9,
+        fontSize: 11,
+        lineHeight: 16,
+    },
+    savedRequestsLoading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginTop: 10,
+    },
+    savedRequestsError: {
+        marginTop: 12,
+        fontSize: 11,
+        lineHeight: 16,
+    },
+    savedRequestsEmpty: {
+        marginTop: 12,
+        fontSize: 11,
+    },
+    savedRequestItem: {
+        marginTop: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderRadius: 10,
+    },
+    savedRequestStatus: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    savedRequestSummary: {
+        marginTop: 6,
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    savedRequestMeta: {
+        marginTop: 5,
+        fontSize: 10,
+    },
+    savedRequestActions: {
+        marginTop: 12,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    savedRequestAction: {
+        minHeight: 38,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    savedRequestActionText: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    savedRequestDetails: {
+        borderTopWidth: 1,
+        marginTop: 12,
+        paddingTop: 10,
+        gap: 7,
+    },
+    savedRequestDetail: {
+        fontSize: 11,
+        lineHeight: 16,
+    },
+    savedRequestDisclaimer: {
+        marginTop: 5,
+        fontSize: 10,
+        lineHeight: 15,
     },
 
     message: {
