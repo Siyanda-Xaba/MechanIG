@@ -1,6 +1,30 @@
-const developmentProfileData = {
+/**
+ * Customer Profile Service
+ *
+ * Profile metadata must originate from
+ * authenticated and authoritative sources.
+ *
+ * Never fabricate account verification,
+ * service bookings, profile changes,
+ * or customer activity.
+ */
+
+const customerProfileData = {
     accountLabel: 'Driver Account',
-    isVerified: true,
+
+    /*
+     * Account verification is unknown until
+     * confirmed by an authoritative source.
+     *
+     * The Profile screen must not display
+     * a Verified badge based on mock data.
+     */
+    isVerified: null,
+
+    /*
+     * Quick Actions are static navigation
+     * definitions, not backend records.
+     */
     quickActions: [
         {
             id: 'vehicle-details',
@@ -19,6 +43,11 @@ const developmentProfileData = {
             title: 'Payment Methods',
         },
     ],
+
+    /*
+     * Account Settings are frontend
+     * navigation and configuration options.
+     */
     settings: [
         {
             id: 'personal-information',
@@ -41,27 +70,43 @@ const developmentProfileData = {
             description: 'Get help and contact customer support.',
         },
     ],
-    recentActivity: [
-        {
-            id: 'profile-activity-001',
-            type: 'profile-updated',
-            title: 'Profile updated',
-            description: 'Your personal information was updated.',
-            occurredAt: 'Today, 10:23',
-        },
-        {
-            id: 'profile-activity-002',
-            type: 'service-booking-confirmed',
-            title: 'Service booking confirmed',
-            description: 'Oil Service scheduled for 24 May 2025.',
-            occurredAt: 'Yesterday, 17:45',
-        },
-    ],
+
+    /*
+     * Recent Activity must contain only
+     * confirmed customer actions.
+     *
+     * Examples:
+     * - Genuine profile updates
+     * - Confirmed service bookings
+     *
+     * Until persistent activity retrieval
+     * is connected, return an empty list.
+     */
+    recentActivity: [],
 };
+
+/**
+ * Retrieve profile information for the
+ * authenticated customer.
+ *
+ * The future backend integration must:
+ *
+ * - Verify the authenticated account.
+ * - Confirm the requested user ID.
+ * - Retrieve authoritative verification status.
+ * - Retrieve confirmed recent activity.
+ * - Return account-specific information.
+ *
+ * Quick Actions and Settings remain
+ * frontend-owned navigation definitions.
+ */
 export async function getCustomerProfileData(userId) {
-    // userId is intentionally part of the API-ready contract.
-    // The backend will later return profile metadata,
-    // account settings and recent activity for this user.
     void userId;
-    return developmentProfileData;
+
+    return {
+        ...customerProfileData,
+        quickActions: [...customerProfileData.quickActions],
+        settings: [...customerProfileData.settings],
+        recentActivity: [],
+    };
 }
