@@ -3,43 +3,57 @@ import { jsx as _jsx } from 'react/jsx-runtime';
 import { Redirect } from 'expo-router';
 
 import {
-    ActivityIndicator,
-    StyleSheet,
-    View,
-} from 'react-native';
+    useEffect,
+    useState,
+} from 'react';
 
 import { auth } from '../src/firebase/firebase';
 
-import { useTheme } from '../src/theme/ThemeContext';
+import SplashScreen from '../src/auth/SplashScreen';
 
 import { useUser } from '../src/users/UserContext';
+
+const MIN_SPLASH_DURATION_MS = 1200;
 
 export default function Index() {
     const { user, isLoadingUser } = useUser();
 
-    const { colors } = useTheme();
+    const [
+        hasCompletedSplash,
+        setHasCompletedSplash,
+    ] = useState(false);
 
     /*
-     * Wait until Firebase restores its session
-     * and UserContext finishes checking the
-     * authenticated account.
+     * Always display the existing MechanIQ splash
+     * screen when the root entry point mounts.
      *
-     * This prevents premature navigation to
-     * Login or the wrong dashboard.
+     * The splash animation must remain visible
+     * for at least 1.2 seconds.
+     *
+     * Authentication may take longer, so navigation
+     * also waits for UserContext to finish loading.
      */
-    if (isLoadingUser) {
-        return _jsx(View, {
-            style: [
-                styles.loadingContainer,
-                {
-                    backgroundColor: colors.background,
-                },
-            ],
-            children: _jsx(ActivityIndicator, {
-                size: 'large',
-                color: colors.accent,
-            }),
-        });
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setHasCompletedSplash(true);
+        }, MIN_SPLASH_DURATION_MS);
+
+        return () => {
+            clearTimeout(timeout);
+        };
+    }, []);
+
+    /*
+     * Keep showing the existing branded splash
+     * until both conditions have been satisfied:
+     *
+     * 1. Minimum splash duration has elapsed.
+     * 2. Firebase account restoration is complete.
+     *
+     * Never redirect before authentication finishes.
+     */
+    if (!hasCompletedSplash || isLoadingUser) {
+        return _jsx(SplashScreen, {});
     }
 
     /*
@@ -48,9 +62,9 @@ export default function Index() {
      * 1. An active Firebase session.
      * 2. A verified email address.
      * 3. A user profile matching the Firebase UID.
-     * 4. A profile recognized as verified.
+     * 4. A verified MechanIQ account.
      *
-     * The backend must independently enforce
+     * Backend services must independently enforce
      * authorization for protected operations.
      */
     const firebaseUser = auth.currentUser;
@@ -64,8 +78,10 @@ export default function Index() {
 
     /*
      * Signed-out users and accounts that have
-     * not completed email verification must
-     * use the Login screen.
+     * not completed verification go to Login.
+     *
+     * Existing Login, Sign-up, and Role Selection
+     * screens remain unchanged.
      */
     if (!canAccessDashboard) {
         return _jsx(Redirect, {
@@ -74,8 +90,8 @@ export default function Index() {
     }
 
     /*
-     * Route authenticated users according
-     * to their verified MechanIQ account role.
+     * Route authenticated users according to
+     * their verified MechanIQ account role.
      */
     if (user.role === 'customer') {
         return _jsx(Redirect, {
@@ -97,11 +113,3 @@ export default function Index() {
         href: '/auth/login',
     });
 }
-
-const styles = StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-});
