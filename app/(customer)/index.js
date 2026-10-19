@@ -258,7 +258,58 @@ export default function CustomerHome() {
                                 router.push('/find-mechanic');
                             } }), _jsx(QuickActionCard, { title: "Book Service", description: "Schedule service appointments", icon: "calendar-check-outline", onPress: () => {
                                 router.push('/book-service');
-                            } })] }), _jsxs(View, { style: styles.dashboardRow, children: [_jsx(PowerShieldCard, { nextOutageTime: homeData?.nextOutageTime ??
+                            } })] }), _jsxs(TouchableOpacity, {
+                                activeOpacity: 0.8,
+                                onPress: () => {
+                                    router.push('/emergency-assistance');
+                                },
+                                accessibilityRole: 'button',
+                                accessibilityLabel: 'Open emergency assistance',
+                                style: [
+                                    styles.emergencyAssistanceCard,
+                                    {
+                                        backgroundColor: colors.card,
+                                        borderColor: colors.danger,
+                                    },
+                                ],
+                                children: [
+                                    _jsx(View, {
+                                        style: [
+                                            styles.emergencyAssistanceIcon,
+                                            { borderColor: colors.danger },
+                                        ],
+                                        children: _jsx(MaterialCommunityIcons, {
+                                            name: 'alert-circle-outline',
+                                            size: 26,
+                                            color: colors.danger,
+                                        }),
+                                    }),
+                                    _jsxs(View, {
+                                        style: styles.emergencyAssistanceContent,
+                                        children: [
+                                            _jsx(Text, {
+                                                style: [
+                                                    styles.emergencyAssistanceTitle,
+                                                    { color: colors.text },
+                                                ],
+                                                children: 'Emergency Assistance',
+                                            }),
+                                            _jsx(Text, {
+                                                style: [
+                                                    styles.emergencyAssistanceDescription,
+                                                    { color: colors.secondaryText },
+                                                ],
+                                                children: 'Stranded or broken down? Get safety guidance and find your location, even with limited connectivity.',
+                                            }),
+                                        ],
+                                    }),
+                                    _jsx(Ionicons, {
+                                        name: 'chevron-forward',
+                                        size: 20,
+                                        color: colors.danger,
+                                    }),
+                                ],
+                            }), _jsxs(View, { style: styles.dashboardRow, children: [_jsx(PowerShieldCard, { nextOutageTime: homeData?.nextOutageTime ??
                                 null, onSchedulePress: () => {
                                 router.push('/(customer)/fuel');
                             } }), _jsx(MaintenanceReminderCard, { reminder: maintenanceReminder, onPress: () => {
@@ -513,6 +564,35 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         rowGap: 12,
+    },
+    emergencyAssistanceCard: {
+        marginTop: 16,
+        borderWidth: 1,
+        borderRadius: 14,
+        padding: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    emergencyAssistanceIcon: {
+        width: 44,
+        height: 44,
+        borderWidth: 1,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emergencyAssistanceContent: {
+        flex: 1,
+    },
+    emergencyAssistanceTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    emergencyAssistanceDescription: {
+        fontSize: 12,
+        lineHeight: 18,
     },
     dashboardRow: {
         marginTop: 16,
