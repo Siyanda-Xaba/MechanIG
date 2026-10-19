@@ -30,6 +30,8 @@ def load_class_names(class_names_path=CLASS_NAMES_PATH):
 
 def predict_audio(
     audio_path,
+    model=None,
+    class_names=None,
     model_path=MODEL_PATH,
     class_names_path=CLASS_NAMES_PATH,
     top_k=3,
@@ -42,8 +44,10 @@ def predict_audio(
     3. Confidence thresholding: flags ambiguous sounds as inconclusive instead of false alarms.
     4. Diagnostic explanations: provides plain-English descriptions and recommended mechanic actions.
     """
-    class_names = load_class_names(class_names_path)
-    model = keras.models.load_model(model_path)
+    if class_names is None:
+        class_names = load_class_names(class_names_path)
+    if model is None:
+        model = keras.models.load_model(model_path)
 
     # 1. Load audio and extract 5-second overlapping analysis windows.
     windows, total_duration, is_audible, rms = load_audio_windows(audio_path)

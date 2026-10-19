@@ -110,7 +110,10 @@ The backend API uses **FastAPI** to provide real-time audio fault diagnosis for 
 Run uvicorn to start the API:
 
 ```bash
-# Local machine only:
+# Directly via Python:
+python src/api.py
+
+# Or via uvicorn directly (local machine only):
 uvicorn src.api:app --reload
 
 # For network / mobile device access (listens on all network interfaces):

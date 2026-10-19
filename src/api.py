@@ -1,30 +1,78 @@
 import shutil
+from contextlib import asynccontextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from tensorflow import keras
 
 try:
-    from .config import SUPPORTED_AUDIO_EXTENSIONS
+    from .config import CLASS_NAMES_PATH, MODEL_PATH, SUPPORTED_AUDIO_EXTENSIONS
 except ImportError:
-    from config import SUPPORTED_AUDIO_EXTENSIONS
+    from config import CLASS_NAMES_PATH, MODEL_PATH, SUPPORTED_AUDIO_EXTENSIONS
 
 try:
-    from .predict import predict_audio
+    from .predict import load_class_names, predict_audio
 except ImportError:
-    from predict import predict_audio
+    from predict import load_class_names, predict_audio
+
+
+# Common audio MIME types to support web frontend blob uploads
+MIME_TYPE_EXTENSION_MAP = {
+    "audio/wav": ".wav",
+    "audio/x-wav": ".wav",
+    "audio/wave": ".wav",
+    "audio/mp3": ".mp3",
+    "audio/mpeg": ".mp3",
+    "audio/ogg": ".ogg",
+    "audio/vorbis": ".ogg",
+    "audio/flac": ".flac",
+    "audio/x-flac": ".flac",
+    "audio/m4a": ".m4a",
+    "audio/x-m4a": ".m4a",
+    "audio/mp4": ".m4a",
+    "audio/aac": ".aac",
+}
+
+# Cache model and class names in memory across requests for rapid inference
+ml_context = {
+    "model": None,
+    "class_names": None,
+}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Preload ML model and class names on server startup to avoid per-request load latency."""
+    try:
+        import numpy as np
+
+        ml_context["model"] = keras.models.load_model(MODEL_PATH)
+        ml_context["class_names"] = load_class_names(CLASS_NAMES_PATH)
+        
+        # Warm up the TensorFlow graph and JIT kernels so even the first user request is instant
+        dummy_input = np.zeros((1, 128, 216, 1), dtype=np.float32)
+        ml_context["model"].predict(dummy_input, verbose=0)
+        print("[INFO] Mechanic Sound Detection CNN model loaded and warmed up.")
+    except Exception as exc:
+        print(f"[WARNING] Could not preload model on startup: {exc}")
+    yield
+    ml_context.clear()
 
 
 app = FastAPI(
     title="Mechanic Sound Detection API",
-    description="Backend API for diagnosing vehicle mechanical sounds recorded via React Native and mobile apps.",
+    description="Backend API for diagnosing vehicle mechanical sounds recorded via React Native, mobile, and web apps.",
+    lifespan=lifespan,
 )
 
+# Enable CORS for front-end clients (React, Vite, Next.js, mobile apps, etc.)
+# Setting allow_credentials=False ensures compliance with W3C specs when allow_origins=["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -33,14 +81,17 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     """Health check endpoint to verify that the server is online and ready."""
-    return {"message": "Mechanic Sound Detection API is running"}
+    return {
+        "message": "Mechanic Sound Detection API is running",
+        "model_loaded": ml_context["model"] is not None,
+    }
 
 
 @app.post("/predict")
 def predict(file: UploadFile = File(...)):
-    """Diagnose a mechanical sound recording uploaded from a mobile app.
-    
-    The React Native app uploads audio using standard multipart/form-data.
+    """Diagnose a mechanical sound recording uploaded from a mobile or web app.
+
+    The front-end app uploads audio using standard multipart/form-data.
     The backend takes care of audio validation, silence gating, sliding-window
     segmentation, CNN feature extraction, and formatting human-friendly diagnostic advice.
     """
@@ -49,12 +100,21 @@ def predict(file: UploadFile = File(...)):
 
     suffix = Path(file.filename).suffix.lower()
 
+    # Fallback to content_type if filename has no extension (common in browser Blob uploads)
+    if (not suffix or suffix not in SUPPORTED_AUDIO_EXTENSIONS) and file.content_type:
+        content_type = file.content_type.split(";")[0].strip().lower()
+        if content_type in MIME_TYPE_EXTENSION_MAP:
+            suffix = MIME_TYPE_EXTENSION_MAP[content_type]
+
     if suffix not in SUPPORTED_AUDIO_EXTENSIONS:
         supported = ", ".join(sorted(SUPPORTED_AUDIO_EXTENSIONS))
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported audio format '{suffix}'. Please upload one of: {supported}",
+        detail_msg = (
+            f"Unsupported audio format '{suffix or file.filename}'. "
+            f"Please upload one of: {supported}"
         )
+        if suffix == ".webm":
+            detail_msg += ". For web recordings, please record in WAV or OGG format."
+        raise HTTPException(status_code=400, detail=detail_msg)
 
     temp_path = None
 
@@ -65,8 +125,13 @@ def predict(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, temp_file)
             temp_path = Path(temp_file.name)
 
-        # Run multi-window audio analysis and CNN classification.
-        diagnosis = predict_audio(temp_path, top_k=3)
+        # Run multi-window audio analysis and CNN classification using the preloaded model.
+        diagnosis = predict_audio(
+            temp_path,
+            model=ml_context.get("model"),
+            class_names=ml_context.get("class_names"),
+            top_k=3,
+        )
 
         return {
             "filename": file.filename,
@@ -94,3 +159,11 @@ def predict(file: UploadFile = File(...)):
         # Clean up temporary upload file immediately.
         if temp_path and temp_path.exists():
             temp_path.unlink()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    # app_dir ensures uvicorn reloader subprocesses reliably find api.py
+    src_dir = str(Path(__file__).resolve().parent)
+    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True, app_dir=src_dir)
