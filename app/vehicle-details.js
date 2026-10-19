@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { Ionicons, MaterialCommunityIcons, } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../src/components/StableScrollView';
 import { useTheme } from '../src/theme/ThemeContext';
@@ -9,9 +9,67 @@ import { useVehicle } from '../src/vehicles/VehicleContext';
 export default function VehicleDetailsScreen() {
     const router = useRouter();
     const { colors } = useTheme();
-    const { vehicles, selectedVehicle, isLoadingVehicles, selectVehicle, refreshVehicles, } = useVehicle();
+    const { vehicles, selectedVehicle, isLoadingVehicles, isSettingPrimaryVehicle, isUpdatingVehicle, isDeletingVehicle, vehiclesError, selectVehicle, setPrimaryVehicle, deleteVehicle, refreshVehicles, } = useVehicle();
     function handleAddVehiclePress() {
         router.push('/add-vehicle');
+    }
+    function handleEditVehiclePress() {
+        if (!selectedVehicle || isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle) {
+            return;
+        }
+        router.push({
+            pathname: '/edit-vehicle',
+            params: { vehicleId: selectedVehicle.id },
+        });
+    }
+    async function handleSetPrimaryPress() {
+        if (!selectedVehicle || selectedVehicle.isPrimary || isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle) {
+            return;
+        }
+        try {
+            await setPrimaryVehicle(selectedVehicle.id);
+        }
+        catch (error) {
+            Alert.alert('Unable to set primary vehicle', error instanceof Error
+                ? error.message
+                : 'Please try again.');
+        }
+    }
+    function handleDeleteVehiclePress() {
+        if (!selectedVehicle || isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle) {
+            return;
+        }
+
+        const vehicleToDelete = selectedVehicle;
+        const vehicleLabel = `${vehicleToDelete.make} ${vehicleToDelete.model}`.trim();
+        const registrationLabel = vehicleToDelete.registration
+            ? ` (${vehicleToDelete.registration})`
+            : '';
+
+        Alert.alert(
+            'Delete Vehicle?',
+            `Permanently remove ${vehicleLabel}${registrationLabel} from your MechanIQ account? This cannot be undone. Existing service history and bookings are not deleted. If this is your primary vehicle, another remaining vehicle will become primary.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete Vehicle',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteVehicle(vehicleToDelete.id);
+                        }
+                        catch (error) {
+                            Alert.alert(
+                                'Unable to delete vehicle',
+                                error instanceof Error
+                                    ? error.message
+                                    : 'Please try again.'
+                            );
+                        }
+                    },
+                },
+            ]
+        );
     }
     if (isLoadingVehicles) {
         return (_jsxs(SafeAreaView, { style: [
@@ -41,7 +99,7 @@ export default function VehicleDetailsScreen() {
                                 {
                                     color: colors.text,
                                 },
-                            ], children: "Vehicle Details" }), _jsx(View, { style: styles.headerPlaceholder })] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: handleAddVehiclePress, style: [
+                            ], children: "Vehicle Details" }), _jsx(View, { style: styles.headerPlaceholder })] }), vehiclesError ? (_jsx(View, { style: [styles.vehiclesErrorCard, { borderColor: colors.warning }], children: _jsx(Text, { style: [styles.vehiclesErrorText, { color: colors.secondaryText }], children: vehiclesError }) })) : null, _jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isDeletingVehicle, onPress: handleAddVehiclePress, style: [
                         styles.addVehicleButton,
                         {
                             backgroundColor: colors.accent,
@@ -62,7 +120,7 @@ export default function VehicleDetailsScreen() {
                                 {
                                     color: colors.secondaryText,
                                 },
-                            ], children: "Vehicles linked to your account will appear here once they are available from the backend." }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: handleAddVehiclePress, style: [
+                            ], children: "Add a vehicle to your MechanIQ account to see it here." }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: handleAddVehiclePress, style: [
                                 styles.emptyAddButton,
                                 {
                                     backgroundColor: colors.accent,
@@ -84,7 +142,7 @@ export default function VehicleDetailsScreen() {
                                         },
                                     ], children: "Your Vehicles" }), _jsx(ScrollView, { horizontal: true, showsHorizontalScrollIndicator: false, contentContainerStyle: styles.vehicleSelector, children: vehicles.map((vehicle) => {
                                         const isSelected = vehicle.id === selectedVehicle?.id;
-                                        return (_jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: () => selectVehicle(vehicle.id), style: [
+                                        return (_jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isDeletingVehicle, onPress: () => selectVehicle(vehicle.id), style: [
                                                 styles.vehicleSelectorCard,
                                                 {
                                                     backgroundColor: colors.card,
@@ -143,7 +201,15 @@ export default function VehicleDetailsScreen() {
                                                             },
                                                         ], children: selectedVehicle.isPrimary
                                                             ? 'Primary Vehicle'
-                                                            : 'Selected Vehicle' })] }) })] }), _jsx(Text, { style: [
+                                                            : 'Selected Vehicle' })] }) })] }), !selectedVehicle.isPrimary ? (_jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle, onPress: handleSetPrimaryPress, style: [
+                                        styles.primaryActionButton,
+                                        {
+                                            backgroundColor: colors.accent,
+                                            opacity: isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle ? 0.6 : 1,
+                                        },
+                                    ], children: [isSettingPrimaryVehicle ? (_jsx(ActivityIndicator, { size: "small", color: "#000000" })) : (_jsx(MaterialCommunityIcons, { name: "star-circle-outline", size: 21, color: "#000000" })), _jsx(Text, { style: styles.primaryActionText, children: isSettingPrimaryVehicle
+                                                ? 'Saving Primary Vehicle...'
+                                                : 'Set as Primary' })] })) : null, _jsx(Text, { style: [
                                         styles.sectionTitle,
                                         {
                                             color: colors.text,
@@ -154,7 +220,21 @@ export default function VehicleDetailsScreen() {
                                             backgroundColor: colors.card,
                                             borderColor: colors.border,
                                         },
-                                    ], children: [_jsx(DetailRow, { icon: "calendar-outline", label: "Year", value: String(selectedVehicle.year), borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent }), _jsx(DetailRow, { icon: "palette-outline", label: "Colour", value: selectedVehicle.color, borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent }), _jsx(DetailRow, { icon: "fuel", label: "Fuel Type", value: selectedVehicle.fuelType, borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent }), _jsx(DetailRow, { icon: "card-text-outline", label: "Registration", value: selectedVehicle.registration, isLast: true, borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent })] }), _jsxs(View, { style: [
+                                    ], children: [_jsx(DetailRow, { icon: "calendar-outline", label: "Year", value: String(selectedVehicle.year), borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent }), _jsx(DetailRow, { icon: "palette-outline", label: "Colour", value: selectedVehicle.color, borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent }), _jsx(DetailRow, { icon: "fuel", label: "Fuel Type", value: selectedVehicle.fuelType, borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent }), _jsx(DetailRow, { icon: "card-text-outline", label: "Registration", value: selectedVehicle.registration, isLast: true, borderColor: colors.border, textColor: colors.text, secondaryTextColor: colors.secondaryText, accentColor: colors.accent })] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle, onPress: handleEditVehiclePress, style: [
+                                        styles.editActionButton,
+                                        {
+                                            borderColor: colors.accent,
+                                            backgroundColor: colors.card,
+                                            opacity: isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle ? 0.55 : 1,
+                                        },
+                                    ], children: [_jsx(MaterialCommunityIcons, { name: "pencil-outline", size: 20, color: colors.accent }), _jsx(Text, { style: [styles.editActionText, { color: colors.text }], children: "Edit Vehicle" })] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, disabled: isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle, onPress: handleDeleteVehiclePress, style: [
+                                        styles.deleteActionButton,
+                                        {
+                                            borderColor: colors.danger,
+                                            backgroundColor: colors.card,
+                                            opacity: isSettingPrimaryVehicle || isUpdatingVehicle || isDeletingVehicle ? 0.55 : 1,
+                                        },
+                                    ], children: [isDeletingVehicle ? (_jsx(ActivityIndicator, { size: "small", color: colors.danger })) : (_jsx(MaterialCommunityIcons, { name: "trash-can-outline", size: 20, color: colors.danger })), _jsx(Text, { style: [styles.deleteActionText, { color: colors.danger }], children: isDeletingVehicle ? 'Deleting Vehicle...' : 'Delete Vehicle' })] }), _jsxs(View, { style: [
                                         styles.noticeCard,
                                         {
                                             borderColor: colors.warning,
@@ -164,7 +244,7 @@ export default function VehicleDetailsScreen() {
                                                 {
                                                     color: colors.secondaryText,
                                                 },
-                                            ], children: "Adding, editing, deleting, or changing a primary vehicle requires the vehicle backend. New vehicles are only added after the backend confirms the saved vehicle record." })] })] })) : null] }))] }) }));
+                                            ], children: "Select a vehicle to use it across MechanIQ. Set as Primary saves your default and selects it automatically. Editing retains the existing vehicle record. Deleting a vehicle permanently removes it from your account." })] })] })) : null] }))] }) }));
 }
 function DetailRow({ icon, label, value, isLast = false, borderColor, textColor, secondaryTextColor, accentColor, }) {
     return (_jsxs(View, { style: [
@@ -415,6 +495,58 @@ const styles = StyleSheet.create({
     noticeText: {
         flex: 1,
         fontSize: 9,
+        lineHeight: 15,
+    },
+    editActionButton: {
+        minHeight: 48,
+        marginTop: 14,
+        borderWidth: 1,
+        borderRadius: 11,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    editActionText: {
+        fontSize: 12,
+        fontWeight: '800',
+    },
+    deleteActionButton: {
+        minHeight: 48,
+        marginTop: 12,
+        borderWidth: 1,
+        borderRadius: 11,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    deleteActionText: {
+        fontSize: 12,
+        fontWeight: '800',
+    },
+    primaryActionButton: {
+        minHeight: 48,
+        marginTop: 12,
+        borderRadius: 11,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    primaryActionText: {
+        color: '#000000',
+        fontSize: 12,
+        fontWeight: '800',
+    },
+    vehiclesErrorCard: {
+        marginTop: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderRadius: 10,
+    },
+    vehiclesErrorText: {
+        fontSize: 10,
         lineHeight: 15,
     },
 });

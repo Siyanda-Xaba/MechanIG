@@ -22,6 +22,9 @@ import {
 
 import {
     getUserVehicles,
+    setPrimaryUserVehicle,
+    updateUserVehicle,
+    deleteUserVehicle,
 } from './vehicleService';
 
 const VehicleContext = createContext(undefined);
@@ -79,6 +82,21 @@ export function VehicleProvider({ children }) {
     ] = useState(false);
 
     const [
+        isSettingPrimaryVehicle,
+        setIsSettingPrimaryVehicle,
+    ] = useState(false);
+
+    const [
+        isUpdatingVehicle,
+        setIsUpdatingVehicle,
+    ] = useState(false);
+
+    const [
+        isDeletingVehicle,
+        setIsDeletingVehicle,
+    ] = useState(false);
+
+    const [
         vehiclesError,
         setVehiclesError,
     ] = useState(null);
@@ -89,6 +107,25 @@ export function VehicleProvider({ children }) {
     ] = useState(null);
 
     const requestVersionRef = useRef(0);
+
+    const primaryUpdateVersionRef = useRef(0);
+
+    const primaryUpdateInProgressRef = useRef(false);
+
+    const editUpdateVersionRef = useRef(0);
+
+    const editUpdateInProgressRef = useRef(false);
+
+    const deleteUpdateVersionRef = useRef(0);
+
+    const deleteUpdateInProgressRef = useRef(false);
+
+    // Keep confirmed deletions from reappearing through a stale offline cache.
+    const deletedVehicleIdsRef = useRef(new Set());
+
+    const vehiclesRef = useRef(vehicles);
+
+    vehiclesRef.current = vehicles;
 
     const accountIdRef = useRef(null);
 
@@ -143,10 +180,13 @@ export function VehicleProvider({ children }) {
                 }
 
                 if (cachedData) {
-                    setVehicles(cachedData.vehicles);
+                    const visibleVehicles = cachedData.vehicles.filter(
+                        (vehicle) => !deletedVehicleIdsRef.current.has(vehicle.id)
+                    );
+                    setVehicles(visibleVehicles);
 
                     const preferredVehicle = getPreferredVehicle(
-                        cachedData.vehicles,
+                        visibleVehicles,
                         selectedVehicleRef.current?.id
                     );
 
@@ -187,6 +227,10 @@ export function VehicleProvider({ children }) {
             if (!isCurrentRequest()) {
                 return;
             }
+
+            // A successful authoritative read supersedes deletion tombstones.
+            // The transaction already confirmed the deletion in Firebase.
+            deletedVehicleIdsRef.current.clear();
 
             setVehicles(userVehicles);
 
@@ -233,10 +277,13 @@ export function VehicleProvider({ children }) {
                 }
 
                 if (cachedData) {
-                    setVehicles(cachedData.vehicles);
+                    const visibleVehicles = cachedData.vehicles.filter(
+                        (vehicle) => !deletedVehicleIdsRef.current.has(vehicle.id)
+                    );
+                    setVehicles(visibleVehicles);
 
                     const preferredVehicle = getPreferredVehicle(
-                        cachedData.vehicles,
+                        visibleVehicles,
                         selectedVehicleRef.current?.id
                     );
 
@@ -297,6 +344,23 @@ export function VehicleProvider({ children }) {
             requestVersionRef.current += 1;
             accountIdRef.current = accountId;
             selectedVehicleRef.current = null;
+            deletedVehicleIdsRef.current.clear();
+            vehiclesRef.current = [];
+
+            // Invalidate a primary-vehicle action from the prior account.
+            primaryUpdateVersionRef.current += 1;
+            primaryUpdateInProgressRef.current = false;
+            setIsSettingPrimaryVehicle(false);
+
+            // Prevent a previous account's completed edit from changing this account.
+            editUpdateVersionRef.current += 1;
+            editUpdateInProgressRef.current = false;
+            setIsUpdatingVehicle(false);
+
+            // Invalidate any deletion requested by the previous account.
+            deleteUpdateVersionRef.current += 1;
+            deleteUpdateInProgressRef.current = false;
+            setIsDeletingVehicle(false);
 
             setVehicles([]);
             setSelectedVehicle(null);
@@ -322,6 +386,233 @@ export function VehicleProvider({ children }) {
         isLoadingUser,
         refreshVehicles,
     ]);
+
+    /**
+     * Make a vehicle the persisted primary vehicle and select it.
+     *
+     * The service confirms the Firebase transaction before local state
+     * changes. Account switching cannot apply another user's result.
+     */
+    const setPrimaryVehicle = useCallback(async (vehicleId) => {
+        const userId = accountIdRef.current;
+
+        if (!userId || auth.currentUser?.uid !== userId) {
+            throw new Error('You must be signed in to change your primary vehicle.');
+        }
+
+        if (isOfflineRef.current) {
+            throw new Error('Connect to the internet to change your primary vehicle.');
+        }
+
+        if (
+            primaryUpdateInProgressRef.current ||
+            editUpdateInProgressRef.current ||
+            deleteUpdateInProgressRef.current
+        ) {
+            throw new Error('Finish the current vehicle change before setting a primary vehicle.');
+        }
+
+        primaryUpdateInProgressRef.current = true;
+        const updateVersion = ++primaryUpdateVersionRef.current;
+        setIsSettingPrimaryVehicle(true);
+
+        try {
+            const confirmedVehicle = await setPrimaryUserVehicle(vehicleId);
+
+            if (
+                primaryUpdateVersionRef.current !== updateVersion ||
+                accountIdRef.current !== userId ||
+                auth.currentUser?.uid !== userId
+            ) {
+                throw new Error('Your account changed while updating the primary vehicle.');
+            }
+
+            // Selecting the persisted primary vehicle was the chosen UX.
+            selectedVehicleRef.current = confirmedVehicle;
+            setSelectedVehicle(confirmedVehicle);
+
+            setVehicles((currentVehicles) =>
+                currentVehicles.map((vehicle) => ({
+                    ...vehicle,
+                    isPrimary: vehicle.id === confirmedVehicle.id,
+                }))
+            );
+
+            // Reconcile other vehicle fields and the offline cache with Firebase.
+            // Refresh errors already produce an explicit vehicle error state.
+            void refreshVehicles();
+
+            return confirmedVehicle;
+        } finally {
+            // A previous account's request must not change the next account's UI.
+            if (primaryUpdateVersionRef.current === updateVersion) {
+                primaryUpdateInProgressRef.current = false;
+                setIsSettingPrimaryVehicle(false);
+            }
+        }
+    }, [refreshVehicles]);
+
+    /**
+     * Persist edits to an existing vehicle before updating shared state.
+     * A successful edit retains the vehicle ID and primary designation.
+     * The selected vehicle is replaced only if it is still the edited one.
+     */
+    const updateVehicle = useCallback(async (vehicleId, input) => {
+        const userId = accountIdRef.current;
+
+        if (!userId || auth.currentUser?.uid !== userId) {
+            throw new Error('You must be signed in to edit a vehicle.');
+        }
+
+        if (isOfflineRef.current) {
+            throw new Error('Connect to the internet to edit a vehicle.');
+        }
+
+        if (
+            editUpdateInProgressRef.current ||
+            primaryUpdateInProgressRef.current ||
+            deleteUpdateInProgressRef.current
+        ) {
+            throw new Error('Another vehicle change is already in progress.');
+        }
+
+        editUpdateInProgressRef.current = true;
+        const updateVersion = ++editUpdateVersionRef.current;
+        setIsUpdatingVehicle(true);
+
+        try {
+            const confirmedVehicle = await updateUserVehicle(vehicleId, input);
+
+            if (
+                editUpdateVersionRef.current !== updateVersion ||
+                accountIdRef.current !== userId ||
+                auth.currentUser?.uid !== userId
+            ) {
+                throw new Error('Your account changed while editing the vehicle.');
+            }
+
+            // Invalidate any refresh started before the confirmed edit.
+            requestVersionRef.current += 1;
+
+            setVehicles((currentVehicles) =>
+                currentVehicles.map((vehicle) =>
+                    vehicle.id === confirmedVehicle.id ? confirmedVehicle : vehicle
+                )
+            );
+
+            // Preserve the customer's current selection if they switched
+            // to another vehicle while the edit was being saved.
+            if (selectedVehicleRef.current?.id === confirmedVehicle.id) {
+                selectedVehicleRef.current = confirmedVehicle;
+                setSelectedVehicle(confirmedVehicle);
+            }
+
+            // Reconcile the complete collection and offline cache with Firebase.
+            void refreshVehicles();
+
+            return confirmedVehicle;
+        } finally {
+            // Do not reset the next account's in-progress operation.
+            if (editUpdateVersionRef.current === updateVersion) {
+                editUpdateInProgressRef.current = false;
+                setIsUpdatingVehicle(false);
+            }
+        }
+    }, [refreshVehicles]);
+
+    /**
+     * Delete a vehicle only after the UI has obtained explicit confirmation.
+     * The service transaction also assigns the next primary, if necessary.
+     * Do not change local state until Firebase confirms deletion.
+     */
+    const deleteVehicle = useCallback(async (vehicleId) => {
+        const userId = accountIdRef.current;
+
+        if (!userId || auth.currentUser?.uid !== userId) {
+            throw new Error('You must be signed in to delete a vehicle.');
+        }
+
+        if (isOfflineRef.current) {
+            throw new Error('Connect to the internet to delete a vehicle.');
+        }
+
+        if (
+            deleteUpdateInProgressRef.current ||
+            primaryUpdateInProgressRef.current ||
+            editUpdateInProgressRef.current
+        ) {
+            throw new Error('Another vehicle change is already in progress.');
+        }
+
+        if (!vehiclesRef.current.some((vehicle) => vehicle.id === vehicleId)) {
+            throw new Error('Vehicle not found. Refresh your vehicles and try again.');
+        }
+
+        deleteUpdateInProgressRef.current = true;
+        const updateVersion = ++deleteUpdateVersionRef.current;
+        setIsDeletingVehicle(true);
+
+        try {
+            const result = await deleteUserVehicle(vehicleId);
+
+            if (
+                deleteUpdateVersionRef.current !== updateVersion ||
+                accountIdRef.current !== userId ||
+                auth.currentUser?.uid !== userId
+            ) {
+                throw new Error('Your account changed while deleting the vehicle.');
+            }
+
+            // Ignore refreshes begun before Firebase confirmed deletion.
+            requestVersionRef.current += 1;
+            deletedVehicleIdsRef.current.add(result.deletedVehicleId);
+
+            const remainingVehicles = vehiclesRef.current
+                .filter((vehicle) => vehicle.id !== result.deletedVehicleId)
+                .map((vehicle) => ({
+                    ...vehicle,
+                    isPrimary: vehicle.id === result.primaryVehicleId,
+                }));
+
+            vehiclesRef.current = remainingVehicles;
+            setVehicles(remainingVehicles);
+
+            const previouslySelectedId = selectedVehicleRef.current?.id;
+            const nextSelectedId = previouslySelectedId === result.deletedVehicleId
+                ? result.primaryVehicleId
+                : previouslySelectedId;
+            const nextSelectedVehicle = getPreferredVehicle(
+                remainingVehicles,
+                nextSelectedId
+            );
+
+            selectedVehicleRef.current = nextSelectedVehicle;
+            setSelectedVehicle(nextSelectedVehicle);
+            setVehiclesError(null);
+            setIsOfflineVehicles(false);
+            setLastVehiclesSyncedAt(new Date().toISOString());
+
+            // Replace cached vehicles so an offline refresh does not restore
+            // the deleted record. Cache failures must not undo a saved deletion.
+            await saveOfflineVehicles(remainingVehicles).catch(() => {});
+
+            if (
+                deleteUpdateVersionRef.current === updateVersion &&
+                accountIdRef.current === userId &&
+                auth.currentUser?.uid === userId
+            ) {
+                // Reconcile other devices' changes and confirm the latest list.
+                void refreshVehicles();
+            }
+
+            return result;
+        } finally {
+            if (deleteUpdateVersionRef.current === updateVersion) {
+                deleteUpdateInProgressRef.current = false;
+                setIsDeletingVehicle(false);
+            }
+        }
+    }, [refreshVehicles]);
 
     function addVehicle(vehicle, shouldSelect = false) {
         setVehicles((currentVehicles) => {
@@ -375,6 +666,12 @@ export function VehicleProvider({ children }) {
 
             addVehicle,
             selectVehicle,
+            setPrimaryVehicle,
+            isSettingPrimaryVehicle,
+            updateVehicle,
+            isUpdatingVehicle,
+            deleteVehicle,
+            isDeletingVehicle,
             refreshVehicles,
         },
         children,
