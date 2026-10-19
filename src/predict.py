@@ -76,16 +76,11 @@ def predict_audio(
     highest_confidence = float(averaged_probabilities[top_indexes[0]])
     primary_fault = class_names[top_indexes[0]]
 
-    # 6. Apply confidence thresholding.
-    # If the top confidence is too low, do not give a misleading diagnosis.
-    if highest_confidence < CONFIDENCE_THRESHOLD:
-        status = "inconclusive"
-        overall_message = (
-            "No distinct mechanical fault detected. "
-            "The sound may be normal engine idle or obscured by ambient noise."
-        )
+    # 6. Diagnosis status (confidence threshold removed to support classes with lower sample count)
+    status = "detected"
+    if primary_fault == "HealthySounds":
+        overall_message = "Normal vehicle sound detected; operating within healthy parameters."
     else:
-        status = "detected"
         overall_message = f"Detected possible {primary_fault} sound."
 
     # 7. Format top results with user-friendly descriptions and mechanic recommendations
@@ -99,6 +94,8 @@ def predict_audio(
             {
                 "rank": rank,
                 "class_name": c_name,
+                "confidence_percent": f"{round(float(averaged_probabilities[idx]) * 100, 1)}%",
+                "confidence_score": round(float(averaged_probabilities[idx]), 4),
                 "title": advice.get("title", c_name),
                 "description": advice.get("description", ""),
                 "symptoms": advice.get("symptoms", ""),

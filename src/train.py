@@ -53,11 +53,16 @@ def load_mel_dataset(mel_dir=MEL_DATASET_DIR):
 
 
 def split_per_class(X, y, file_paths, class_names):
-    """Create a balanced train / validation / test split with at least 1 sample per class."""
+    """Create a balanced train / validation / test split.
+    
+    Uses a proportional split (~70% train, ~15% val, ~15% test) while ensuring
+    every class has at least 1 sample in validation and test even if sample count is small.
+    """
     X_train, y_train, paths_train = [], [], []
     X_val, y_val, paths_val = [], [], []
     X_test, y_test, paths_test = [], [], []
 
+    print("\nDataset split per class:")
     for class_index, class_name in enumerate(class_names):
         class_indices = np.where(y == class_index)[0]
 
@@ -65,18 +70,29 @@ def split_per_class(X, y, file_paths, class_names):
         rng = np.random.default_rng(RANDOM_SEED)
         rng.shuffle(class_indices)
 
-        if len(class_indices) < 3:
+        n = len(class_indices)
+        if n < 3:
             raise ValueError(
-                f"Class '{class_name}' has only {len(class_indices)} samples. "
+                f"Class '{class_name}' has only {n} samples. "
                 "At least 3 samples are needed for train/val/test splits."
             )
 
-        train_count = len(class_indices) - 2
-        val_count = 1
+        # Proportional split: ~70% train, ~15% val, ~15% test (at least 1 each)
+        val_count = max(1, int(round(n * 0.15)))
+        test_count = max(1, int(round(n * 0.15)))
+        train_count = n - val_count - test_count
+        if train_count < 1:
+            train_count = 1
+            if val_count > 1:
+                val_count -= 1
+            elif test_count > 1:
+                test_count -= 1
 
         train_idx = class_indices[:train_count]
         val_idx = class_indices[train_count : train_count + val_count]
         test_idx = class_indices[train_count + val_count :]
+
+        print(f"  - {class_name:<20}: {train_count:>3} train | {val_count:>2} val | {test_count:>2} test (total: {n})")
 
         for i in train_idx:
             X_train.append(X[i])
@@ -276,16 +292,23 @@ def main():
     test_preds = model.predict(X_test, verbose=0)
     test_pred_classes = np.argmax(test_preds, axis=1)
 
-    print("\n--- Test Set Evaluation ---")
-    print(f"Overall Test Loss: {test_loss:.4f}")
-    print(f"Overall Test Accuracy: {test_accuracy * 100:.2f}%")
+    print("\n--- Per-Class Test Accuracy & Confidence ---")
+    for c_idx, c_name in enumerate(class_names):
+        idxs = np.where(y_test == c_idx)[0]
+        if len(idxs) == 0:
+            continue
+        c_matches = (test_pred_classes[idxs] == c_idx).sum()
+        c_acc = (c_matches / len(idxs)) * 100
+        avg_conf = np.mean([test_preds[k][test_pred_classes[k]] for k in idxs]) * 100
+        print(f"  {c_name:<20}: {c_matches}/{len(idxs)} correct ({c_acc:>5.1f}%) | Avg Confidence: {avg_conf:>5.1f}%")
 
+    print("\n--- Test Set Sample Predictions ---")
     for i in range(len(y_test)):
         true_name = class_names[y_test[i]]
         pred_name = class_names[test_pred_classes[i]]
         conf = test_preds[i][test_pred_classes[i]] * 100
         match = "MATCH" if true_name == pred_name else "MISMATCH"
-        print(f"  Sample {i+1} [{true_name}] -> Predicted [{pred_name}] ({conf:.1f}% confidence) [{match}]")
+        print(f"  Sample {i+1:>3} [{true_name:<18}] -> Predicted [{pred_name:<18}] ({conf:>5.1f}% confidence) [{match}]")
 
     # 9. Save model and class mapping
     model_path = Path(args.model_path)

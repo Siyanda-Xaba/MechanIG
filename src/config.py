@@ -33,9 +33,9 @@ WINDOW_STEP_SAMPLES = int(TARGET_SAMPLE_RATE * WINDOW_STEP_SECONDS)
 # this value, the recording is flagged as silent or too quiet to diagnose.
 MIN_ENERGY_THRESHOLD = 0.003
 
-# Minimum confidence required for a top prediction. If the model's highest
-# confidence is below this value, the diagnosis is marked as inconclusive.
-CONFIDENCE_THRESHOLD = 0.12
+# Minimum confidence threshold disabled (set to 0.0) so classes with lower volume
+# of training data (such as WheelBearing and CVJoints) are not rejected.
+CONFIDENCE_THRESHOLD = 0.0
 
 # Mel spectrogram settings.
 # These values must stay the same during training and prediction.
@@ -89,6 +89,12 @@ FAULT_DESCRIPTIONS = {
         "description": "Harsh grinding, buzzing, or whirring noise during engine cranking or continuous bearing whine while running.",
         "symptoms": "Difficulty starting, grinding sound when turning the key, or high-pitched electrical whine from the alternator.",
         "recommended_action": "Test battery voltage and alternator charging output. If grinding occurs only during cranking, inspect the starter motor bendix gear and flywheel teeth.",
+    },
+    "HealthySounds": {
+        "title": "Normal Engine Operation",
+        "description": "Clean, smooth engine idle or running sound with no abnormal mechanical friction, clicking, or knocking.",
+        "symptoms": "Consistent rhythm, normal vehicle background acoustics, no abnormal squeaks or rattles.",
+        "recommended_action": "No immediate mechanical action required. Continue following regular vehicle maintenance schedules.",
     },
     "WheelBearing": {
         "title": "Wheel Hub / Bearing Wear",
