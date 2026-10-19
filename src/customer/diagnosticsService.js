@@ -1,63 +1,58 @@
-const developmentDiagnosticsData = {
-    summary: {
-        lastScanAt: 'Today, 08:31',
-        obdConnected: false,
+const commonSymptoms = [
+    {
+        id: 'symptom-001',
+        label: 'Brake noise',
+        icon: 'disc',
     },
-    commonSymptoms: [
-        {
-            id: 'symptom-001',
-            label: 'Brake noise',
-            icon: 'disc',
-        },
-        {
-            id: 'symptom-002',
-            label: 'Engine light',
-            icon: 'engine',
-        },
-        {
-            id: 'symptom-003',
-            label: 'Vibration',
-            icon: 'vibrate',
-        },
-        {
-            id: 'symptom-004',
-            label: 'Battery issue',
-            icon: 'battery-alert',
-        },
-        {
-            id: 'symptom-005',
-            label: 'Overheating',
-            icon: 'thermometer-alert',
-        },
-        {
-            id: 'symptom-006',
-            label: "Won't start",
-            icon: 'car-key',
-        },
-    ],
-    recentScans: [
-        {
-            id: 'scan-001',
-            resultId: 'result-001',
-            title: 'Diagnostics Scan',
-            description: 'All systems normal',
-            scannedAt: 'Today, 08:31',
-            status: 'No Issues',
-            severity: 'normal',
-        },
-        {
-            id: 'scan-002',
-            resultId: 'result-002',
-            title: 'Brake Noise Check',
-            description: 'Review needed',
-            scannedAt: 'Yesterday, 17:45',
-            status: 'Review',
-            severity: 'warning',
-        },
-    ],
-};
+    {
+        id: 'symptom-002',
+        label: 'Engine light',
+        icon: 'engine',
+    },
+    {
+        id: 'symptom-003',
+        label: 'Vibration',
+        icon: 'vibrate',
+    },
+    {
+        id: 'symptom-004',
+        label: 'Battery issue',
+        icon: 'battery-alert',
+    },
+    {
+        id: 'symptom-005',
+        label: 'Overheating',
+        icon: 'thermometer-alert',
+    },
+    {
+        id: 'symptom-006',
+        label: "Won't start",
+        icon: 'car-key',
+    },
+];
+
 export async function getCustomerDiagnosticsData(vehicleId) {
-    // Later this will call the MechanIQ backend
-    // using the selected vehicle ID.
-    return developmentDiagnosticsData;
+    /*
+     * Vehicle-specific diagnostic history will
+     * eventually be retrieved from an authenticated
+     * MechanIQ backend service using vehicleId.
+     *
+     * Until a verified diagnostic source is available,
+     * never fabricate scan results, timestamps,
+     * OBD readings, or vehicle health information.
+     *
+     * Common symptoms are predefined UI options,
+     * not vehicle-specific diagnostic results.
+     */
+
+    return {
+        summary: {
+            lastScanAt: null,
+            obdConnected: false,
+        },
+
+        commonSymptoms,
+
+        recentScans: [],
+    };
 }
