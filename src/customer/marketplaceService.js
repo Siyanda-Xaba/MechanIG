@@ -47,6 +47,21 @@ function isCurrentAuthenticatedUser(uid) {
     );
 }
 
+/**
+ * Development Marketplace data.
+ *
+ * These products demonstrate the frontend catalogue,
+ * search, filtering, cards, and product details.
+ *
+ * They are NOT verified retailer listings.
+ *
+ * Prices, ratings, reviews, seller information,
+ * availability, and vehicle compatibility must
+ * come from validated backend/provider data.
+ *
+ * Sample products must remain visibly identifiable
+ * as development examples.
+ */
 const developmentMarketplaceData = {
     categories: [
         'Brakes',
@@ -56,58 +71,79 @@ const developmentMarketplaceData = {
         'Fluids',
     ],
 
-    // Development display products: compatibility is unknown until verified.
     recommendedProducts: [
         {
             id: 'product-001',
-            name: 'Front Brake Pads',
-            subtitle: 'Premium Ceramic',
+            name: 'Sample: Front Brake Pads',
+            subtitle: 'Premium Ceramic - Example Product',
             category: 'Brakes',
-            price: 1299,
-            rating: 4.7,
-            reviewCount: 128,
+
+            price: null,
+            rating: null,
+            reviewCount: null,
+
             imageUrl: null,
             compatibleWithSelectedVehicle: null,
             sellerId: null,
+
+            isDevelopmentSample: true,
         },
         {
             id: 'product-002',
-            name: 'Oil Filter',
-            subtitle: 'High Performance',
+            name: 'Sample: Oil Filter',
+            subtitle: 'High Performance - Example Product',
             category: 'Engine',
-            price: 249,
-            rating: 4.8,
-            reviewCount: 96,
+
+            price: null,
+            rating: null,
+            reviewCount: null,
+
             imageUrl: null,
             compatibleWithSelectedVehicle: null,
             sellerId: null,
+
+            isDevelopmentSample: true,
         },
         {
             id: 'product-003',
-            name: 'Car Battery',
-            subtitle: '12V • 70Ah • AGM',
+            name: 'Sample: Car Battery',
+            subtitle: '12V - 70Ah - AGM - Example Product',
             category: 'Battery',
-            price: 2199,
-            rating: 4.8,
-            reviewCount: 72,
+
+            price: null,
+            rating: null,
+            reviewCount: null,
+
             imageUrl: null,
             compatibleWithSelectedVehicle: null,
             sellerId: null,
+
+            isDevelopmentSample: true,
         },
         {
             id: 'product-004',
-            name: 'Tyre',
-            subtitle: '205/55 R16 91V',
+            name: 'Sample: Tyre',
+            subtitle: '205/55 R16 91V - Example Product',
             category: 'Tyres',
-            price: 1499,
-            rating: 4.6,
-            reviewCount: 63,
+
+            price: null,
+            rating: null,
+            reviewCount: null,
+
             imageUrl: null,
             compatibleWithSelectedVehicle: null,
             sellerId: null,
+
+            isDevelopmentSample: true,
         },
     ],
 
+    /*
+     * Legacy development store fixtures are retained
+     * as inert data for now. Neither the Marketplace
+     * list nor store-detail lookup returns these as
+     * real nearby stores.
+     */
     nearbyStores: [
         {
             id: 'store-development-001',
@@ -141,24 +177,22 @@ const developmentMarketplaceData = {
         },
     ],
 
-    recentActivity: [
-        {
-            id: 'marketplace-activity-001',
-            title: 'Oil Filter added to cart',
-            occurredAt: 'Today, 10:23',
-            price: 249,
-            type: 'cart',
-        },
-        {
-            id: 'marketplace-activity-002',
-            title: 'Front Brake Pads saved',
-            occurredAt: 'Yesterday, 17:45',
-            price: 1299,
-            type: 'saved',
-        },
-    ],
+    /*
+     * Never create fabricated customer activity.
+     *
+     * Actual activity is loaded separately from
+     * account-specific AsyncStorage.
+     */
+    recentActivity: [],
 };
 
+/**
+ * Retrieve nearby stores from the configured
+ * Marketplace API.
+ *
+ * This function uses actual foreground location
+ * permission and device coordinates.
+ */
 async function getLiveNearbyStores() {
     const permission =
         await Location.requestForegroundPermissionsAsync();
@@ -257,6 +291,7 @@ export async function getMarketplaceActivity() {
  * authenticated account.
  *
  * Activity remains local development data.
+ *
  * This function does not claim that a backend
  * cart, purchase, or saved-item operation
  * succeeded.
@@ -311,6 +346,19 @@ export async function recordMarketplaceActivity(activity) {
     );
 }
 
+/**
+ * Retrieve Marketplace dashboard information.
+ *
+ * Sample catalogue products are clearly labelled
+ * and contain no fabricated pricing, ratings,
+ * or compatibility results.
+ *
+ * Nearby stores are requested from the configured
+ * live provider.
+ *
+ * Recent Activity contains only stored customer
+ * actions belonging to the authenticated account.
+ */
 export async function getCustomerMarketplaceData(vehicle) {
     const recentActivity =
         await getMarketplaceActivity();
@@ -333,35 +381,47 @@ export async function getCustomerMarketplaceData(vehicle) {
     };
 }
 
+/**
+ * Retrieve Marketplace products.
+ *
+ * Until a real product catalogue is connected,
+ * only clearly identified sample products
+ * are returned.
+ */
 export async function getMarketplaceProducts(vehicleId) {
-    // Later this will call the MechanIQ backend
-    // using the selected vehicle ID.
+    // Future backend integration:
     //
-    // Production results should contain validated:
-    // - product details
-    // - current pricing
-    // - seller data
-    // - availability
-    // - selected-vehicle compatibility
+    // - Authenticate the customer.
+    // - Validate the selected vehicle.
+    // - Retrieve real catalogue products.
+    // - Retrieve validated seller information.
+    // - Retrieve verified prices and availability.
+    // - Retrieve authoritative compatibility data.
+    //
+    // Sample data must never claim verified fitment
+    // or retailer availability.
 
     void vehicleId;
 
     return developmentMarketplaceData.recommendedProducts;
 }
 
+/**
+ * Retrieve an individual Marketplace product.
+ *
+ * Product IDs currently resolve to development
+ * samples only.
+ */
 export async function getMarketplaceProductById(
     productId,
     vehicleId
 ) {
-    // Later this will call the MechanIQ backend
-    // using both the product ID and selected vehicle ID.
+    // Future backend integration will retrieve
+    // actual product information using productId
+    // and selected vehicle information.
     //
-    // Production data must provide authoritative:
-    // - product details
-    // - current price
-    // - seller information
-    // - availability / stock
-    // - selected-vehicle compatibility
+    // Verified compatibility must come from
+    // authoritative fitment data.
 
     void vehicleId;
 
@@ -372,38 +432,59 @@ export async function getMarketplaceProductById(
     );
 }
 
+/**
+ * Retrieve nearby Marketplace stores.
+ */
 export async function getMarketplaceStores() {
-    // Later this will call the MechanIQ backend or
-    // marketplace provider.
-    //
     // Production nearby-store results should use:
-    // - validated store/provider data
-    // - authoritative coordinates
-    // - the customer's permitted location where needed
-    // - current opening status
-    // - supported stock / pricing information
+    //
+    // - Validated store/provider data.
+    // - Authoritative coordinates.
+    // - The customer's permitted location.
+    // - Verified opening information.
+    // - Supported stock and pricing data.
 
     return getLiveNearbyStores();
 }
 
+/**
+ * Retrieve a Marketplace store by ID using the same
+ * live nearby-stores API as the Marketplace screens.
+ *
+ * Until the backend exposes a dedicated store-detail
+ * endpoint, only stores present in a fresh nearby-store
+ * response can be opened. No development store records
+ * are used as a fallback.
+ */
 export async function getMarketplaceStoreById(storeId) {
-    // Later this will call the MechanIQ backend or
-    // marketplace provider using the store ID.
-    //
-    // Production data can then provide authoritative:
-    // - store address and coordinates
-    // - opening status and trading hours
-    // - contact information
-    // - available products
-    // - live stock / pricing where supported
+    const requestedId = Array.isArray(storeId)
+        ? storeId[0]
+        : storeId;
 
-    return (
-        developmentMarketplaceData.nearbyStores.find(
-            (store) => store.id === storeId
-        ) ?? null
-    );
+    if (requestedId == null || String(requestedId).trim() === '') {
+        return null;
+    }
+
+    const stores = await getLiveNearbyStores();
+
+    if (!Array.isArray(stores)) {
+        throw new Error(
+            'The nearby-store service returned invalid store data.'
+        );
+    }
+
+    return stores.find(
+        (store) =>
+            store?.id != null &&
+            String(store.id) === String(requestedId)
+    ) ?? null;
 }
 
+/**
+ * Search for a vehicle part using a photograph.
+ *
+ * Recognition is not proof of compatibility.
+ */
 export async function recognizeMarketplacePart(
     picture,
     vehicle
@@ -491,6 +572,13 @@ export async function recognizeMarketplacePart(
     };
 }
 
+/**
+ * Request retailer offers for a confirmed
+ * part name and selected vehicle.
+ *
+ * A retailer offer does not establish
+ * compatibility with the selected vehicle.
+ */
 export async function checkMarketplacePartCompatibility(input) {
     const {
         getPictureSearchEndpoint,

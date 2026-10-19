@@ -1,47 +1,144 @@
-import { jsx as _jsx } from "react/jsx-runtime";
-import { createContext, useCallback, useContext, useEffect, useState, } from 'react';
+import { jsx as _jsx } from 'react/jsx-runtime';
+
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
+
 import { useVehicle } from '../vehicles/VehicleContext';
-import { getCustomerMarketplaceData } from './marketplaceService';
+
+import {
+    getCustomerMarketplaceData,
+} from './marketplaceService';
+
 const CustomerMarketplaceContext = createContext(undefined);
-export function CustomerMarketplaceProvider({ children, }) {
+
+export function CustomerMarketplaceProvider({ children }) {
     const { selectedVehicle } = useVehicle();
+
+    const selectedVehicleId = selectedVehicle?.id ?? null;
+
     const [marketplaceData, setMarketplaceData] = useState(null);
-    const [isLoadingMarketplace, setIsLoadingMarketplace] = useState(false);
-    const [marketplaceError, setMarketplaceError] = useState(null);
+
+    const [
+        isLoadingMarketplace,
+        setIsLoadingMarketplace,
+    ] = useState(false);
+
+    const [
+        marketplaceError,
+        setMarketplaceError,
+    ] = useState(null);
+
+    /*
+     * Each request receives a unique version.
+     *
+     * Older requests must not overwrite Marketplace
+     * data belonging to the currently selected vehicle.
+     */
+    const requestVersionRef = useRef(0);
+
     const refreshMarketplaceData = useCallback(async () => {
-        if (!selectedVehicle) {
+        const requestVersion = ++requestVersionRef.current;
+
+        /*
+         * Marketplace information must be associated
+         * with the currently selected vehicle.
+         */
+        if (!selectedVehicleId || !selectedVehicle) {
             setMarketplaceData(null);
             setMarketplaceError(null);
+            setIsLoadingMarketplace(false);
             return;
         }
+
+        /*
+         * Clear previous vehicle information while
+         * loading data for the selected vehicle.
+         */
+        setMarketplaceData(null);
+        setIsLoadingMarketplace(true);
+        setMarketplaceError(null);
+
         try {
-            setIsLoadingMarketplace(true);
-            setMarketplaceError(null);
-            const data = await getCustomerMarketplaceData(selectedVehicle);
+            const data = await getCustomerMarketplaceData(
+                selectedVehicle
+            );
+
+            /*
+             * Ignore results from requests that have
+             * been superseded by a newer request.
+             */
+            if (
+                requestVersion !== requestVersionRef.current
+            ) {
+                return;
+            }
+
             setMarketplaceData(data);
-        }
-        catch {
+        } catch {
+            if (
+                requestVersion !== requestVersionRef.current
+            ) {
+                return;
+            }
+
             setMarketplaceData(null);
-            setMarketplaceError('Unable to load marketplace information.');
+
+            setMarketplaceError(
+                'Unable to load marketplace information.'
+            );
+        } finally {
+            /*
+             * Only the latest request may update
+             * the loading state.
+             */
+            if (
+                requestVersion === requestVersionRef.current
+            ) {
+                setIsLoadingMarketplace(false);
+            }
         }
-        finally {
-            setIsLoadingMarketplace(false);
-        }
-    }, [selectedVehicle]);
+    }, [
+        selectedVehicle,
+        selectedVehicleId,
+    ]);
+
     useEffect(() => {
         refreshMarketplaceData();
+
+        /*
+         * Invalidate pending requests when the selected
+         * vehicle changes or the provider unmounts.
+         */
+        return () => {
+            requestVersionRef.current += 1;
+        };
     }, [refreshMarketplaceData]);
-    return (_jsx(CustomerMarketplaceContext.Provider, { value: {
+
+    return _jsx(CustomerMarketplaceContext.Provider, {
+        value: {
             marketplaceData,
             isLoadingMarketplace,
             marketplaceError,
             refreshMarketplaceData,
-        }, children: children }));
+        },
+        children,
+    });
 }
+
 export function useCustomerMarketplace() {
     const context = useContext(CustomerMarketplaceContext);
+
     if (!context) {
-        throw new Error('useCustomerMarketplace must be used inside CustomerMarketplaceProvider');
+        throw new Error(
+            'useCustomerMarketplace must be used inside CustomerMarketplaceProvider'
+        );
     }
+
     return context;
 }
