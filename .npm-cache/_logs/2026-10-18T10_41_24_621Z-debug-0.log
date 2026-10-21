@@ -1,0 +1,285 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.11.0
+2 info using node@v25.8.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Xsiya\AppData\Local\Temp\mechaniq-native-build-tools\.npmrc
+5 silly config load:file:C:\Users\Xsiya\.npmrc
+6 silly config load:file:C:\Users\Xsiya\AppData\Local\Temp\mechaniq-native-build-tools\etc\npmrc
+7 verbose title npm install ninja-runtime@1.13.2
+8 verbose argv "install" "--prefix" "C:\\Users\\Xsiya\\AppData\\Local\\Temp\\mechaniq-native-build-tools" "--no-save" "ninja-runtime@1.13.2" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_41_24_621Z-
+10 verbose logfile C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_41_24_621Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 silly logfile done cleaning log files
+14 silly idealTree buildDeps
+15 silly fetch manifest ninja-runtime@1.13.2
+16 silly packumentCache full:https://registry.npmjs.org/ninja-runtime cache-miss
+17 http cache https://registry.npmjs.org/ninja-runtime 22ms (cache hit)
+18 silly packumentCache full:https://registry.npmjs.org/ninja-runtime set size:11835 disposed:false
+19 silly placeDep ROOT ninja-runtime@1.13.2 OK for:  want: 1.13.2
+20 silly fetch manifest bare-fs@^4.4.4
+21 silly packumentCache full:https://registry.npmjs.org/bare-fs cache-miss
+22 silly fetch manifest bare-os@^3.0.1
+23 silly packumentCache full:https://registry.npmjs.org/bare-os cache-miss
+24 silly fetch manifest bare-path@^3.0.0
+25 silly packumentCache full:https://registry.npmjs.org/bare-path cache-miss
+26 silly fetch manifest bare-subprocess@^5.0.0
+27 silly packumentCache full:https://registry.npmjs.org/bare-subprocess cache-miss
+28 silly fetch manifest ninja-runtime-linux-x64@1.13.2
+29 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-linux-x64 cache-miss
+30 silly fetch manifest ninja-runtime-win32-x64@1.13.2
+31 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-win32-x64 cache-miss
+32 silly fetch manifest ninja-runtime-darwin-x64@1.13.2
+33 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-darwin-x64 cache-miss
+34 http fetch GET 200 https://registry.npmjs.org/bare-path 473ms (cache miss)
+35 silly packumentCache full:https://registry.npmjs.org/bare-path set size:undefined disposed:false
+36 silly fetch manifest ninja-runtime-linux-arm64@1.13.2
+37 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-linux-arm64 cache-miss
+38 http fetch GET 200 https://registry.npmjs.org/bare-fs 478ms (cache miss)
+39 silly packumentCache full:https://registry.npmjs.org/bare-fs set size:undefined disposed:false
+40 silly fetch manifest ninja-runtime-win32-arm64@1.13.2
+41 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-win32-arm64 cache-miss
+42 http fetch GET 200 https://registry.npmjs.org/bare-subprocess 739ms (cache miss)
+43 silly packumentCache full:https://registry.npmjs.org/bare-subprocess set size:undefined disposed:false
+44 silly fetch manifest ninja-runtime-darwin-arm64@1.13.2
+45 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-darwin-arm64 cache-miss
+46 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-linux-x64 775ms (cache miss)
+47 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-linux-x64 set size:undefined disposed:false
+48 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-darwin-x64 778ms (cache miss)
+49 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-darwin-x64 set size:undefined disposed:false
+50 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-win32-x64 781ms (cache miss)
+51 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-win32-x64 set size:undefined disposed:false
+52 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-win32-arm64 375ms (cache miss)
+53 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-win32-arm64 set size:undefined disposed:false
+54 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-linux-arm64 400ms (cache miss)
+55 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-linux-arm64 set size:undefined disposed:false
+56 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-darwin-arm64 408ms (cache miss)
+57 silly packumentCache full:https://registry.npmjs.org/ninja-runtime-darwin-arm64 set size:undefined disposed:false
+58 http fetch GET 200 https://registry.npmjs.org/bare-os 1308ms (cache miss)
+59 silly packumentCache full:https://registry.npmjs.org/bare-os set size:undefined disposed:false
+60 silly fetch manifest bare-buffer@*
+61 silly packumentCache full:https://registry.npmjs.org/bare-buffer cache-miss
+62 http fetch GET 200 https://registry.npmjs.org/bare-buffer 40ms (cache miss)
+63 silly packumentCache full:https://registry.npmjs.org/bare-buffer set size:undefined disposed:false
+64 silly placeDep ROOT bare-fs@4.8.4 OK for: ninja-runtime@1.13.2 want: ^4.4.4
+65 silly placeDep ROOT bare-os@3.9.3 OK for: ninja-runtime@1.13.2 want: ^3.0.1
+66 silly placeDep ROOT bare-path@3.1.2 OK for: ninja-runtime@1.13.2 want: ^3.0.0
+67 silly placeDep ROOT bare-subprocess@5.2.3 OK for: ninja-runtime@1.13.2 want: ^5.0.0
+68 silly placeDep ROOT ninja-runtime-darwin-arm64@1.13.2 OK for: ninja-runtime@1.13.2 want: 1.13.2
+69 silly placeDep ROOT ninja-runtime-darwin-x64@1.13.2 OK for: ninja-runtime@1.13.2 want: 1.13.2
+70 silly placeDep ROOT ninja-runtime-linux-arm64@1.13.2 OK for: ninja-runtime@1.13.2 want: 1.13.2
+71 silly placeDep ROOT ninja-runtime-linux-x64@1.13.2 OK for: ninja-runtime@1.13.2 want: 1.13.2
+72 silly placeDep ROOT ninja-runtime-win32-arm64@1.13.2 OK for: ninja-runtime@1.13.2 want: 1.13.2
+73 silly placeDep ROOT ninja-runtime-win32-x64@1.13.2 OK for: ninja-runtime@1.13.2 want: 1.13.2
+74 silly fetch manifest bare-url@^2.2.2
+75 silly packumentCache full:https://registry.npmjs.org/bare-url cache-miss
+76 silly fetch manifest fast-fifo@^1.3.2
+77 silly packumentCache full:https://registry.npmjs.org/fast-fifo cache-miss
+78 silly fetch manifest bare-events@^2.5.4
+79 silly packumentCache full:https://registry.npmjs.org/bare-events cache-miss
+80 silly fetch manifest bare-stream@^2.6.4
+81 silly packumentCache full:https://registry.npmjs.org/bare-stream cache-miss
+82 silly fetch manifest bare-env@^3.0.0
+83 silly packumentCache full:https://registry.npmjs.org/bare-env cache-miss
+84 silly fetch manifest bare-url@^2.2.2
+85 silly packumentCache full:https://registry.npmjs.org/bare-url cache-miss
+86 silly fetch manifest bare-pipe@^4.0.0
+87 silly packumentCache full:https://registry.npmjs.org/bare-pipe cache-miss
+88 http fetch GET 200 https://registry.npmjs.org/fast-fifo 37ms (cache miss)
+89 silly packumentCache full:https://registry.npmjs.org/fast-fifo set size:undefined disposed:false
+90 silly fetch manifest bare-events@^2.5.4
+91 silly packumentCache full:https://registry.npmjs.org/bare-events cache-miss
+92 http fetch GET 200 https://registry.npmjs.org/bare-events 50ms (cache miss)
+93 silly packumentCache full:https://registry.npmjs.org/bare-events set size:undefined disposed:false
+94 silly fetch manifest require-asset@^1.0.2
+95 silly packumentCache full:https://registry.npmjs.org/require-asset cache-miss
+96 http fetch GET 200 https://registry.npmjs.org/bare-stream 68ms (cache miss)
+97 silly packumentCache full:https://registry.npmjs.org/bare-stream set size:undefined disposed:false
+98 silly fetch manifest require-asset@^1.0.2
+99 silly packumentCache full:https://registry.npmjs.org/require-asset cache-miss
+100 http fetch GET 200 https://registry.npmjs.org/bare-url 73ms (cache miss)
+101 silly packumentCache full:https://registry.npmjs.org/bare-url set size:undefined disposed:false
+102 silly fetch manifest require-asset@^1.0.2
+103 silly packumentCache full:https://registry.npmjs.org/require-asset cache-miss
+104 http fetch GET 200 https://registry.npmjs.org/bare-events 72ms (cache miss)
+105 silly packumentCache full:https://registry.npmjs.org/bare-events set size:undefined disposed:false
+106 silly fetch manifest require-asset@^1.0.2
+107 silly packumentCache full:https://registry.npmjs.org/require-asset cache-miss
+108 http fetch GET 200 https://registry.npmjs.org/bare-url 124ms (cache miss)
+109 silly packumentCache full:https://registry.npmjs.org/bare-url set size:undefined disposed:false
+110 silly fetch manifest require-asset@^1.0.2
+111 silly packumentCache full:https://registry.npmjs.org/require-asset cache-miss
+112 http fetch GET 200 https://registry.npmjs.org/bare-env 341ms (cache miss)
+113 silly packumentCache full:https://registry.npmjs.org/bare-env set size:undefined disposed:false
+114 silly fetch manifest require-asset@^1.0.2
+115 silly packumentCache full:https://registry.npmjs.org/require-asset cache-miss
+116 http fetch GET 200 https://registry.npmjs.org/require-asset 439ms (cache miss)
+117 silly packumentCache full:https://registry.npmjs.org/require-asset set size:undefined disposed:false
+118 http fetch GET 200 https://registry.npmjs.org/require-asset 479ms (cache miss)
+119 silly packumentCache full:https://registry.npmjs.org/require-asset set size:undefined disposed:false
+120 http fetch GET 200 https://registry.npmjs.org/require-asset 426ms (cache miss)
+121 silly packumentCache full:https://registry.npmjs.org/require-asset set size:undefined disposed:false
+122 http fetch GET 200 https://registry.npmjs.org/require-asset 485ms (cache miss)
+123 silly packumentCache full:https://registry.npmjs.org/require-asset set size:undefined disposed:false
+124 http fetch GET 200 https://registry.npmjs.org/require-asset 214ms (cache miss)
+125 silly packumentCache full:https://registry.npmjs.org/require-asset set size:undefined disposed:false
+126 http fetch GET 200 https://registry.npmjs.org/require-asset 504ms (cache miss)
+127 silly packumentCache full:https://registry.npmjs.org/require-asset set size:undefined disposed:false
+128 http fetch GET 200 https://registry.npmjs.org/bare-pipe 556ms (cache miss)
+129 silly packumentCache full:https://registry.npmjs.org/bare-pipe set size:undefined disposed:false
+130 silly fetch manifest bare-abort-controller@*
+131 silly packumentCache full:https://registry.npmjs.org/bare-abort-controller cache-miss
+132 http fetch GET 200 https://registry.npmjs.org/bare-abort-controller 369ms (cache miss)
+133 silly packumentCache full:https://registry.npmjs.org/bare-abort-controller set size:undefined disposed:false
+134 silly placeDep ROOT bare-events@2.9.2 OK for: bare-fs@4.8.4 want: ^2.5.4
+135 silly placeDep ROOT bare-stream@2.13.4 OK for: bare-fs@4.8.4 want: ^2.6.4
+136 silly placeDep ROOT bare-url@2.5.5 OK for: bare-fs@4.8.4 want: ^2.2.2
+137 silly placeDep ROOT fast-fifo@1.3.2 OK for: bare-fs@4.8.4 want: ^1.3.2
+138 silly fetch manifest b4a@^1.8.1
+139 silly packumentCache full:https://registry.npmjs.org/b4a cache-miss
+140 silly fetch manifest teex@^1.0.1
+141 silly packumentCache full:https://registry.npmjs.org/teex cache-miss
+142 silly fetch manifest streamx@^2.25.0
+143 silly packumentCache full:https://registry.npmjs.org/streamx cache-miss
+144 http fetch GET 200 https://registry.npmjs.org/teex 25ms (cache miss)
+145 silly packumentCache full:https://registry.npmjs.org/teex set size:undefined disposed:false
+146 http fetch GET 200 https://registry.npmjs.org/streamx 89ms (cache miss)
+147 silly packumentCache full:https://registry.npmjs.org/streamx set size:undefined disposed:false
+148 http fetch GET 200 https://registry.npmjs.org/b4a 366ms (cache miss)
+149 silly packumentCache full:https://registry.npmjs.org/b4a set size:undefined disposed:false
+150 silly fetch manifest react-native-b4a@*
+151 silly packumentCache full:https://registry.npmjs.org/react-native-b4a cache-miss
+152 http fetch GET 200 https://registry.npmjs.org/react-native-b4a 31ms (cache miss)
+153 silly packumentCache full:https://registry.npmjs.org/react-native-b4a set size:undefined disposed:false
+154 silly fetch manifest react@*
+155 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+156 http fetch GET 200 https://registry.npmjs.org/react 74ms (cache revalidated)
+157 silly packumentCache full:https://registry.npmjs.org/react set size:7059166 disposed:false
+158 silly fetch manifest react-native@*
+159 silly packumentCache full:https://registry.npmjs.org/react-native cache-miss
+160 http fetch GET 200 https://registry.npmjs.org/react-native 417ms (cache revalidated)
+161 silly packumentCache full:https://registry.npmjs.org/react-native set size:16014790 disposed:false
+162 silly fetch manifest @react-native/jest-preset@0.86.3
+163 silly packumentCache full:https://registry.npmjs.org/@react-native%2fjest-preset cache-miss
+164 http fetch GET 200 https://registry.npmjs.org/@react-native%2fjest-preset 249ms (cache revalidated)
+165 silly packumentCache full:https://registry.npmjs.org/@react-native%2fjest-preset set size:518923 disposed:false
+166 silly fetch manifest @types/react@^19.1.1
+167 silly packumentCache full:https://registry.npmjs.org/@types%2freact cache-miss
+168 http fetch GET 200 https://registry.npmjs.org/@types%2freact 38ms (cache revalidated)
+169 silly packumentCache full:https://registry.npmjs.org/@types%2freact set size:2642195 disposed:false
+170 silly placeDep ROOT b4a@1.9.0 OK for: bare-stream@2.13.4 want: ^1.8.1
+171 silly placeDep ROOT streamx@2.28.1 OK for: bare-stream@2.13.4 want: ^2.25.0
+172 silly placeDep ROOT teex@1.0.1 OK for: bare-stream@2.13.4 want: ^1.0.1
+173 silly fetch manifest text-decoder@^1.1.0
+174 silly packumentCache full:https://registry.npmjs.org/text-decoder cache-miss
+175 silly fetch manifest events-universal@^1.0.0
+176 silly packumentCache full:https://registry.npmjs.org/events-universal cache-miss
+177 http fetch GET 200 https://registry.npmjs.org/events-universal 33ms (cache miss)
+178 silly packumentCache full:https://registry.npmjs.org/events-universal set size:undefined disposed:false
+179 http fetch GET 200 https://registry.npmjs.org/text-decoder 35ms (cache miss)
+180 silly packumentCache full:https://registry.npmjs.org/text-decoder set size:undefined disposed:false
+181 silly placeDep ROOT bare-env@3.0.1 OK for: bare-subprocess@5.2.3 want: ^3.0.0
+182 silly placeDep ROOT bare-pipe@4.4.0 OK for: bare-subprocess@5.2.3 want: ^4.0.0
+183 silly placeDep ROOT require-asset@1.2.4 OK for: ninja-runtime-darwin-arm64@1.13.2 want: ^1.0.2
+184 silly fetch manifest bare-module-resolve@^1.6.2
+185 silly packumentCache full:https://registry.npmjs.org/bare-module-resolve cache-miss
+186 http fetch GET 200 https://registry.npmjs.org/bare-module-resolve 345ms (cache miss)
+187 silly packumentCache full:https://registry.npmjs.org/bare-module-resolve set size:undefined disposed:false
+188 silly fetch manifest bare-url@*
+189 silly packumentCache full:https://registry.npmjs.org/bare-url cache-miss
+190 http cache https://registry.npmjs.org/bare-url 9ms (cache hit)
+191 silly packumentCache full:https://registry.npmjs.org/bare-url set size:119442 disposed:false
+192 silly placeDep ROOT bare-module-resolve@1.12.6 OK for: require-asset@1.2.4 want: ^1.6.2
+193 silly fetch manifest bare-semver@^1.0.0
+194 silly packumentCache full:https://registry.npmjs.org/bare-semver cache-miss
+195 http fetch GET 200 https://registry.npmjs.org/bare-semver 335ms (cache miss)
+196 silly packumentCache full:https://registry.npmjs.org/bare-semver set size:undefined disposed:false
+197 silly placeDep ROOT bare-semver@1.1.0 OK for: bare-module-resolve@1.12.6 want: ^1.0.0
+198 silly placeDep ROOT events-universal@1.0.1 OK for: streamx@2.28.1 want: ^1.0.0
+199 silly placeDep ROOT text-decoder@1.2.7 OK for: streamx@2.28.1 want: ^1.1.0
+200 silly reify moves {}
+201 http cache bare-semver@https://registry.npmjs.org/bare-semver/-/bare-semver-1.1.0.tgz 0ms (cache hit)
+202 http cache text-decoder@https://registry.npmjs.org/text-decoder/-/text-decoder-1.2.7.tgz 0ms (cache hit)
+203 http cache events-universal@https://registry.npmjs.org/events-universal/-/events-universal-1.0.1.tgz 0ms (cache hit)
+204 http cache bare-pipe@https://registry.npmjs.org/bare-pipe/-/bare-pipe-4.4.0.tgz 0ms (cache hit)
+205 http cache bare-env@https://registry.npmjs.org/bare-env/-/bare-env-3.0.1.tgz 0ms (cache hit)
+206 http cache require-asset@https://registry.npmjs.org/require-asset/-/require-asset-1.2.4.tgz 0ms (cache hit)
+207 http cache b4a@https://registry.npmjs.org/b4a/-/b4a-1.9.0.tgz 0ms (cache hit)
+208 http cache streamx@https://registry.npmjs.org/streamx/-/streamx-2.28.1.tgz 0ms (cache hit)
+209 http cache teex@https://registry.npmjs.org/teex/-/teex-1.0.1.tgz 0ms (cache hit)
+210 http cache fast-fifo@https://registry.npmjs.org/fast-fifo/-/fast-fifo-1.3.2.tgz 0ms (cache hit)
+211 http cache bare-module-resolve@https://registry.npmjs.org/bare-module-resolve/-/bare-module-resolve-1.12.6.tgz 0ms (cache hit)
+212 http cache bare-url@https://registry.npmjs.org/bare-url/-/bare-url-2.5.5.tgz 0ms (cache hit)
+213 http cache ninja-runtime-win32-x64@https://registry.npmjs.org/ninja-runtime-win32-x64/-/ninja-runtime-win32-x64-1.13.2.tgz 0ms (cache hit)
+214 http cache bare-subprocess@https://registry.npmjs.org/bare-subprocess/-/bare-subprocess-5.2.3.tgz 0ms (cache hit)
+215 http cache bare-stream@https://registry.npmjs.org/bare-stream/-/bare-stream-2.13.4.tgz 0ms (cache hit)
+216 http cache bare-path@https://registry.npmjs.org/bare-path/-/bare-path-3.1.2.tgz 0ms (cache hit)
+217 http cache bare-os@https://registry.npmjs.org/bare-os/-/bare-os-3.9.3.tgz 0ms (cache hit)
+218 http cache bare-events@https://registry.npmjs.org/bare-events/-/bare-events-2.9.2.tgz 0ms (cache hit)
+219 silly tarball no local data for bare-semver@https://registry.npmjs.org/bare-semver/-/bare-semver-1.1.0.tgz. Extracting by manifest.
+220 silly tarball no local data for text-decoder@https://registry.npmjs.org/text-decoder/-/text-decoder-1.2.7.tgz. Extracting by manifest.
+221 http cache ninja-runtime@https://registry.npmjs.org/ninja-runtime/-/ninja-runtime-1.13.2.tgz 0ms (cache hit)
+222 silly tarball no local data for events-universal@https://registry.npmjs.org/events-universal/-/events-universal-1.0.1.tgz. Extracting by manifest.
+223 silly tarball no local data for bare-pipe@https://registry.npmjs.org/bare-pipe/-/bare-pipe-4.4.0.tgz. Extracting by manifest.
+224 silly tarball no local data for bare-env@https://registry.npmjs.org/bare-env/-/bare-env-3.0.1.tgz. Extracting by manifest.
+225 silly tarball no local data for require-asset@https://registry.npmjs.org/require-asset/-/require-asset-1.2.4.tgz. Extracting by manifest.
+226 silly tarball no local data for b4a@https://registry.npmjs.org/b4a/-/b4a-1.9.0.tgz. Extracting by manifest.
+227 http cache bare-fs@https://registry.npmjs.org/bare-fs/-/bare-fs-4.8.4.tgz 0ms (cache hit)
+228 silly tarball no local data for streamx@https://registry.npmjs.org/streamx/-/streamx-2.28.1.tgz. Extracting by manifest.
+229 silly tarball no local data for teex@https://registry.npmjs.org/teex/-/teex-1.0.1.tgz. Extracting by manifest.
+230 silly tarball no local data for fast-fifo@https://registry.npmjs.org/fast-fifo/-/fast-fifo-1.3.2.tgz. Extracting by manifest.
+231 silly tarball no local data for bare-module-resolve@https://registry.npmjs.org/bare-module-resolve/-/bare-module-resolve-1.12.6.tgz. Extracting by manifest.
+232 silly tarball no local data for bare-url@https://registry.npmjs.org/bare-url/-/bare-url-2.5.5.tgz. Extracting by manifest.
+233 silly tarball no local data for ninja-runtime-win32-x64@https://registry.npmjs.org/ninja-runtime-win32-x64/-/ninja-runtime-win32-x64-1.13.2.tgz. Extracting by manifest.
+234 silly tarball no local data for bare-subprocess@https://registry.npmjs.org/bare-subprocess/-/bare-subprocess-5.2.3.tgz. Extracting by manifest.
+235 silly tarball no local data for bare-stream@https://registry.npmjs.org/bare-stream/-/bare-stream-2.13.4.tgz. Extracting by manifest.
+236 silly tarball no local data for bare-path@https://registry.npmjs.org/bare-path/-/bare-path-3.1.2.tgz. Extracting by manifest.
+237 silly tarball no local data for bare-os@https://registry.npmjs.org/bare-os/-/bare-os-3.9.3.tgz. Extracting by manifest.
+238 silly tarball no local data for bare-events@https://registry.npmjs.org/bare-events/-/bare-events-2.9.2.tgz. Extracting by manifest.
+239 silly tarball no local data for bare-fs@https://registry.npmjs.org/bare-fs/-/bare-fs-4.8.4.tgz. Extracting by manifest.
+240 http fetch GET 200 https://registry.npmjs.org/events-universal/-/events-universal-1.0.1.tgz 200ms (cache miss)
+241 http fetch GET 200 https://registry.npmjs.org/text-decoder/-/text-decoder-1.2.7.tgz 218ms (cache miss)
+242 http fetch GET 200 https://registry.npmjs.org/bare-semver/-/bare-semver-1.1.0.tgz 329ms (cache miss)
+243 http fetch GET 200 https://registry.npmjs.org/bare-events/-/bare-events-2.9.2.tgz 323ms (cache miss)
+244 http fetch GET 200 https://registry.npmjs.org/b4a/-/b4a-1.9.0.tgz 364ms (cache miss)
+245 http fetch GET 200 https://registry.npmjs.org/bare-env/-/bare-env-3.0.1.tgz 415ms (cache miss)
+246 http fetch GET 200 https://registry.npmjs.org/fast-fifo/-/fast-fifo-1.3.2.tgz 450ms (cache miss)
+247 http fetch GET 200 https://registry.npmjs.org/bare-pipe/-/bare-pipe-4.4.0.tgz 499ms (cache miss)
+248 http fetch GET 200 https://registry.npmjs.org/teex/-/teex-1.0.1.tgz 619ms (cache miss)
+249 http fetch GET 200 https://registry.npmjs.org/streamx/-/streamx-2.28.1.tgz 668ms (cache miss)
+250 http fetch GET 200 https://registry.npmjs.org/bare-stream/-/bare-stream-2.13.4.tgz 681ms (cache miss)
+251 http fetch GET 200 https://registry.npmjs.org/require-asset/-/require-asset-1.2.4.tgz 689ms (cache miss)
+252 http fetch GET 200 https://registry.npmjs.org/bare-module-resolve/-/bare-module-resolve-1.12.6.tgz 743ms (cache miss)
+253 http fetch GET 200 https://registry.npmjs.org/bare-fs/-/bare-fs-4.8.4.tgz 1231ms (cache miss)
+254 http fetch GET 200 https://registry.npmjs.org/bare-subprocess/-/bare-subprocess-5.2.3.tgz 1875ms (cache miss)
+255 http fetch GET 200 https://registry.npmjs.org/bare-path/-/bare-path-3.1.2.tgz 1952ms (cache miss)
+256 http fetch GET 200 https://registry.npmjs.org/bare-os/-/bare-os-3.9.3.tgz 2350ms (cache miss)
+257 http fetch GET 200 https://registry.npmjs.org/ninja-runtime-win32-x64/-/ninja-runtime-win32-x64-1.13.2.tgz 2640ms (cache miss)
+258 http fetch GET 200 https://registry.npmjs.org/bare-url/-/bare-url-2.5.5.tgz 2836ms (cache miss)
+259 silly ADD node_modules/text-decoder
+260 silly ADD node_modules/events-universal
+261 silly ADD node_modules/bare-semver
+262 silly ADD node_modules/bare-module-resolve
+263 silly ADD node_modules/require-asset
+264 silly ADD node_modules/bare-pipe
+265 silly ADD node_modules/bare-env
+266 silly ADD node_modules/teex
+267 silly ADD node_modules/streamx
+268 silly ADD node_modules/b4a
+269 silly ADD node_modules/fast-fifo
+270 silly ADD node_modules/bare-url
+271 silly ADD node_modules/bare-stream
+272 silly ADD node_modules/bare-events
+273 silly ADD node_modules/ninja-runtime-win32-x64
+274 silly ADD node_modules/bare-subprocess
+275 silly ADD node_modules/bare-path
+276 silly ADD node_modules/bare-os
+277 silly ADD node_modules/bare-fs
+278 silly ADD node_modules/ninja-runtime
+279 verbose cwd C:\Users\Xsiya\OneDrive\Desktop\m
+280 verbose os Windows_NT 10.0.26300
+281 verbose node v25.8.0
+282 verbose npm  v11.11.0
+283 verbose exit 0
+284 info ok

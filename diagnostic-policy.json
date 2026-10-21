@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "operations": {
+    "readSupportedPidRange": {
+      "service": "01",
+      "allowedPids": ["00", "20", "40"],
+      "responseService": "41",
+      "requiredDataBytes": 4,
+      "purpose": "Ask the ECU which standard live-data PIDs it supports before requesting them."
+    },
+    "readLivePid": {
+      "service": "01",
+      "allowedPids": {
+        "04": { "dataBytes": 1, "name": "Calculated engine load" },
+        "05": { "dataBytes": 1, "name": "Engine coolant temperature" },
+        "06": { "dataBytes": 1, "name": "Short-term fuel trim (Bank 1)" },
+        "07": { "dataBytes": 1, "name": "Long-term fuel trim (Bank 1)" },
+        "08": { "dataBytes": 1, "name": "Short-term fuel trim (Bank 2)" },
+        "09": { "dataBytes": 1, "name": "Long-term fuel trim (Bank 2)" },
+        "0A": { "dataBytes": 1, "name": "Fuel pressure" },
+        "0B": { "dataBytes": 1, "name": "Intake manifold pressure" },
+        "0C": { "dataBytes": 2, "name": "Engine RPM" },
+        "0D": { "dataBytes": 1, "name": "Vehicle speed" },
+        "0E": { "dataBytes": 1, "name": "Ignition timing advance" },
+        "0F": { "dataBytes": 1, "name": "Intake air temperature" },
+        "10": { "dataBytes": 2, "name": "Mass air flow" },
+        "11": { "dataBytes": 1, "name": "Throttle position" },
+        "2F": { "dataBytes": 1, "name": "Fuel level" },
+        "32": { "dataBytes": 2, "name": "EVAP system vapor pressure" },
+        "33": { "dataBytes": 1, "name": "Barometric pressure" },
+        "42": { "dataBytes": 2, "name": "Control module voltage" },
+        "5E": { "dataBytes": 2, "name": "Engine fuel rate" }
+      },
+      "responseService": "41",
+      "purpose": "Read only the listed standard emissions-related live data supported by the ECU."
+    },
+    "readStoredEmissionDtcs": {
+      "service": "03",
+      "allowedPids": [],
+      "responseService": "43",
+      "maxResponseBytes": 64,
+      "purpose": "Read stored emissions-related diagnostic trouble codes; never clear or change them."
+    }
+  },
+  "limits": {
+    "responseCharacters": 4096,
+    "requestTimeoutMs": 5000,
+    "minimumRequestIntervalMs": 100,
+    "snapshotIntervalMs": 1000,
+    "connectionTimeoutMs": 12000,
+    "maximumConsecutivePidFailures": 3
+  }
+}

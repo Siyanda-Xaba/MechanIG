@@ -1,0 +1,286 @@
+openapi: 3.1.0
+info:
+  title: MechanIQ OBD diagnostics API
+  version: 1.0.0
+  description: REST API for decoding adapter-provided OBD-II responses and storing vehicle scans.
+servers:
+  - url: http://localhost:5000
+tags:
+  - name: Health
+  - name: Diagnostics
+  - name: Vehicles
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      summary: Check that the process is running
+      responses:
+        '200':
+          description: API process is alive
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Read API storage and readiness configuration
+      responses:
+        '200':
+          description: API is configured to receive requests
+  /api/v1/diagnostics/problems:
+    get:
+      tags: [Diagnostics]
+      summary: List supported diagnostic trouble codes
+      responses:
+        '200':
+          description: Supported trouble-code catalogue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProblemListResponse' }
+  /api/v1/diagnostics/problems/{code}:
+    get:
+      tags: [Diagnostics]
+      summary: Look up a supported trouble code
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: { type: string, pattern: '^[PCBU][0-3][0-9A-Fa-f]{3}$', example: P0300 }
+      responses:
+        '200':
+          description: Problem definition
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ApiError' }
+  /api/v1/diagnostics/translate:
+    post:
+      tags: [Diagnostics]
+      summary: Translate adapter responses without persisting a scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DiagnosticInput' }
+      responses:
+        '200':
+          description: Frontend-ready diagnostic summary, problems, and readings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TranslationResponse' }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '422': { $ref: '#/components/responses/ApiError' }
+  /api/v1/vehicles:
+    get:
+      tags: [Vehicles]
+      summary: List vehicles owned by the authenticated user
+      security: [{ firebaseBearer: [] }]
+      responses:
+        '200':
+          description: User's vehicles
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleListResponse' }
+        '401': { $ref: '#/components/responses/ApiError' }
+    post:
+      tags: [Vehicles]
+      summary: Create a vehicle for the authenticated user
+      security: [{ firebaseBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleInput' }
+      responses:
+        '201':
+          description: Created vehicle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleResponse' }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+  /api/v1/diagnostics/scans:
+    post:
+      tags: [Diagnostics]
+      summary: Translate and save a diagnostic scan for an owned vehicle
+      security: [{ firebaseBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/DiagnosticInput'
+                - type: object
+                  required: [vehicleId]
+                  properties:
+                    vehicleId: { type: string, example: veh_abc123 }
+      responses:
+        '201':
+          description: Saved scan with raw responses and decoded interpretation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScanResponse' }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '404': { $ref: '#/components/responses/ApiError' }
+    get:
+      tags: [Diagnostics]
+      summary: List scan summaries for an owned vehicle
+      security: [{ firebaseBearer: [] }]
+      parameters:
+        - in: query
+          name: vehicleId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Scan summaries, newest first
+        '401': { $ref: '#/components/responses/ApiError' }
+        '404': { $ref: '#/components/responses/ApiError' }
+  /api/v1/diagnostics/scans/{scanId}:
+    get:
+      tags: [Diagnostics]
+      summary: Read a full saved scan owned by the caller
+      security: [{ firebaseBearer: [] }]
+      parameters:
+        - in: path
+          name: scanId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Saved scan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScanResponse' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '404': { $ref: '#/components/responses/ApiError' }
+    delete:
+      tags: [Diagnostics]
+      summary: Delete a saved scan owned by the caller
+      security: [{ firebaseBearer: [] }]
+      parameters:
+        - in: path
+          name: scanId
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Scan deleted }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '404': { $ref: '#/components/responses/ApiError' }
+  /api/v1/diagnostics/scans/{scanId}/repair-guide:
+    get:
+      tags: [Diagnostics]
+      summary: Get conservative next steps for a saved scan
+      security: [{ firebaseBearer: [] }]
+      parameters:
+        - in: path
+          name: scanId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Repair guidance and safety notice }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '404': { $ref: '#/components/responses/ApiError' }
+components:
+  securitySchemes:
+    firebaseBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Firebase ID token
+      description: Firebase client ID token. Required in development and production.
+  schemas:
+    Health:
+      type: object
+      properties:
+        status: { type: string, example: ok }
+        version: { type: string, example: v1 }
+        requestId: { type: string }
+    ApiError:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+        requestId: { type: string }
+    VehicleInput:
+      type: object
+      required: [make, model, year]
+      properties:
+        make: { type: string, example: BMW }
+        model: { type: string, example: 320i }
+        year: { type: integer, minimum: 1886, example: 2015 }
+        nickname: { type: [string, 'null'] }
+    Vehicle:
+      allOf:
+        - $ref: '#/components/schemas/VehicleInput'
+        - type: object
+          required: [id, ownerId, createdAt]
+          properties:
+            id: { type: string }
+            ownerId: { type: string }
+            createdAt: { type: string, format: date-time }
+    VehicleResponse:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/Vehicle' }
+        requestId: { type: string }
+    VehicleListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Vehicle' } }
+        requestId: { type: string }
+    DiagnosticInput:
+      type: object
+      properties:
+        vehicle: { type: object, additionalProperties: true }
+        dtcs: { type: array, maxItems: 100, items: { type: string, pattern: '^[PCBU][0-3][0-9A-Fa-f]{3}$' } }
+        rawDtcResponse: { type: string, maxLength: 256, example: '43 03 00 04 20' }
+        rawDTCResponse: { type: string, maxLength: 256 }
+        rawResponses: { type: array, maxItems: 100, items: { type: string, maxLength: 256, example: '41 0C 1A F8' } }
+        readings: { type: array, maxItems: 100, items: { type: string, maxLength: 256 } }
+        unsupportedPids: { type: array, maxItems: 100, items: { type: string, pattern: '^[0-9A-Fa-f]{2}$', example: '5E' } }
+      anyOf:
+        - required: [dtcs]
+        - required: [rawDtcResponse]
+        - required: [rawDTCResponse]
+        - required: [rawResponses]
+        - required: [readings]
+        - required: [unsupportedPids]
+    Problem:
+      type: object
+      properties:
+        code: { type: string }
+        supported: { type: boolean }
+        title: { type: string }
+        system: { type: string }
+        severity: { type: string, enum: [information, warning, urgent] }
+        summary: { type: string }
+        symptoms: { type: array, items: { type: string } }
+        recommendedAction: { type: string }
+    ProblemListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Problem' } }
+        requestId: { type: string }
+    ProblemResponse:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/Problem' }
+        requestId: { type: string }
+    TranslationResponse:
+      type: object
+      properties:
+        data: { type: object, description: 'Contains scannedAt, vehicle, summary, problems, readings and source.' }
+        requestId: { type: string }
+    ScanResponse:
+      type: object
+      properties:
+        data: { type: object, description: 'Saved scan with id, vehicleId, raw adapter responses, and interpretation.' }
+        requestId: { type: string }
+  responses:
+    ApiError:
+      description: Request or authentication error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }

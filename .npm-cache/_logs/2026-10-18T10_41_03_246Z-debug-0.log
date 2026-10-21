@@ -1,0 +1,41 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.11.0
+2 info using node@v25.8.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Xsiya\OneDrive\Desktop\m\.npmrc
+5 silly config load:file:C:\Users\Xsiya\.npmrc
+6 silly config load:file:C:\Users\Xsiya\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm pack @xpack-dev-tools/ninja-build@1.13.1-1.1
+8 verbose argv "pack" "@xpack-dev-tools/ninja-build@1.13.1-1.1" "--pack-destination" ".npm-cache" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_41_03_246Z-
+10 verbose logfile C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_41_03_246Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 http fetch GET 200 https://registry.npmjs.org/@xpack-dev-tools%2fninja-build 820ms (cache miss)
+14 http cache https://registry.npmjs.org/@xpack-dev-tools%2fninja-build 11ms (cache hit)
+15 http cache https://registry.npmjs.org/@xpack-dev-tools/ninja-build/-/ninja-build-1.13.1-1.1.tgz 0ms (cache hit)
+16 silly tarball no local data for https://registry.npmjs.org/@xpack-dev-tools/ninja-build/-/ninja-build-1.13.1-1.1.tgz. Extracting by manifest.
+17 http fetch GET 200 https://registry.npmjs.org/@xpack-dev-tools/ninja-build/-/ninja-build-1.13.1-1.1.tgz 726ms (cache miss)
+18 notice
+19 notice 📦  @xpack-dev-tools/ninja-build@1.13.1-1.1
+20 notice Tarball Contents
+21 notice 17.9kB CHANGELOG.md
+21 notice 1.1kB LICENSE
+21 notice 1.4kB README.md
+21 notice 2.8kB package.json
+22 notice Tarball Details
+23 notice name: @xpack-dev-tools/ninja-build
+24 notice version: 1.13.1-1.1
+25 notice filename: xpack-dev-tools-ninja-build-1.13.1-1.1.tgz
+26 notice package size: 7.5 kB
+27 notice unpacked size: 23.2 kB
+28 notice shasum: 706152ac791bae1f2a096af9d13131a244f6c489
+29 notice integrity: sha512-hPTYVpKdwpiLW[...]M9xeFt0bjU1Zg==
+30 notice total files: 4
+31 notice
+32 verbose cwd C:\Users\Xsiya\OneDrive\Desktop\m
+33 verbose os Windows_NT 10.0.26300
+34 verbose node v25.8.0
+35 verbose npm  v11.11.0
+36 verbose exit 0
+37 info ok
