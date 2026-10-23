@@ -1,0 +1,20 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.11.0
+2 info using node@v25.8.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Xsiya\OneDrive\Desktop\m\.npmrc
+5 silly config load:file:C:\Users\Xsiya\.npmrc
+6 silly config load:file:C:\Users\Xsiya\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm view @xpack-dev-tools/ninja-build@1.13.1-1.1 dependencies optionalDependencies
+8 verbose argv "view" "@xpack-dev-tools/ninja-build@1.13.1-1.1" "dependencies" "optionalDependencies" "--json" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_40_43_931Z-
+10 verbose logfile C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_40_43_931Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 http fetch GET 200 https://registry.npmjs.org/@xpack-dev-tools%2fninja-build 443ms (cache revalidated)
+14 verbose cwd C:\Users\Xsiya\OneDrive\Desktop\m
+15 verbose os Windows_NT 10.0.26300
+16 verbose node v25.8.0
+17 verbose npm  v11.11.0
+18 verbose exit 0
+19 info ok
