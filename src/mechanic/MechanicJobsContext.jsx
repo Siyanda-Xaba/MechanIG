@@ -22,6 +22,9 @@ import {
   getMechanicJobsData,
 } from './jobsService'
 
+import { subscribeToMechanicFuelDeliveryChanges } from './fuelDeliveryService'
+import { subscribeToMechanicRequests } from '../customer/mechanicRequestService'
+
 import {
   MECHANIC_JOB_ACTIONS,
 } from './jobsTypes'
@@ -146,6 +149,16 @@ export function MechanicJobsProvider({
       actionInFlightRef.current = null
     }
   }, [mechanicId, refreshJobs])
+
+  useEffect(() => {
+    if (!mechanicId || isLoadingUser) return undefined
+    return subscribeToMechanicFuelDeliveryChanges(() => { void refreshJobs() })
+  }, [mechanicId, isLoadingUser, refreshJobs])
+
+  useEffect(() => {
+    if (!mechanicId || isLoadingUser) return undefined
+    return subscribeToMechanicRequests(() => { void refreshJobs() })
+  }, [mechanicId, isLoadingUser, refreshJobs])
 
   const clearJobActionError = useCallback(() => {
     setJobActionState((current) => {

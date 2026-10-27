@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, } from 'react';
 import { findMechanicsForVehicle, } from './mechanicService';
-export function useVehicleMechanicSearch(vehicleId) {
+export function useVehicleMechanicSearch(vehicleId, location) {
     const [mechanicSearchResult, setMechanicSearchResult,] = useState(null);
     const [isLoadingMechanics, setIsLoadingMechanics,] = useState(false);
     const [mechanicSearchError, setMechanicSearchError,] = useState(null);
@@ -13,7 +13,7 @@ export function useVehicleMechanicSearch(vehicleId) {
         try {
             setIsLoadingMechanics(true);
             setMechanicSearchError(null);
-            const result = await findMechanicsForVehicle(vehicleId);
+            const result = await findMechanicsForVehicle(vehicleId, location);
             setMechanicSearchResult(result);
         }
         catch {
@@ -23,7 +23,7 @@ export function useVehicleMechanicSearch(vehicleId) {
         finally {
             setIsLoadingMechanics(false);
         }
-    }, [vehicleId]);
+    }, [vehicleId, location]);
     useEffect(() => {
         refreshMechanics();
     }, [refreshMechanics]);

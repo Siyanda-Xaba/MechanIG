@@ -6,6 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import StableScrollView from '../../src/components/StableScrollView';
 import { useMechanicRequest } from '../../src/customer/useMechanicRequest';
+import { useForegroundLocation } from '../../src/location/useForegroundLocation';
+import { useMessaging } from '../../src/messaging/MessagingContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useUser } from '../../src/users/UserContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
@@ -14,6 +16,7 @@ export default function MechanicRequestScreen() {
     const { colors } = useTheme();
     const { user } = useUser();
     const { selectedVehicle } = useVehicle();
+    const { location, isLoadingLocation, locationError, refreshLocation } = useForegroundLocation();
     const params = useLocalSearchParams();
     const mechanicId = Array.isArray(params.mechanicId)
         ? params.mechanicId[0]
@@ -24,35 +27,51 @@ export default function MechanicRequestScreen() {
     const [serviceAddress, setServiceAddress] = useState('');
     const [issueDescription, setIssueDescription] = useState('');
     const { mechanicRequest, isSubmittingRequest, mechanicRequestError, submitMechanicRequest, } = useMechanicRequest();
+    const { openConversation, isOpeningConversation, openConversationError } = useMessaging();
     const hasServiceAddress = serviceAddress.trim().length > 0;
     const canSubmit = Boolean(user) &&
         Boolean(selectedVehicle) &&
         Boolean(mechanicId) &&
-        hasServiceAddress &&
+        Boolean(location) &&
+        !isLoadingLocation &&
         !isSubmittingRequest;
     const handleSubmit = async () => {
         if (!user ||
             !selectedVehicle ||
             !mechanicId ||
-            !hasServiceAddress) {
+            !location) {
             return;
         }
         await submitMechanicRequest({
             customerId: user.id,
             vehicleId: selectedVehicle.id,
+            vehicle: { make: selectedVehicle.make ?? null, model: selectedVehicle.model ?? null, registration: selectedVehicle.registration ?? null },
             mechanicId,
             diagnosticResultId: resultId ?? null,
             requestType: 'mobile',
             serviceLocation: {
-                address: serviceAddress.trim(),
-                // Later GPS/geocoding will provide
-                // authoritative coordinates.
-                latitude: null,
-                longitude: null,
+                address: serviceAddress.trim() || null,
+                latitude: location.latitude,
+                longitude: location.longitude,
             },
             scheduledAt: null,
             issueDescription: issueDescription.trim() || null,
         });
+    };
+    const handleMessageMechanic = async () => {
+        if (!mechanicId) {
+            return;
+        }
+        const conversation = await openConversation({
+            recipientUserId: mechanicId,
+            requestId: mechanicRequest?.id ?? null,
+        });
+        if (conversation) {
+            router.replace({
+                pathname: '/customer-conversation/[conversationId]',
+                params: { conversationId: conversation.id },
+            });
+        }
     };
     if (mechanicRequest) {
         return (_jsxs(SafeAreaView, { style: [
@@ -96,7 +115,10 @@ export default function MechanicRequestScreen() {
                                 {
                                     color: colors.secondaryText,
                                 },
-                            ], children: mechanicRequest.id })] }), _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.replace('/(customer)'), style: [
+                    ], children: mechanicRequest.id })] }), _jsx(TouchableOpacity, { activeOpacity: 0.75, disabled: isOpeningConversation, onPress: handleMessageMechanic, style: [
+                        styles.doneButton,
+                        { backgroundColor: colors.accent, opacity: isOpeningConversation ? 0.6 : 1 },
+                    ], children: _jsx(Text, { style: styles.doneButtonText, children: isOpeningConversation ? "Opening chat..." : "Message Mechanic" }) }), openConversationError ? (_jsx(Text, { style: [styles.requestError, { color: colors.danger }], children: openConversationError })) : null, _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.replace('/(customer)'), style: [
                         styles.doneButton,
                         {
                             backgroundColor: colors.accent,
@@ -208,7 +230,7 @@ export default function MechanicRequestScreen() {
                         {
                             color: colors.secondaryText,
                         },
-                    ], children: "GPS and address suggestions will be added here later. For now, enter the service address manually." }), _jsx(Text, { style: [
+                    ], children: locationError ?? (location ? "Your current GPS location will be shared only after the mechanic accepts." : "Getting your current location...") }), _jsx(Text, { style: [
                         styles.sectionTitle,
                         {
                             color: colors.text,
@@ -229,7 +251,7 @@ export default function MechanicRequestScreen() {
                         {
                             color: colors.secondaryText,
                         },
-                    ], children: [issueDescription.length, "/500"] }), mechanicRequestError ? (_jsx(Text, { style: [
+                    ], children: [issueDescription.length, "/500"] }), locationError ? (_jsx(TouchableOpacity, { onPress: refreshLocation, style: [styles.retryButton, { backgroundColor: colors.accent }], children: _jsx(Text, { style: styles.retryButtonText, children: "Retry location" }) })) : mechanicRequestError ? (_jsx(Text, { style: [
                         styles.requestError,
                         {
                             color: colors.danger,

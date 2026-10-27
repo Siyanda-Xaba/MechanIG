@@ -166,10 +166,7 @@ export default function MechanicProfile() {
               await signOutUser()
 
               setUser(null)
-
-              router.replace(
-                '/auth/login'
-              )
+              router.replace('/auth/login')
             } catch {
               Alert.alert(
                 'Unable to sign out',

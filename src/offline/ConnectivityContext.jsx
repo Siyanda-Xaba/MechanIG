@@ -117,7 +117,7 @@ export function ConnectivityProvider({ children }) {
     const unsubscribeNetwork =
       NetInfo.addEventListener(applyNetworkState)
 
-    void refreshConnectivity()
+    NetInfo.fetch().then(applyNetworkState).catch(() => {})
 
     const appStateSubscription =
       AppState.addEventListener(

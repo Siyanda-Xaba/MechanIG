@@ -1,3 +1,5 @@
+const { handleFuelDelivery } = require('./fuelDelivery');
+const { handleMechanicRequests } = require('./mechanicRequests');
 const http = require('node:http');
 const crypto = require('node:crypto');
 
@@ -21,6 +23,8 @@ const ROUTE_LIMITS = new Map([
 const allowedOrigins = new Set((process.env.PICTURE_SEARCH_CORS_ORIGINS || '')
   .split(',').map((origin) => origin.trim()).filter(Boolean));
 let adminAuthPromise;
+let adminDatabasePromise;
+let adminServerValuePromise;
 
 function sendJson(response, status, payload) {
   response.writeHead(status, {
@@ -47,13 +51,32 @@ async function authenticateRequest(request) {
       })();
     }
     const auth = await adminAuthPromise;
-    await auth.verifyIdToken(match[1], process.env.NODE_ENV === 'production');
-    return true;
+    return await auth.verifyIdToken(match[1], process.env.NODE_ENV === 'production');
   } catch (error) {
     console.error('Picture-search authentication failed:', { code: error?.code || 'UNKNOWN' });
     return false;
   }
 }
+
+async function getMessagingDatabase() {
+  if (!adminDatabasePromise) adminDatabasePromise = (async () => {
+    const [{ getApps, initializeApp }, { getDatabase, ServerValue }] = await Promise.all([
+      import('firebase-admin/app'), import('firebase-admin/database'),
+    ]);
+    const name = 'mechaniq-messaging';
+    const app = getApps().find((candidate) => candidate.name === name) || initializeApp({ projectId: process.env.GOOGLE_CLOUD_PROJECT || 'mechaniq-3a0f2', databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://mechaniq-3a0f2-default-rtdb.firebaseio.com' }, name);
+    adminServerValuePromise = ServerValue;
+    return getDatabase(app);
+  })();
+  return adminDatabasePromise;
+}
+
+function messagingError(status, message) { const error = new Error(message); error.status = status; return error; }
+function displayName(profile, fallback) { return [profile?.firstName, profile?.lastName].filter(Boolean).join(' ').trim() || profile?.username || fallback; }
+function conversationForParticipant(value, userId) { return { id: value.id, customerUserId: value.customerUserId, mechanicUserId: value.mechanicUserId, customerName: value.customerName || null, mechanicName: value.mechanicName || null, jobId: value.jobId || null, bookingId: value.bookingId || null, requestId: value.requestId || null, lastMessageText: value.lastMessageText || null, lastMessageAt: value.lastMessageAt || null, unreadCount: Number(value.unreadBy?.[userId] || 0), updatedAt: value.updatedAt || null }; }
+async function getProfile(db, userId) { const value = (await db.ref(`users/${userId}`).get()).val(); if (!value) throw messagingError(404, 'The selected account no longer exists.'); return value; }
+async function requireConversation(db, id, userId) { const value = (await db.ref(`messaging_conversations/${id}`).get()).val(); if (!value || ![value.customerUserId, value.mechanicUserId].includes(userId)) throw messagingError(404, 'Conversation not found.'); return value; }
+async function readJsonBody(request) { try { return JSON.parse((await readBody(request, 64 * 1024)).toString('utf8') || '{}'); } catch (error) { if (error.status) throw error; throw messagingError(400, 'The request body must be valid JSON.'); } }
 
 function isRateLimited(request, pathname) {
   const limit = ROUTE_LIMITS.get(pathname);
@@ -452,11 +475,45 @@ async function handleNearbyFuelStations(request, response) {
   return sendJson(response, 200, await findNearbyFuelStations(input.location));
 }
 
+async function handleMessaging(request, response, url, identity) {
+  const db = await getMessagingDatabase(); const userId = identity.uid;
+  const path = url.pathname.replace(/^\/api\/v1\/messaging\/?/, ''); const parts = path.split('/').filter(Boolean);
+  if (request.method === 'GET' && path === 'conversations') {
+    const index = (await db.ref(`messaging_user_conversations/${userId}`).get()).val() || {};
+    const conversations = (await Promise.all(Object.keys(index).map(async (id) => { const value = (await db.ref(`messaging_conversations/${id}`).get()).val(); return value ? conversationForParticipant(value, userId) : null; }))).filter(Boolean).sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+    return sendJson(response, 200, { conversations, totalUnreadCount: conversations.reduce((total, item) => total + item.unreadCount, 0) });
+  }
+  if (request.method === 'POST' && path === 'conversations') {
+    const input = await readJsonBody(request); const recipientUserId = typeof input.recipientUserId === 'string' ? input.recipientUserId.trim() : '';
+    if (!recipientUserId || recipientUserId === userId) throw messagingError(400, 'Choose another account to start a conversation.');
+    const [sender, recipient] = await Promise.all([getProfile(db, userId), getProfile(db, recipientUserId)]);
+    const customerUserId = sender.role === 'customer' && recipient.role === 'mechanic' ? userId : sender.role === 'mechanic' && recipient.role === 'customer' ? recipientUserId : null;
+    const mechanicUserId = customerUserId === userId ? recipientUserId : customerUserId === recipientUserId ? userId : null;
+    if (!customerUserId || !mechanicUserId) throw messagingError(403, 'Conversations are available only between a customer and a mechanic.');
+    const id = crypto.createHash('sha256').update(`${customerUserId}:${mechanicUserId}`).digest('hex').slice(0, 32); const ref = db.ref(`messaging_conversations/${id}`); const existing = (await ref.get()).val(); const now = new Date().toISOString();
+    const conversation = existing || { id, customerUserId, mechanicUserId, customerName: displayName(customerUserId === userId ? sender : recipient, 'Customer'), mechanicName: displayName(mechanicUserId === userId ? sender : recipient, 'Mechanic'), jobId: typeof input.jobId === 'string' ? input.jobId : null, bookingId: typeof input.bookingId === 'string' ? input.bookingId : null, requestId: typeof input.requestId === 'string' ? input.requestId : null, lastMessageText: null, lastMessageAt: null, updatedAt: now, unreadBy: { [customerUserId]: 0, [mechanicUserId]: 0 } };
+    if (!existing) await db.ref().update({ [`messaging_conversations/${id}`]: conversation, [`messaging_user_conversations/${customerUserId}/${id}`]: true, [`messaging_user_conversations/${mechanicUserId}/${id}`]: true });
+    return sendJson(response, 200, conversationForParticipant(conversation, userId));
+  }
+  const conversationId = parts[1]; if (!conversationId || parts[0] !== 'conversations') throw messagingError(404, 'Messaging endpoint not found.'); const conversation = await requireConversation(db, conversationId, userId);
+  if (request.method === 'GET' && parts[2] === 'messages') { const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 30, 1), 100); const all = Object.values((await db.ref(`messaging_messages/${conversationId}`).get()).val() || {}).sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))); return sendJson(response, 200, { messages: all.slice(-limit), nextCursor: null, hasMore: all.length > limit }); }
+  if (request.method === 'POST' && parts[2] === 'messages') {
+    const input = await readJsonBody(request); const text = typeof input.text === 'string' ? input.text.trim() : ''; const clientRequestId = typeof input.clientRequestId === 'string' ? input.clientRequestId.trim() : '';
+    if (!text || text.length > 2000 || !clientRequestId || clientRequestId.length > 200) throw messagingError(400, 'A message up to 2,000 characters and request ID are required.');
+    const recipientUserId = conversation.customerUserId === userId ? conversation.mechanicUserId : conversation.customerUserId; const requestRef = db.ref(`messaging_message_requests/${conversationId}/${userId}/${clientRequestId}`); const proposedId = crypto.randomUUID(); const result = await requestRef.transaction((current) => current || proposedId); const messageId = result.snapshot.val(); const messageRef = db.ref(`messaging_messages/${conversationId}/${messageId}`); let message = (await messageRef.get()).val();
+    if (!message) { const now = new Date().toISOString(); message = { id: messageId, conversationId, senderUserId: userId, recipientUserId, contentType: 'text', text, createdAt: now, deliveryStatus: 'sent' }; await db.ref().update({ [`messaging_messages/${conversationId}/${messageId}`]: message, [`messaging_conversations/${conversationId}/lastMessageText`]: text, [`messaging_conversations/${conversationId}/lastMessageAt`]: now, [`messaging_conversations/${conversationId}/updatedAt`]: now, [`messaging_conversations/${conversationId}/unreadBy/${recipientUserId}`]: adminServerValuePromise?.increment ? adminServerValuePromise.increment(1) : (conversation.unreadBy?.[recipientUserId] || 0) + 1 }); }
+    return sendJson(response, 200, message);
+  }
+  if (request.method === 'POST' && parts[2] === 'read') { const messages = (await db.ref(`messaging_messages/${conversationId}`).get()).val() || {}; const updates = { [`messaging_conversations/${conversationId}/unreadBy/${userId}`]: 0 }; for (const [id, message] of Object.entries(messages)) if (message.recipientUserId === userId && message.deliveryStatus !== 'read') updates[`messaging_messages/${conversationId}/${id}/deliveryStatus`] = 'read'; await db.ref().update(updates); return sendJson(response, 204, {}); }
+  throw messagingError(404, 'Messaging endpoint not found.');
+}
+
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
     const origin = request.headers.origin;
-    if (origin && allowedOrigins.has(origin)) {
+    const isLocalDevelopmentOrigin = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3})(?::\d+)?$/i.test(origin || '');
+    if (origin && (allowedOrigins.has(origin) || isLocalDevelopmentOrigin)) {
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Vary', 'Origin');
     }
@@ -465,6 +522,33 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'OPTIONS') return sendJson(response, 204, {});
     if (request.method === 'GET' && url.pathname === '/health') {
       return sendJson(response, 200, { ok: true, recognitionConfigured: Boolean(process.env.GEMINI_API_KEY), offersConfigured: Boolean(process.env.SERPAPI_API_KEY), model: GEMINI_MODEL });
+    }
+    if (url.pathname === '/api/v1/fuel-deliveries' || url.pathname.startsWith('/api/v1/fuel-deliveries/')) {
+      const identity = await authenticateRequest(request);
+      if (!identity) return sendJson(response, 401, { message: 'Sign in again to use fuel delivery.' });
+      const db = await getMessagingDatabase();
+      return await handleFuelDelivery({
+        request,
+        response,
+        url,
+        identity,
+        db,
+        readJsonBody,
+        sendJson,
+        getProfile,
+        displayName,
+      });
+    }
+    if (url.pathname === '/api/v1/mechanic-requests' || url.pathname.startsWith('/api/v1/mechanic-requests/')) {
+      const identity = await authenticateRequest(request);
+      if (!identity) return sendJson(response, 401, { message: 'Sign in again to manage mechanic requests.' });
+      const db = await getMessagingDatabase();
+      return await handleMechanicRequests({ request, response, url, identity, db, readJsonBody, sendJson, getProfile, displayName });
+    }
+    if (url.pathname === '/api/v1/messaging' || url.pathname.startsWith('/api/v1/messaging/')) {
+      const identity = await authenticateRequest(request);
+      if (!identity) return sendJson(response, 401, { message: 'Sign in again to use messaging.' });
+      return await handleMessaging(request, response, url, identity);
     }
     if (ROUTE_LIMITS.has(url.pathname)) {
       if (isRateLimited(request, url.pathname)) return sendJson(response, 429, { error: 'Too many requests. Please wait and try again.' });
@@ -489,11 +573,11 @@ const server = http.createServer(async (request, response) => {
       code: error?.code || null,
     });
     const message = error instanceof Error ? error.message : 'The picture-search request failed.';
-    const clientError = error?.status === 400 || error?.status === 413;
+    const clientError = typeof error?.status === 'number' && error.status >= 400 && error.status < 500;
     const safeMessage = clientError || process.env.NODE_ENV !== 'production'
       ? message
       : 'The request could not be completed. Please try again later.';
-    return sendJson(response, clientError ? error.status : 502, { error: safeMessage });
+    return sendJson(response, clientError ? error.status : 502, { error: safeMessage, message: safeMessage });
   }
 });
 

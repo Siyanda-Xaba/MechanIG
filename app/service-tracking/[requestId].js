@@ -41,6 +41,9 @@ import {
 } from '../../src/serviceRequests/useServiceTracking'
 
 import {
+  useMessaging,
+} from '../../src/messaging/MessagingContext'
+import {
   useTheme,
 } from '../../src/theme/ThemeContext'
 
@@ -136,6 +139,23 @@ export default function ServiceTrackingScreen() {
   const {
     colors,
   } = useTheme()
+
+  const { openConversation, isOpeningConversation } = useMessaging()
+
+  const handleMessageMechanic = async () => {
+    if (!tracking?.mechanicId) return
+    const conversation = await openConversation({
+      recipientUserId: tracking.mechanicId,
+      requestId: tracking.requestId,
+      jobId: tracking.jobId ?? null,
+    })
+    if (conversation) {
+      router.push({
+        pathname: '/customer-conversation/[conversationId]',
+        params: { conversationId: conversation.id },
+      })
+    }
+  }
 
   const params = useLocalSearchParams()
 
@@ -595,6 +615,34 @@ export default function ServiceTrackingScreen() {
                   }
                   colors={colors}
                 />
+
+                {tracking.mechanicId ? (
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    accessibilityRole="button"
+                    accessibilityLabel="Message the mechanic for this service"
+                    disabled={isOpeningConversation}
+                    onPress={handleMessageMechanic}
+                    style={[
+                      styles.reviewButton,
+                      {
+                        backgroundColor: colors.accent,
+                        marginBottom: canOpenReview ? 12 : 0,
+                        opacity: isOpeningConversation ? 0.6 : 1,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="message-text-outline"
+                      size={20}
+                      color="#000000"
+                    />
+
+                    <Text style={styles.reviewButtonText}>
+                      {isOpeningConversation ? 'Opening chat...' : 'Message Mechanic'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
 
                 {canOpenReview ? (
                   <TouchableOpacity

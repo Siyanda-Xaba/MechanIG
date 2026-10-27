@@ -19,7 +19,7 @@ if (-not $PythonExe -or -not (Test-Path -LiteralPath $PythonExe)) {
   throw 'Install 64-bit Python 3.12, then rerun this script with -PythonExe if Python is not on PATH.'
 }
 
-$version = & $PythonExe -c 'import sys; print("%d.%d" % sys.version_info[:2])'
+$version = & $PythonExe -c 'import sys; print(sys.version_info[0], sys.version_info[1], sep=chr(46))'
 if ($LASTEXITCODE -ne 0 -or [version]$version -lt [version]'3.10') {
   throw 'Sound detection requires Python 3.10 or newer.'
 }

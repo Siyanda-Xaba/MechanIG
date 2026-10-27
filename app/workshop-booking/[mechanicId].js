@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../../src/components/StableScrollView';
 import { useWorkshopBooking } from '../../src/customer/useWorkshopBooking';
+import { useMessaging } from '../../src/messaging/MessagingContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useUser } from '../../src/users/UserContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
@@ -26,6 +27,20 @@ export default function WorkshopBookingScreen() {
     const [scheduledTime, setScheduledTime] = useState('');
     const [issueDescription, setIssueDescription] = useState('');
     const { workshopBooking, isSubmittingBooking, workshopBookingError, submitWorkshopBooking, } = useWorkshopBooking();
+    const { openConversation, isOpeningConversation } = useMessaging();
+    const handleMessageMechanic = async () => {
+        if (!mechanicId) return;
+        const conversation = await openConversation({
+            recipientUserId: mechanicId,
+            bookingId: workshopBooking?.id ?? null,
+        });
+        if (conversation) {
+            router.replace({
+                pathname: '/customer-conversation/[conversationId]',
+                params: { conversationId: conversation.id },
+            });
+        }
+    };
     const hasServiceType = serviceType.trim().length > 0;
     const hasDate = scheduledDate.trim().length > 0;
     const hasTime = scheduledTime.trim().length > 0;
@@ -108,7 +123,14 @@ export default function WorkshopBookingScreen() {
                                 {
                                     color: colors.secondaryText,
                                 },
-                            ], children: workshopBooking.id })] }), _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.replace('/(customer)'), style: [
+                            ], children: workshopBooking.id })] }), _jsx(TouchableOpacity, { activeOpacity: 0.75, disabled: isOpeningConversation, onPress: handleMessageMechanic, style: [
+                        styles.doneButton,
+                        {
+                            backgroundColor: colors.accent,
+                            marginBottom: 12,
+                            opacity: isOpeningConversation ? 0.6 : 1,
+                        },
+                    ], children: _jsx(Text, { style: styles.doneButtonText, children: isOpeningConversation ? 'Opening chat...' : 'Message Mechanic' }) }), _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => router.replace('/(customer)'), style: [
                         styles.doneButton,
                         {
                             backgroundColor: colors.accent,

@@ -33,8 +33,8 @@ async function serviceIsRunning(url) {
   }
   catch { return false; }
 }
-async function waitForService(url) {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+async function waitForService(url, attempts = 30) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (await serviceIsRunning(url)) return true;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
@@ -154,15 +154,19 @@ async function main() {
     });
     serviceProcesses.push(soundProcess);
     reportSpawnError('the sound-detection service', soundProcess);
-    if (!await waitForService(soundDetectionHealthUrl)) {
+    if (!await waitForService(soundDetectionHealthUrl, 120)) {
       throw new Error('Sound detection API did not become ready. Confirm the trained model and Python dependencies are installed.');
     }
   }
   console.log(buildPlatform ? `Building and starting the ${buildPlatform} app...` : 'Starting Expo development client...');
   const pictureSearchUrl = process.env.EXPO_PUBLIC_PICTURE_SEARCH_API_URL || `http://${getLanAddress()}:${pictureSearchPort}`;
+  const messagingApiUrl = process.env.EXPO_PUBLIC_MESSAGING_API_URL || `${pictureSearchUrl}/api/v1/messaging`;
+  const fuelDeliveryApiUrl = process.env.EXPO_PUBLIC_FUEL_DELIVERY_API_URL || `${pictureSearchUrl}/api/v1/fuel-deliveries`;
   const obdApiUrl = process.env.EXPO_PUBLIC_OBD_API_URL || `http://${getLanAddress()}:${obdApiPort}`;
   const soundDiagnosisApiUrl = process.env.EXPO_PUBLIC_SOUND_DIAGNOSIS_API_URL || `http://${getLanAddress()}:${soundDetectionPort}`;
   console.log(`Picture-search API for the app: ${pictureSearchUrl}`);
+  console.log(`Messaging API for the app: ${messagingApiUrl}`);
+  console.log(`Fuel delivery API for the app: ${fuelDeliveryApiUrl}`);
   console.log(`OBD diagnostics API for the app: ${obdApiUrl}`);
   console.log(`Sound diagnosis API for the app: ${soundDiagnosisApiUrl}`);
   const expoCommandArgs = buildPlatform
@@ -176,6 +180,8 @@ async function main() {
       GRADLE_OPTS: getGradleOptions(buildPlatform),
       JAVA_TOOL_OPTIONS: getJavaToolOptions(buildPlatform),
       EXPO_PUBLIC_PICTURE_SEARCH_API_URL: pictureSearchUrl,
+      EXPO_PUBLIC_MESSAGING_API_URL: messagingApiUrl,
+      EXPO_PUBLIC_FUEL_DELIVERY_API_URL: fuelDeliveryApiUrl,
       EXPO_PUBLIC_OBD_API_URL: obdApiUrl,
       EXPO_PUBLIC_SOUND_DIAGNOSIS_API_URL: soundDiagnosisApiUrl,
     },

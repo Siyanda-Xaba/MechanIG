@@ -5,12 +5,14 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../../src/components/StableScrollView';
 import { useServiceMechanicSearch } from '../../src/customer/useServiceMechanicSearch';
+import { useForegroundLocation } from '../../src/location/useForegroundLocation';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
 export default function BookServiceOptionsScreen() {
     const router = useRouter();
     const { colors } = useTheme();
     const { selectedVehicle, isLoadingVehicles, } = useVehicle();
+    const { location, isLoadingLocation, locationError, refreshLocation } = useForegroundLocation();
     const params = useLocalSearchParams();
     const serviceId = getSingleParam(params.serviceId);
     const preferredDate = getSingleParam(params.preferredDate);
@@ -79,7 +81,7 @@ export default function BookServiceOptionsScreen() {
                             },
                         ], children: "Go Back" }) })] }));
     }
-    if (mechanicSearchError) {
+    if (locationError || mechanicSearchError) {
         return (_jsxs(SafeAreaView, { style: [
                 styles.centeredPage,
                 {
@@ -95,7 +97,7 @@ export default function BookServiceOptionsScreen() {
                         {
                             color: colors.secondaryText,
                         },
-                    ], children: mechanicSearchError }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: refreshMechanics, style: [
+                    ], children: locationError ?? mechanicSearchError }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: locationError ? refreshLocation : refreshMechanics, style: [
                         styles.retryButton,
                         {
                             backgroundColor: colors.accent,

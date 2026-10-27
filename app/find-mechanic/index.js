@@ -5,13 +5,15 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../../src/components/StableScrollView';
 import { useVehicleMechanicSearch } from '../../src/customer/useVehicleMechanicSearch';
+import { useForegroundLocation } from '../../src/location/useForegroundLocation';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useVehicle } from '../../src/vehicles/VehicleContext';
 export default function VehicleMechanicSearchScreen() {
     const router = useRouter();
     const { colors } = useTheme();
     const { selectedVehicle, isLoadingVehicles, } = useVehicle();
-    const { mechanicSearchResult, isLoadingMechanics, mechanicSearchError, refreshMechanics, } = useVehicleMechanicSearch(selectedVehicle?.id);
+    const { location, isLoadingLocation, locationError, refreshLocation, } = useForegroundLocation();
+    const { mechanicSearchResult, isLoadingMechanics, mechanicSearchError, refreshMechanics, } = useVehicleMechanicSearch(selectedVehicle?.id, location);
     const isLoading = isLoadingVehicles ||
         isLoadingMechanics;
     const mechanics = mechanicSearchResult?.mechanics ?? [];
@@ -56,7 +58,7 @@ export default function VehicleMechanicSearchScreen() {
                             },
                         ], children: "Go Back" }) })] }));
     }
-    if (mechanicSearchError) {
+    if (locationError || mechanicSearchError) {
         return (_jsxs(SafeAreaView, { style: [
                 styles.centeredPage,
                 {
@@ -72,7 +74,7 @@ export default function VehicleMechanicSearchScreen() {
                         {
                             color: colors.secondaryText,
                         },
-                    ], children: mechanicSearchError }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: refreshMechanics, style: [
+                    ], children: locationError ?? mechanicSearchError }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: locationError ? refreshLocation : refreshMechanics, style: [
                         styles.retryButton,
                         {
                             backgroundColor: colors.accent,

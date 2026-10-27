@@ -4,7 +4,9 @@ import {
 } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import {
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -21,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import StableScrollView from '../../src/components/StableScrollView'
 import { useForegroundLocation } from '../../src/location/useForegroundLocation'
 import { useMechanicJobs } from '../../src/mechanic/MechanicJobsContext'
+import { updateMechanicJobLocation } from '../../src/mechanic/jobActionsService'
 import {
   MECHANIC_JOB_ACTIONS,
   MECHANIC_JOB_FILTER_LABELS,
@@ -56,6 +59,8 @@ export default function MechanicJobs() {
     isLoadingLocation,
     locationError,
     refreshLocation,
+    startWatchingLocation,
+    stopWatchingLocation,
   } = useForegroundLocation({
     autoLoad: false,
   })
@@ -66,6 +71,21 @@ export default function MechanicJobs() {
   ] = useState(
     MECHANIC_JOB_FILTERS.PENDING
   )
+
+  const lastLocationSendRef = useRef(null)
+  useEffect(() => {
+    const activeTrip = jobsData?.jobs?.find((job) => job.travelStatus === 'en-route' && job.locationSharingActive)
+    if (!activeTrip) { stopWatchingLocation(); return undefined }
+    const publishLocation = (mechanicLocation) => {
+      const previous = lastLocationSendRef.current
+      const now = Date.now()
+      if (previous && now - previous.sentAt < 5000 && Math.abs(previous.latitude - mechanicLocation.latitude) < 0.0001 && Math.abs(previous.longitude - mechanicLocation.longitude) < 0.0001) return
+      lastLocationSendRef.current = { ...mechanicLocation, sentAt: now }
+      void updateMechanicJobLocation({ jobId: activeTrip.id, mechanicLocation }).catch(() => {})
+    }
+    void startWatchingLocation(publishLocation)
+    return stopWatchingLocation
+  }, [jobsData, startWatchingLocation, stopWatchingLocation])
 
   const filteredJobs = useMemo(() => {
     if (!jobsData?.jobs) {

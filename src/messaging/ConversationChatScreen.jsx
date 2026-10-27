@@ -261,7 +261,9 @@ export default function ConversationChatScreen({
   const sendInFlightRef = useRef(false)
   const sendOperationRef = useRef(0)
   const conversationIdRef = useRef(conversationId)
-  conversationIdRef.current = conversationId
+  useEffect(() => {
+    conversationIdRef.current = conversationId
+  }, [conversationId])
   const [draft, setDraft] = useState('')
   const [isSavingMessage, setIsSavingMessage] = useState(false)
   const [previewSendNotice, setPreviewSendNotice] = useState(false)
@@ -323,9 +325,11 @@ export default function ConversationChatScreen({
       : conversation?.customerName ?? otherParticipantLabel
 
   const isCurrentConversation = activeConversationId === conversationId
-  const currentPage = isPreview
-    ? { messages: previewData.messages, hasMore: false, nextCursor: null }
-    : isCurrentConversation ? messagesPage : null
+  const currentPage = useMemo(() => (
+    isPreview
+      ? { messages: previewData?.messages ?? [], hasMore: false, nextCursor: null }
+      : isCurrentConversation ? messagesPage : null
+  ), [isPreview, previewData, isCurrentConversation, messagesPage])
   const currentError = isPreview
     ? null
     : isCurrentConversation ? messagesError : null
@@ -368,15 +372,19 @@ export default function ConversationChatScreen({
     })
   }, [accountId, conversationId, currentPage, isPreview, outboxItems])
 
+  const prevKeyRef = useRef(`${accountId}:${conversationId}`)
   useEffect(() => {
-    sendOperationRef.current += 1
-    sendInFlightRef.current = false
-    setIsSavingMessage(false)
-    setDraft('')
-    setPreviewSendNotice(false)
-
-    if (!isPreview) {
-      clearMessagingErrors()
+    const currentKey = `${accountId}:${conversationId}`
+    if (prevKeyRef.current !== currentKey) {
+      prevKeyRef.current = currentKey
+      sendOperationRef.current += 1
+      sendInFlightRef.current = false
+      setIsSavingMessage(false)
+      setDraft('')
+      setPreviewSendNotice(false)
+      if (!isPreview) {
+        clearMessagingErrors()
+      }
     }
   }, [accountId, conversationId, clearMessagingErrors, isPreview])
 

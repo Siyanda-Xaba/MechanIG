@@ -20,6 +20,11 @@ const developmentProfileData = {
     ],
     settings: [
         {
+            id: 'messages',
+            title: 'Messages',
+            description: 'Chat with mechanics and view active conversations.',
+        },
+        {
             id: 'personal-information',
             title: 'Personal Information',
             description: 'View and update your personal details.',

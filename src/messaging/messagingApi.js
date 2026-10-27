@@ -135,7 +135,7 @@ export async function messagingApiRequest(
 
       signal: controller.signal,
     })
-  } catch (error) {
+  } catch (_error) {
     if (controller.signal.aborted) {
       throw createMessagingApiError(
         'The messaging request timed out. Please try again.',
@@ -159,7 +159,7 @@ export async function messagingApiRequest(
   if (responseText) {
     try {
       data = JSON.parse(responseText)
-    } catch (error) {
+    } catch (_error) {
       throw createMessagingApiError(
         'The messaging backend returned an invalid response.',
         MESSAGING_API_ERROR_CODES
@@ -173,10 +173,11 @@ export async function messagingApiRequest(
     const backendMessage =
       typeof data?.message === 'string'
         ? data.message
-        : typeof data?.error?.message ===
-            'string'
+        : typeof data?.error?.message === 'string'
           ? data.error.message
-          : `Messaging request failed (${response.status}).`
+          : typeof data?.error === 'string'
+            ? data.error
+            : `Messaging request failed (${response.status}).`
 
     throw createMessagingApiError(
       backendMessage,

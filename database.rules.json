@@ -8,20 +8,19 @@
         ".write": "auth != null && auth.uid === $uid && ((!data.exists() && newData.child('role').val() === 'customer' && !newData.hasChild('isAdmin') && !newData.hasChild('isVerified') && !newData.hasChild('isMechanicApproved') && !newData.hasChild('accountStatus')) || (data.exists() && newData.child('role').val() === data.child('role').val() && newData.child('isAdmin').val() === data.child('isAdmin').val() && newData.child('isVerified').val() === data.child('isVerified').val() && newData.child('isMechanicApproved').val() === data.child('isMechanicApproved').val() && newData.child('accountStatus').val() === data.child('accountStatus').val()))"
       }
     },
+    "mechanic_pending_requests": {
+      "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": false }
+    },
+    "mechanicRequests": {
+      "$requestId": { ".read": "auth != null && (data.child('customerId').val() === auth.uid || data.child('mechanicId').val() === auth.uid)", ".write": false }
+    },
+    "fuel_mechanic_pending": {
+      "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": false }
+    },
     "fuelDeliveries": {
       "$deliveryId": {
-        ".read": "auth != null && data.child('customerId').val() === auth.uid",
-        ".write": "auth != null && !data.exists() && newData.child('customerId').val() === auth.uid",
-        ".validate": "newData.hasChildren(['customerId', 'vehicleId', 'requestType', 'fuelType', 'quantityLitres', 'destination', 'status', 'createdAt']) && newData.child('status').val() === 'requested' && (newData.child('requestType').val() === 'standard' || newData.child('requestType').val() === 'emergency') && newData.child('quantityLitres').isNumber() && newData.child('quantityLitres').val() > 0 && newData.child('quantityLitres').val() <= 1000",
-        "customerId": { ".validate": "newData.isString() && newData.val() === auth.uid" },
-        "vehicleId": { ".validate": "newData.isString() && newData.val().length > 0" },
-        "fuelType": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
-        "status": { ".validate": "newData.val() === 'requested'" },
-        "destination": {
-          ".validate": "newData.hasChildren(['latitude', 'longitude'])",
-          "latitude": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
-          "longitude": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" }
-        }
+        ".read": "auth != null && (data.child('customerId').val() === auth.uid || data.child('assignedMechanicId').val() === auth.uid)",
+        ".write": false
       }
     }
   }

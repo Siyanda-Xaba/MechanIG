@@ -4,8 +4,9 @@ import { useLocalSearchParams, useRouter, } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../src/components/StableScrollView';
-import { useMemo, useState, } from 'react';
+import { useEffect, useMemo, useState, } from 'react';
 import { useFuelDeliveryRequest } from '../src/customer/useFuelDeliveryRequest';
+import { getNearbyFuelMechanics } from '../src/customer/fuelService';
 import { useForegroundLocation } from '../src/location/useForegroundLocation';
 import { useTheme } from '../src/theme/ThemeContext';
 import { useVehicle } from '../src/vehicles/VehicleContext';
@@ -66,8 +67,45 @@ export default function FuelDeliveryRequestScreen() {
     const { isSubmittingRequest, requestError, submitFuelRequest, clearRequestError, } = useFuelDeliveryRequest();
     const [quantityText, setQuantityText,] = useState('');
     const [validationError, setValidationError,] = useState(null);
+    const [isChoosingMechanic, setIsChoosingMechanic,] = useState(false);
+    const [nearbyMechanics, setNearbyMechanics,] = useState([]);
+    const [isLoadingMechanics, setIsLoadingMechanics,] = useState(false);
+    const [mechanicsError, setMechanicsError,] = useState(null);
+    const [selectedMechanicId, setSelectedMechanicId,] = useState(null);
+    const [mechanicsReloadKey, setMechanicsReloadKey,] = useState(0);
+    useEffect(() => {
+        if (!isChoosingMechanic || !location) return undefined;
+        let active = true;
+        const timer = setTimeout(() => {
+            setIsLoadingMechanics(true);
+            setMechanicsError(null);
+            getNearbyFuelMechanics(location).then((items) => {
+                if (active) setNearbyMechanics(items);
+            }).catch((error) => {
+                if (active) setMechanicsError(error instanceof Error ? error.message : 'Unable to find nearby mechanics.');
+            }).finally(() => {
+                if (active) setIsLoadingMechanics(false);
+            });
+        }, 0);
+        return () => { active = false; clearTimeout(timer); };
+    }, [isChoosingMechanic, location, mechanicsReloadKey]);
     const quantityLitres = Number(quantityText);
     const hasValidQuantity = Number.isFinite(quantityLitres) && quantityLitres > 0;
+    const canStartMechanicSearch = Boolean(selectedVehicle && selectedFuelType && hasValidQuantity && location && !isLoadingVehicles && !isLoadingLocation);
+    const canSubmit = isChoosingMechanic
+        ? canStartMechanicSearch && Boolean(selectedMechanicId) && !isLoadingMechanics && !mechanicsError
+        : canStartMechanicSearch;
+    const readinessMessage = !selectedVehicle
+        ? 'Select or add a vehicle before requesting fuel.'
+        : !selectedFuelType
+            ? 'Select a compatible fuel type before requesting fuel.'
+            : !hasValidQuantity
+                ? 'Enter a quantity greater than 0 litres.'
+                : isLoadingLocation
+                    ? 'Determining your current location…'
+                    : !location
+                        ? (locationError || 'Allow location access before requesting fuel.')
+                        : null;
     function handleBack() {
         router.replace('/fuel');
     }
@@ -97,11 +135,24 @@ export default function FuelDeliveryRequestScreen() {
             setValidationError(locationError ?? 'Allow location access before requesting fuel.');
             return;
         }
+        if (!isChoosingMechanic) {
+            setIsChoosingMechanic(true);
+            return;
+        }
+        if (isLoadingMechanics) {
+            setValidationError('Please wait while nearby mechanics are loading.');
+            return;
+        }
+        if (!selectedMechanicId) {
+            setValidationError(mechanicsError ?? 'Choose a nearby mechanic before submitting your request.');
+            return;
+        }
         const result = await submitFuelRequest({
             vehicleId: selectedVehicle.id,
             requestType,
             fuelType: selectedFuelType,
             quantityLitres,
+            targetMechanicId: selectedMechanicId,
             deliveryLocation: {
                 label: 'Current location',
                 address: null,
@@ -332,7 +383,7 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "Location unavailable." }))] }), _jsxs(View, { style: [
+                                ], children: "Location unavailable." }))] }), isChoosingMechanic ? _jsx(View, { style: [styles.mechanicsCard, { backgroundColor: colors.card, borderColor: colors.border }], children: _jsxs(_Fragment, { children: [_jsxs(View, { style: styles.sectionHeader, children: [_jsx(MaterialCommunityIcons, { name: "account-wrench-outline", size: 22, color: colors.accent }), _jsx(Text, { style: [styles.sectionTitle, { color: colors.text }], children: "Choose a nearby mechanic" })] }), isLoadingMechanics ? _jsx(Text, { style: [styles.secondaryText, { color: colors.secondaryText }], children: "Finding available mechanics..." }) : mechanicsError ? _jsxs(_Fragment, { children: [_jsx(Text, { style: [styles.secondaryText, { color: colors.danger }], children: mechanicsError }), _jsx(TouchableOpacity, { activeOpacity: 0.75, onPress: () => setMechanicsReloadKey((value) => value + 1), style: [styles.retryButton, { borderColor: colors.accent }], children: _jsx(Text, { style: [styles.retryText, { color: colors.accent }], children: "Try Again" }) })] }) : nearbyMechanics.length === 0 ? _jsx(Text, { style: [styles.secondaryText, { color: colors.secondaryText }], children: "No available mechanics are within service range. Refresh your location and try again." }) : _jsx(View, { style: styles.mechanicOptions, children: nearbyMechanics.map((mechanic) => { const selected = selectedMechanicId === mechanic.id; return _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: () => { clearRequestError(); setValidationError(null); setSelectedMechanicId(mechanic.id); }, style: [styles.mechanicOption, { borderColor: selected ? colors.accent : colors.border }], children: [_jsxs(View, { style: { flex: 1 }, children: [_jsx(Text, { style: [styles.mechanicName, { color: colors.text }], children: mechanic.name }), _jsx(Text, { style: [styles.secondaryText, { color: colors.secondaryText }], children: mechanic.distanceKm + " km away • " + mechanic.serviceRadiusKm + " km service radius" })] }), selected ? _jsx(Ionicons, { name: "checkmark-circle", size: 22, color: colors.accent }) : null] }, mechanic.id); }) })] }) }) : null, _jsxs(View, { style: [
                             styles.infoCard,
                             {
                                 borderColor: colors.border,
@@ -342,7 +393,17 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "Final pricing, service coverage, fuel compatibility, and driver availability will be confirmed by the MechanIQ delivery backend before a request is created." })] }), requestError ? (_jsxs(View, { style: [
+                                ], children: "Final pricing, service coverage, fuel compatibility, and driver availability will be confirmed by the MechanIQ delivery backend before a request is created." })] }), readinessMessage && !isChoosingMechanic ? (_jsxs(View, { style: [
+                            styles.errorCard,
+                            {
+                                borderColor: colors.border,
+                            },
+                        ], children: [_jsx(MaterialCommunityIcons, { name: "information-outline", size: 20, color: colors.secondaryText }), _jsx(Text, { style: [
+                                    styles.errorText,
+                                    {
+                                        color: colors.secondaryText,
+                                    },
+                                ], children: readinessMessage })] })) : null, requestError ? (_jsxs(View, { style: [
                             styles.errorCard,
                             {
                                 borderColor: colors.danger,
@@ -362,12 +423,12 @@ export default function FuelDeliveryRequestScreen() {
                                     {
                                         color: colors.danger,
                                     },
-                                ], children: validationError })] })) : null, _jsxs(TouchableOpacity, { activeOpacity: isSubmittingRequest
+                                ], children: validationError })] })) : null, _jsxs(TouchableOpacity, { activeOpacity: isSubmittingRequest || !canSubmit
                             ? 1
-                            : 0.75, disabled: isSubmittingRequest, onPress: handleSubmit, style: [
+                            : 0.75, disabled: isSubmittingRequest || !canSubmit, onPress: handleSubmit, style: [
                             styles.submitButton,
                             {
-                                backgroundColor: isSubmittingRequest
+                                backgroundColor: isSubmittingRequest || !canSubmit
                                     ? colors.border
                                     : isEmergency
                                         ? colors.danger
@@ -375,20 +436,22 @@ export default function FuelDeliveryRequestScreen() {
                             },
                         ], children: [_jsx(MaterialCommunityIcons, { name: isEmergency
                                     ? 'alert-circle-outline'
-                                    : 'truck-delivery-outline', size: 20, color: isSubmittingRequest
+                                    : 'truck-delivery-outline', size: 20, color: isSubmittingRequest || !canSubmit
                                     ? colors.secondaryText
                                     : '#000000' }), _jsx(Text, { style: [
                                     styles.submitButtonText,
                                     {
-                                        color: isSubmittingRequest
+                                        color: isSubmittingRequest || !canSubmit
                                             ? colors.secondaryText
                                             : '#000000',
                                     },
                                 ], children: isSubmittingRequest
                                     ? 'Submitting...'
-                                    : isEmergency
-                                        ? 'Request Emergency Fuel'
-                                        : 'Request Fuel' })] })] }) }) }));
+                                    : isChoosingMechanic
+                                        ? 'Send Fuel Request'
+                                        : isEmergency
+                                            ? 'Request Emergency Fuel'
+                                            : 'Request Fuel' })] })] }) }) }));
 }
 const styles = StyleSheet.create({
     safeArea: {
@@ -570,6 +633,10 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
     },
+    mechanicsCard: { marginTop: 14, padding: 14, borderWidth: 1, borderRadius: 14, },
+    mechanicOptions: { marginTop: 12, gap: 8, },
+    mechanicOption: { minHeight: 58, paddingHorizontal: 12, borderWidth: 1, borderRadius: 9, flexDirection: 'row', alignItems: 'center', },
+    mechanicName: { fontSize: 12, fontWeight: '700', },
     infoCard: {
         marginTop: 14,
         padding: 12,

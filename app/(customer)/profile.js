@@ -61,6 +61,9 @@ export default function CustomerProfile() {
     }
     function handleSettingPress(setting) {
         switch (setting.id) {
+            case 'messages':
+                router.push('/customer-messages');
+                return;
             case 'personal-information':
                 router.push('/personal-information');
                 return;
@@ -386,6 +389,8 @@ function getQuickActionIcon(id) {
 }
 function getSettingIcon(id) {
     switch (id) {
+        case 'messages':
+            return 'message-text-outline';
         case 'personal-information':
             return 'account-outline';
         case 'notifications':
