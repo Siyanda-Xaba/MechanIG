@@ -32,7 +32,13 @@ export default function SplashScreen() {
         }, 550);
         const timeout = setTimeout(() => {
             if (!isLoadingUser) {
-                router.replace(user ? '/(customer)' : '/auth/login');
+                router.replace(
+                    !user
+                        ? '/auth/login'
+                        : user.role === 'superadmin'
+                        ? '/(superadmin)'
+                        : '/(customer)'
+                );
             }
         }, 1200);
         return () => {

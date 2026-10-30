@@ -1,5 +1,6 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radii, typography } from '../theme/theme';
 import { getSupportRequests, updateSupportStatus } from '../api/platformApi';
 import useAsync from '../api/useAsync';

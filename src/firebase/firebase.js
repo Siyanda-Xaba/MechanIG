@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, getReactNativePersistence, initializeAuth, } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
+import { getFirestore } from 'firebase/firestore';
 const firebaseConfig = {
     apiKey: 'AIzaSyCIow8TP9gJTEbOyIAInaMh-3usjrCOw9s',
     authDomain: 'mechaniq-3a0f2.firebaseapp.com',
@@ -26,3 +27,5 @@ export const auth = (() => {
     }
 })();
 export const database = getDatabase(firebaseApp);
+// Firestore stores platform administration data; profile records remain in RTDB.
+export const db = getFirestore(firebaseApp);

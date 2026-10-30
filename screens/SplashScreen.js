@@ -73,7 +73,7 @@ export default function SplashScreen({ navigation }) {
 
       <Animated.View style={[styles.content, { opacity: fadeIn }]}>
         <Image
-          source={require('../assets/mechaniq-logo.png')}
+          source={require('../assets/images/mechaniq-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />

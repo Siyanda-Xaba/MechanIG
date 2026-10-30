@@ -1,135 +1,162 @@
-// Mock admin API. Replace each function body with a real fetch() call to your
-// backend when it's ready — the shape of the returned data is what the screens expect.
+import { addDoc, collection, deleteDoc, doc, getDocs, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { auth, database, db } from '../../firebase/firebase';
+import { get, onValue, ref } from 'firebase/database';
 
-const delay = (ms = 350) => new Promise((res) => setTimeout(res, ms));
+const col = (name) => collection(db, name);
+const rows = (snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+const actor = () => ({ uid: auth.currentUser?.uid ?? null, email: auth.currentUser?.email ?? null });
 
-const ADMINISTRATORS = [
-  { id: '1', name: 'Tashlyn Mitchell', email: 'tashlyn@mechaniq.co.za', role: 'Super Admin', status: 'Active', lastActive: 'Today 09:12' },
-  { id: '2', name: 'Alicia Naidoo', email: 'alicia@mechaniq.co.za', role: 'Super Admin', status: 'Active', lastActive: 'Today 08:45' },
-  { id: '3', name: 'Thabo Dlamini', email: 'thabo@mechaniq.co.za', role: 'Admin', status: 'Active', lastActive: 'Yesterday 16:20' },
-  { id: '4', name: 'Lerato Radebe', email: 'lerato@mechaniq.co.za', role: 'Admin', status: 'Pending', lastActive: '2 days ago 14:18' },
-  { id: '5', name: 'Jason Williams', email: 'jason@mechaniq.co.za', role: 'Admin', status: 'Active', lastActive: 'Today 11:05' },
-  { id: '6', name: 'Siphokazi Ndlovu', email: 'sipho@mechaniq.co.za', role: 'Admin', status: 'Suspended', lastActive: '5 days ago 09:30' },
-  { id: '7', name: 'Daniel Cooper', email: 'daniel@mechaniq.co.za', role: 'Admin', status: 'Active', lastActive: 'Today 07:50' },
-  { id: '8', name: 'Mpho Phiri', email: 'mpho@mechaniq.co.za', role: 'Admin', status: 'Pending', lastActive: '1 day ago 13:12' },
-];
+export async function writeAuditLog({ action, details, targetId = null, targetType = 'platform' }) {
+  const current = actor();
+  return addDoc(col('auditLogs'), {
+    action, details, targetId, targetType, actorId: current.uid, actorEmail: current.email,
+    timestamp: new Date().toISOString(), createdAt: new Date().toISOString(),
+  });
+}
 
-const AUDIT_LOGS = [
-  { id: '1', date: '14 Sep 2025', time: '09:12', user: 'Tashlyn Mitchell', role: 'Super Admin', action: 'CREATE', details: 'Created admin account (Alicia Naidoo)' },
-  { id: '2', date: '14 Sep 2025', time: '08:45', user: 'Alicia Naidoo', role: 'Super Admin', action: 'UPDATE', details: 'Updated role permissions (Content Manager)' },
-  { id: '3', date: '13 Sep 2025', time: '16:20', user: 'Thabo Dlamini', role: 'Admin', action: 'LOGIN', details: 'User logged in (IP: 196.22.10.5)' },
-  { id: '4', date: '13 Sep 2025', time: '14:18', user: 'Lerato Radebe', role: 'Admin', action: 'DELETE', details: 'Removed user access (Mechanic Support)' },
-  { id: '5', date: '12 Sep 2025', time: '11:05', user: 'Jason Williams', role: 'Admin', action: 'UPDATE', details: 'Modified store settings (ZK Auto Care)' },
-  { id: '6', date: '12 Sep 2025', time: '09:30', user: 'Siphokazi Ndlovu', role: 'Admin', action: 'ASSIGN', details: 'Assigned role (Store Manager)' },
-  { id: '7', date: '11 Sep 2025', time: '16:42', user: 'Daniel Cooper', role: 'Admin', action: 'UPDATE', details: 'Updated marketplace settings' },
-  { id: '8', date: '11 Sep 2025', time: '10:15', user: 'Mpho Phiri', role: 'Admin', action: 'LOGIN', details: 'User logged in (IP: 196.22.11.8)' },
-  { id: '9', date: '10 Sep 2025', time: '13:27', user: 'Tashlyn Mitchell', role: 'Super Admin', action: 'UPDATE', details: 'Updated system configuration' },
-  { id: '10', date: '10 Sep 2025', time: '11:03', user: 'Alicia Naidoo', role: 'Super Admin', action: 'EXPORT', details: 'Exported audit logs (Last 30 days)' },
-];
-
-const ROLES = [
-  { id: '1', name: 'Super Admin', description: 'Full system access and control', users: 2, status: 'Active', icon: 'crown', color: '#A855F7' },
-  { id: '2', name: 'Admin', description: 'Manage platform operations', users: 5, status: 'Active', icon: 'settings', color: '#3B82F6' },
-  { id: '3', name: 'Content Manager', description: 'Manage marketplace content', users: 8, status: 'Active', icon: 'user', color: '#22C55E' },
-  { id: '4', name: 'Store Manager', description: 'Manage store accounts and listings', users: 10, status: 'Active', icon: 'shopping-bag', color: '#F59E0B' },
-  { id: '5', name: 'Mechanic Support', description: 'Support mechanic accounts', users: 12, status: 'Active', icon: 'tool', color: '#EF4444' },
-  { id: '6', name: 'Read Only', description: 'View only access', users: 9, status: 'Inactive', icon: 'eye', color: '#8A9BA8' },
-];
-
-const RECENT_PERMISSION_CHANGES = [
-  { id: '1', type: 'add', title: 'New permission assigned', details: 'Marketplace Content → Content Manager', time: '2 hours ago' },
-  { id: '2', type: 'update', title: 'Role updated', details: 'Store Manager permissions modified', time: '6 hours ago' },
-  { id: '3', type: 'remove', title: 'Permission revoked', details: 'User access removed → Mechanic Support', time: '1 day ago' },
-];
-
-const RECENT_ACTIVITY = [
-  { id: '1', type: 'user', title: 'New customer registered', details: 'john.doe@example.com', time: '2 minutes ago' },
-  { id: '2', type: 'mechanic', title: 'Mechanic approved', details: 'Elite Auto Garage', time: '15 minutes ago' },
-  { id: '3', type: 'booking', title: 'New booking created', details: 'BMW 320i • Engine Diagnosis', time: '32 minutes ago' },
-  { id: '4', type: 'product', title: 'New product listed', details: 'Brake Pads (Front)', time: '1 hour ago' },
-  { id: '5', type: 'support', title: 'Support request received', details: '#SR-2025-0042', time: '2 hours ago' },
-];
+function buildDashboardStats(profileData, administratorCount, productCount) {
+  const profiles = Object.values(profileData || {}).filter((profile) => profile && typeof profile === 'object');
+  const countRole = (role) => profiles.filter((profile) => String(profile.role || '').trim().toLowerCase() === role).length;
+  return {
+    totalUsers: countRole('customer'),
+    totalUsersChange: 'Customer role only',
+    mechanics: countRole('mechanic'),
+    mechanicsChange: 'Mechanic role only',
+    totalBookings: null,
+    bookingsChange: 'Booking backend not connected',
+    revenue: null,
+    revenueChange: 'Payment ledger not connected',
+    administratorCount,
+    productCount,
+    systemStatus: 'Realtime Database + Firestore connected',
+  };
+}
 
 export async function getDashboardStats() {
-  await delay();
-  return {
-    totalUsers: 2548, totalUsersChange: '+12%',
-    mechanics: 342, mechanicsChange: '+8%',
-    totalBookings: 1124, totalBookingsChange: '+20%',
-    revenue: 128450, revenueChange: '+15%',
-    systemStatus: 'All systems operational',
+  const [profileSnapshot, admins, products] = await Promise.all([
+    get(ref(database, 'users')),
+    getDocs(col('administrators')),
+    getDocs(col('marketplaceProducts')),
+  ]);
+  return buildDashboardStats(profileSnapshot.val(), admins.size, products.size);
+}
+
+export function subscribeDashboardStats(onData, onError) {
+  const current = { profiles: null, administrators: null, products: null };
+  const emit = () => {
+    if (current.profiles === null || current.administrators === null || current.products === null) return;
+    onData(buildDashboardStats(current.profiles, current.administrators, current.products));
+  };
+  const reportError = (error) => onError?.(error);
+  const unsubscribeProfiles = onValue(ref(database, 'users'), (snapshot) => {
+    current.profiles = snapshot.val() || {};
+    emit();
+  }, reportError);
+  const unsubscribeAdministrators = onSnapshot(col('administrators'), (snapshot) => {
+    current.administrators = snapshot.size;
+    emit();
+  }, reportError);
+  const unsubscribeProducts = onSnapshot(col('marketplaceProducts'), (snapshot) => {
+    current.products = snapshot.size;
+    emit();
+  }, reportError);
+  return () => {
+    unsubscribeProfiles();
+    unsubscribeAdministrators();
+    unsubscribeProducts();
   };
 }
 
 export async function getRecentActivity() {
-  await delay();
-  return RECENT_ACTIVITY;
+  const snapshot = await getDocs(query(col('auditLogs'), orderBy('timestamp', 'desc'), limit(5)));
+  return rows(snapshot).map((item) => ({ id: item.id, type: item.targetType || 'system', title: item.action || 'Activity', details: item.details || '', time: item.timestamp || item.createdAt }));
+}
+
+export function subscribeRecentActivity(onData, onError) {
+  return onSnapshot(query(col('auditLogs'), orderBy('timestamp', 'desc'), limit(5)),
+    (snapshot) => onData(rows(snapshot).map((item) => ({ id: item.id, type: item.targetType || 'system', title: item.action || 'Activity', details: item.details || '', time: item.timestamp || item.createdAt }))), onError);
 }
 
 export async function getCurrentUserProfile() {
-  await delay();
-  return {
-    id: '1',
-    name: 'Tashlyn Mitchell',
-    email: 'tashlyn@mechaniq.co.za',
-    role: 'Super Admin',
-    status: 'Active',
-    initials: 'KM',
-  };
+  const user = auth.currentUser;
+  return { id: user?.uid ?? '', name: user?.displayName || user?.email || 'Super Admin', email: user?.email || '', role: 'Super Admin', status: 'Active', initials: (user?.displayName || user?.email || 'SA').slice(0, 2).toUpperCase() };
 }
 
 export async function getAdministrators({ search = '', page = 1, pageSize = 8 } = {}) {
-  await delay();
-  const filtered = ADMINISTRATORS.filter((a) =>
-    `${a.name} ${a.email}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const snapshot = await getDocs(query(col('administrators'), orderBy('createdAt', 'desc')));
+  const all = rows(snapshot).filter((a) => `${a.name} ${a.email}`.toLowerCase().includes(search.toLowerCase()));
   const start = (page - 1) * pageSize;
-  return {
-    items: filtered.slice(start, start + pageSize),
-    total: filtered.length,
-    totalAdministrators: ADMINISTRATORS.length,
-    active: ADMINISTRATORS.filter((a) => a.status === 'Active').length,
-    pending: ADMINISTRATORS.filter((a) => a.status === 'Pending').length,
-    suspended: ADMINISTRATORS.filter((a) => a.status === 'Suspended').length,
-    page,
-    pageSize,
-  };
+  return { items: all.slice(start, start + pageSize), total: all.length, totalAdministrators: all.length,
+    active: all.filter((a) => a.status === 'Active').length, pending: all.filter((a) => a.status === 'Pending').length,
+    suspended: all.filter((a) => a.status === 'Suspended').length, page, pageSize };
+}
+
+export function subscribeAdministrators(onData, onError) {
+  return onSnapshot(query(col('administrators'), orderBy('createdAt', 'desc')), (snapshot) => onData(rows(snapshot)), onError);
 }
 
 export async function getRolesAndPermissions() {
-  await delay();
-  return {
-    roles: ROLES,
-    totalRoles: ROLES.length,
-    totalPermissions: 48,
-    assignedUsers: 36,
-    pendingChanges: 12,
-  };
+  const [roleSnap, adminSnap] = await Promise.all([getDocs(query(col('roles'), orderBy('name'))), getDocs(col('administrators'))]);
+  const roles = rows(roleSnap);
+  const totalPermissions = new Set(roles.flatMap((role) => role.permissions || [])).size;
+  return { roles, totalRoles: roles.length, totalPermissions, assignedUsers: adminSnap.size, pendingChanges: 0 };
 }
-
 export async function getRecentPermissionChanges() {
-  await delay();
-  return RECENT_PERMISSION_CHANGES;
+  const snapshot = await getDocs(query(col('auditLogs'), orderBy('timestamp', 'desc'), limit(30)));
+  return rows(snapshot).filter((item) => item.targetType === 'role').slice(0, 5)
+    .map((item) => ({ id: item.id, type: item.action === 'DELETE' ? 'remove' : item.action === 'CREATE' ? 'add' : 'update', title: item.action, details: item.details, time: item.timestamp }));
 }
-
 export async function getAuditLogs({ search = '', page = 1, pageSize = 10 } = {}) {
-  await delay();
-  const filtered = AUDIT_LOGS.filter((l) =>
-    `${l.user} ${l.details} ${l.action}`.toLowerCase().includes(search.toLowerCase())
-  );
-  const start = (page - 1) * pageSize;
-  return {
-    items: filtered.slice(start, start + pageSize),
-    total: 1248,
-    userActions: 320,
-    systemChanges: 216,
-    securityEvents: 12,
-    page,
-    pageSize,
-  };
+  const snapshot = await getDocs(query(col('auditLogs'), orderBy('timestamp', 'desc')));
+  const all = rows(snapshot).filter((log) => `${log.actorEmail} ${log.details} ${log.action}`.toLowerCase().includes(search.toLowerCase()));
+  const items = all.slice((page - 1) * pageSize, page * pageSize);
+  return { items, total: all.length, userActions: all.filter((x) => x.targetType === 'user').length,
+    systemChanges: all.filter((x) => x.targetType !== 'user').length, securityEvents: all.filter((x) => /LOGIN|SECURITY|AUTH/.test(x.action || '')).length, page, pageSize };
 }
+export function subscribeAuditLogs(onData, onError) {
+  return onSnapshot(query(col('auditLogs'), orderBy('timestamp', 'desc')), (snapshot) => onData(rows(snapshot)), onError);
+}
+export async function exportAuditLogs() { return getAuditLogs({ pageSize: 10000 }); }
 
-export async function exportAuditLogs() {
-  await delay(500);
-  return { success: true };
+export async function createAdministrator(payload) {
+  const now = new Date().toISOString();
+  const reference = await addDoc(col('administrators'), { ...payload, email: payload.email.trim().toLowerCase(), status: 'Pending', lastActive: 'Never', createdAt: now, updatedAt: now });
+  await writeAuditLog({ action: 'CREATE', details: `Created administrator invitation for ${payload.email}`, targetId: reference.id, targetType: 'administrator' });
+  return { id: reference.id, ...payload, status: 'Pending', lastActive: 'Never' };
+}
+export async function updateAdministrator(id, updates) {
+  await updateDoc(doc(db, 'administrators', id), { ...updates, updatedAt: new Date().toISOString() });
+  await writeAuditLog({ action: 'UPDATE', details: `Updated administrator ${id}`, targetId: id, targetType: 'administrator' });
+}
+export async function deleteAdministrator(id) {
+  await deleteDoc(doc(db, 'administrators', id));
+  await writeAuditLog({ action: 'DELETE', details: `Deleted administrator ${id}`, targetId: id, targetType: 'administrator' });
+}
+export async function getManagedUsers({ search = '' } = {}) {
+  const all = rows(await getDocs(query(col('users'), orderBy('createdAt', 'desc'))));
+  return all.filter((user) => `${user.firstName || ''} ${user.lastName || ''} ${user.fullName || ''} ${user.email || ''}`.toLowerCase().includes(search.toLowerCase()));
+}
+export function subscribeManagedUsers(onData, onError) {
+  return onSnapshot(query(col('users'), orderBy('createdAt', 'desc')), (snapshot) => onData(rows(snapshot)), onError);
+}
+export async function updateManagedUser(id, updates) {
+  await updateDoc(doc(db, 'users', id), { ...updates, updatedAt: new Date().toISOString() });
+  await writeAuditLog({ action: 'UPDATE', details: `Updated user ${id}`, targetId: id, targetType: 'user' });
+}
+export async function deleteManagedUser(id) {
+  await deleteDoc(doc(db, 'users', id));
+  await writeAuditLog({ action: 'DELETE', details: `Removed user profile ${id}`, targetId: id, targetType: 'user' });
+}
+export async function createRole(payload) {
+  const reference = await addDoc(col('roles'), { ...payload, status: 'Active', users: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  await writeAuditLog({ action: 'CREATE', details: `Created role ${payload.name}`, targetId: reference.id, targetType: 'role' });
+  return { id: reference.id, ...payload, status: 'Active', users: 0 };
+}
+export async function updateRole(id, updates) {
+  await updateDoc(doc(db, 'roles', id), { ...updates, updatedAt: new Date().toISOString() });
+  await writeAuditLog({ action: 'UPDATE', details: `Updated role ${id}`, targetId: id, targetType: 'role' });
+}
+export async function deleteRole(id) {
+  await deleteDoc(doc(db, 'roles', id));
+  await writeAuditLog({ action: 'DELETE', details: `Deleted role ${id}`, targetId: id, targetType: 'role' });
 }

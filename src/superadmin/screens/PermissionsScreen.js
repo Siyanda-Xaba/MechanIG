@@ -1,7 +1,8 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { getRecentPermissionChanges, getRolesAndPermissions } from '../api/adminApi';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { deleteRole, getRecentPermissionChanges, getRolesAndPermissions, updateRole } from '../api/adminApi';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenHeader from '../components/ScreenHeader';
 import SearchBar from '../components/SearchBar';
@@ -19,7 +20,7 @@ const CHANGE_ICONS = {
 
 const STATUS_FILTERS = ['All', 'Active', 'Inactive'];
 
-function RoleCard({ role }) {
+function RoleCard({ role, onManage }) {
   const icon = Feather.glyphMap[role.icon] ? role.icon : 'shield';
   const userCount = role.users ?? role.userCount ?? role.assignedUsers ?? 0;
 
@@ -36,7 +37,9 @@ function RoleCard({ role }) {
             <Text style={styles.usersText}>{userCount} users</Text>
           </View>
         </View>
-        <Feather name="chevron-right" size={18} color={colors.textMuted} />
+        <Pressable onPress={() => onManage(role)} hitSlop={10} accessibilityLabel={`Manage ${role.name}`}>
+          <Feather name="more-vertical" size={18} color={colors.textMuted} />
+        </Pressable>
       </View>
 
       {role.description ? (
@@ -85,8 +88,22 @@ export default function PermissionsScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    load();
+    let active = true;
+    Promise.resolve().then(() => { if (active) load(); });
+    return () => { active = false; };
   }, [load]);
+
+  const manageRole = (role) => Alert.alert(role.name, 'Manage this role', [
+    { text: role.status === 'Active' ? 'Deactivate' : 'Activate', onPress: async () => {
+      try { await updateRole(role.id, { status: role.status === 'Active' ? 'Inactive' : 'Active' }); load(); }
+      catch (e) { Alert.alert('Could not update role', e.message); }
+    } },
+    { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Delete role?', `Remove ${role.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteRole(role.id); load(); } catch (e) { Alert.alert('Could not delete role', e.message); } } },
+    ]) },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
 
   const filteredRoles = useMemo(() => {
     if (!data) return [];
@@ -148,7 +165,7 @@ export default function PermissionsScreen({ navigation }) {
             {filteredRoles.length === 0 ? (
               <EmptyView message="No roles match your search" icon="shield" />
             ) : (
-              filteredRoles.map((role) => <RoleCard key={role.id} role={role} />)
+              filteredRoles.map((role) => <RoleCard key={role.id} role={role} onManage={manageRole} />)
             )}
 
             <View style={styles.sectionHeader}>

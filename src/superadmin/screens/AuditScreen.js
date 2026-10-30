@@ -1,8 +1,9 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radii, typography } from '../theme/theme';
-import { getAuditLogs, exportAuditLogs } from '../api/adminApi';
+import { getAuditLogs, exportAuditLogs, subscribeAuditLogs } from '../api/adminApi';
 import ScreenHeader from '../components/ScreenHeader';
 import StatCard from '../components/StatCard';
 import StatGrid from '../components/StatGrid';
@@ -64,9 +65,17 @@ export default function AuditScreen() {
     }
   }, [search, page]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => subscribeAuditLogs((logs) => {
+    const filtered = logs.filter((log) => `${log.actorEmail || ''} ${log.details || ''} ${log.action || ''}`.toLowerCase().includes(search.toLowerCase()));
+    const items = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((log) => ({
+      ...log, user: log.actorEmail || 'System', dateTime: log.timestamp || log.createdAt,
+    }));
+    setData({ items, total: filtered.length,
+      userActions: filtered.filter((x) => x.targetType === 'user').length,
+      systemChanges: filtered.filter((x) => x.targetType !== 'user').length,
+      securityEvents: filtered.filter((x) => /LOGIN|SECURITY|AUTH/.test(x.action || '')).length });
+    setLoading(false);
+  }, setError), [search, page]);
 
   const handleExport = async () => {
     setExporting(true);

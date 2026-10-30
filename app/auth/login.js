@@ -29,7 +29,8 @@ export default function LoginScreen() {
             setIsSubmitting(true);
             const user = await signInWithEmail(emailOrPhone, password);
             setUser(user);
-            router.replace('/(customer)');
+            const role = String(user.role || '').trim().toLowerCase();
+            router.replace(role === 'superadmin' || role === 'super admin' ? '/(superadmin)' : '/(customer)');
         }
         catch (error) {
             Alert.alert('Unable to sign in', getFirebaseAuthErrorMessage(error));

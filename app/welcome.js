@@ -1,7 +1,8 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Ionicons, } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { useTheme } from '../src/theme/ThemeContext';
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -184,3 +185,4 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 });
+

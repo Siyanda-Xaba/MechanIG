@@ -144,7 +144,7 @@ export function SignUpHeader({ onBack, step }) {
 
       <View style={styles.logoRow}>
         <Image
-          source={require('../assets/mechaniq-logo.png')}
+          source={require('../assets/images/mechaniq-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />

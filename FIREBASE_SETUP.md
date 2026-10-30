@@ -1,15 +1,21 @@
 # Firebase setup
 
-The app is configured to use the `mechaniq-3a0f2` Firebase project with:
+The app uses the `mechaniq-3a0f2` Firebase project.
 
-- Firebase Authentication for email/password accounts and password resets.
-- Realtime Database for profiles at `users/{firebaseUserId}`.
+- Firebase Authentication provides email/password sign-in and password resets.
+- Realtime Database continues to store app user profiles at `users/{firebaseUserId}`.
+- Cloud Firestore stores superadmin data in `administrators`, `roles`, `auditLogs`, `platform/settings`, `marketplaceProducts`, `marketplaceStores`, `supportRequests`, `bookings`, and `users` collections.
 
-Before testing sign-up, complete these Firebase Console steps:
+## Enable Firestore superadmin access
 
-1. In **Authentication** → **Sign-in method**, enable **Email/Password**.
-2. In **Realtime Database**, create the database if it does not already exist.
-3. In **Realtime Database** → **Rules**, publish the contents of `database.rules.json`.
-4. In **Authentication** → **Settings** → **Authorized domains**, add the domain used for your web build when you deploy it.
+1. In Firebase Console, create the Cloud Firestore database in the project.
+2. Assign the `role: "superadmin"` custom claim to each trusted superadmin account using a trusted Admin SDK environment. Never assign admin claims from this client app. The client cannot securely create Firebase Auth users or change another user's custom claims.
+3. Publish `firestore.rules` in Firestore Rules. These rules intentionally deny access to all Firestore data unless the signed-in token has the superadmin claim.
+4. Publish `database.rules.json` to Realtime Database to retain profile access rules.
+5. In Authentication, enable Email/Password and add the deployed web domain to Authorized domains.
 
-The rules ensure that a signed-in user can read and write only their own profile. Do not use open test-mode database rules in production.
+The Add Administrator screen creates a pending administrator invitation/profile document. A trusted backend or Cloud Function should create the corresponding Firebase Auth account, send the invitation, and grant claims after approval. The app does not create other users' credentials from a client.
+
+Audit records are written to `auditLogs` for administrator, role, marketplace, support, and settings changes. Audit records are intended to be append-only; the Firestore rules currently allow writes only to superadmins, so use trusted backend policy if immutable audit enforcement is required.
+
+Do not use open test-mode database rules in production.

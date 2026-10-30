@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Image, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radii, typography } from '../theme/theme';
-import { getDashboardStats, getRecentActivity } from '../api/adminApi';
+import { getRecentActivity, subscribeDashboardStats } from '../api/adminApi';
 import StatCard from '../components/StatCard';
 import StatGrid from '../components/StatGrid';
 import ActivityRow from '../components/ActivityRow';
@@ -11,6 +12,7 @@ import { LoadingView, ErrorView } from '../components/StateViews';
 const QUICK_ACTIONS = [
 
   { key: 'admins', icon: 'users', bg: colors.purpleBg, color: colors.purple, title: 'Manage Administrators', subtitle: 'Create, view and manage admin accounts', screen: 'Administrators' },
+  { key: 'users', icon: 'user-check', bg: colors.infoBg, color: colors.info, title: 'Manage Users', subtitle: 'Review customer and mechanic profiles', screen: 'Users' },
   { key: 'permissions', icon: 'shield', bg: colors.successBg, color: colors.success, title: 'Roles & Permissions', subtitle: 'Manage platform access and policies', screen: 'Permissions' },
   { key: 'marketplace', icon: 'shopping-bag', bg: colors.warningBg, color: colors.warning, title: 'Manage Marketplace', subtitle: 'Oversee products, stores and listings', screen: 'Marketplace' },
   { key: 'audit', icon: 'file-text', bg: colors.infoBg, color: colors.info, title: 'View Audit Logs', subtitle: 'Monitor system and admin activity', screen: 'Audit' },
@@ -21,35 +23,37 @@ const QUICK_ACTIONS = [
 
 
 function formatCurrency(n) {
-  return `$${n.toLocaleString()}`;
+  return n == null ? '—' : String.fromCharCode(36) + n.toLocaleString();
 }
-
 export default function HomeScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setError(null);
-      const [statsRes, activityRes] = await Promise.all([
-        getDashboardStats(),
-        getRecentActivity(),
-      ]);
-      setStats(statsRes);
-      setActivity(activityRes);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let isMounted = true;
+    const unsubscribe = subscribeDashboardStats((nextStats) => {
+      setStats(nextStats);
+      setError(null);
+      setLoading(false);
+    }, (subscriptionError) => {
+      setError(subscriptionError.message || 'Unable to load dashboard data.');
+      setLoading(false);
+    });
+    getRecentActivity()
+      .then((recentActivity) => {
+        if (isMounted) setActivity(recentActivity);
+      })
+      .catch((activityError) => {
+        if (isMounted) setError(activityError.message || 'Unable to load recent activity.');
+      });
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [reloadKey]);
 
   const today = new Date();
 
@@ -91,14 +95,18 @@ export default function HomeScreen({ navigation }) {
         {loading && !stats ? (
           <LoadingView label="Loading dashboard..." />
         ) : error ? (
-          <ErrorView message={error} onRetry={load} />
+          <ErrorView message={error} onRetry={() => {
+            setError(null);
+            setLoading(true);
+            setReloadKey((current) => current + 1);
+          }} />
         ) : (
           <>
             <StatGrid>
-              <StatCard icon="users" iconBg={colors.infoBg} iconColor={colors.info} value={stats.totalUsers.toLocaleString()} label="Total Users" change={`↗ ${stats.totalUsersChange} vs last 30 days`} />
-              <StatCard icon="tool" iconBg={colors.successBg} iconColor={colors.success} value={stats.mechanics} label="Mechanics" change={`↗ ${stats.mechanicsChange} vs last 30 days`} />
-              <StatCard icon="calendar" iconBg={colors.infoBg} iconColor={colors.info} value={stats.totalBookings.toLocaleString()} label="Total Bookings" change={`↗ ${stats.totalBookingsChange} vs last 30 days`} />
-              <StatCard icon="bar-chart-2" iconBg={colors.successBg} iconColor={colors.success} value={formatCurrency(stats.revenue)} label="Platform Revenue" change={`↗ ${stats.revenueChange} vs last 30 days`} />
+              <StatCard icon="users" iconBg={colors.infoBg} iconColor={colors.info} value={stats.totalUsers.toLocaleString()} label="Customer Accounts" change={stats.totalUsersChange} />
+              <StatCard icon="tool" iconBg={colors.successBg} iconColor={colors.success} value={stats.mechanics} label="Mechanics" change={stats.mechanicsChange} />
+              <StatCard icon="calendar" iconBg={colors.infoBg} iconColor={colors.info} value={stats.totalBookings?.toLocaleString() ?? '—'} label="Total Bookings" change={stats.bookingsChange} />
+              <StatCard icon="bar-chart-2" iconBg={colors.successBg} iconColor={colors.success} value={formatCurrency(stats.revenue)} label="Platform Revenue" change={stats.revenueChange} />
             </StatGrid>
 
             <View style={styles.statusCard}>

@@ -1,7 +1,8 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { getAdministrators } from '../api/adminApi';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { deleteAdministrator, getAdministrators, subscribeAdministrators, updateAdministrator } from '../api/adminApi';
 import Avatar from '../components/Avatar';
 import Pagination from '../components/Pagination';
 import PrimaryButton from '../components/PrimaryButton';
@@ -38,9 +39,26 @@ export default function AdministratorsScreen({ navigation }) {
     }
   }, [search, page]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => subscribeAdministrators((all) => {
+    const filtered = all.filter((a) => `${a.name} ${a.email}`.toLowerCase().includes(search.toLowerCase()));
+    const start = (page - 1) * PAGE_SIZE;
+    setResult({ items: filtered.slice(start, start + PAGE_SIZE), total: filtered.length,
+      totalAdministrators: all.length, active: all.filter((a) => a.status === 'Active').length,
+      pending: all.filter((a) => a.status === 'Pending').length, suspended: all.filter((a) => a.status === 'Suspended').length });
+    setLoading(false);
+  }, setError), [search, page]);
+
+  const manageAdmin = (admin) => Alert.alert(admin.name, 'Manage this administrator record', [
+    { text: admin.status === 'Active' ? 'Suspend' : 'Activate', onPress: async () => {
+      try { await updateAdministrator(admin.id, { status: admin.status === 'Active' ? 'Suspended' : 'Active' }); }
+      catch (e) { Alert.alert('Could not update administrator', e.message); }
+    } },
+    { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Delete administrator?', `Remove ${admin.email} from the administrator list?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteAdministrator(admin.id); } catch (e) { Alert.alert('Could not delete administrator', e.message); } } },
+    ]) },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
 
   const items = useMemo(() => {
     if (!result) return [];
@@ -107,7 +125,7 @@ export default function AdministratorsScreen({ navigation }) {
                       <Text style={styles.name} numberOfLines={1}>{admin.name}</Text>
                       <Text style={styles.email} numberOfLines={1}>{admin.email}</Text>
                     </View>
-                    <Pressable hitSlop={10}>
+                    <Pressable hitSlop={10} onPress={() => manageAdmin(admin)} accessibilityLabel={`Manage ${admin.name}`}>
                       <Feather name="more-vertical" size={18} color={colors.textMuted} />
                     </Pressable>
                   </View>

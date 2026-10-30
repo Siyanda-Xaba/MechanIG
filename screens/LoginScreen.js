@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }) {
 
         <View style={styles.header}>
           <Image
-            source={require('../assets/mechaniq-logo.png')}
+            source={require('../assets/images/mechaniq-logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -110,7 +110,7 @@ export default function LoginScreen({ navigation }) {
         </TouchableOpacity>
 
         <View style={styles.footerRow}>
-          <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+          <Text style={styles.footerText}>Don't have an account? </Text>
                   <TouchableOpacity onPress={() => navigation?.navigate?.('SignUpStep1')}>
                       <Text style={styles.footerLink}>Create Mechanic Account</Text>
                   </TouchableOpacity>

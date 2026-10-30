@@ -1,36 +1,74 @@
+const fs = require('node:fs');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 
 const appDirectory = path.resolve(__dirname, '..');
-const apiDirectory = 'C:\\Users\\Xsiya\\OneDrive\\Desktop\\MechanIG-search-with-picture\\backend';
-const apiUrl = 'http://127.0.0.1:3001/health';
+const apiDirectory = process.env.MECHANIQ_BACKEND_DIR || path.resolve(appDirectory, '..', 'backend');
+const configuredApiUrl = process.env.EXPO_PUBLIC_PICTURE_SEARCH_API_URL || 'http://127.0.0.1:3001';
+const healthUrl = configuredApiUrl.replace(/\/$/, '') + '/health';
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 let apiProcess;
 let expoProcess;
 
 async function apiIsRunning() {
-  try { return (await fetch(apiUrl, { signal: AbortSignal.timeout(1000) })).ok; }
-  catch { return false; }
+  try {
+    const res = await fetch(healthUrl, { signal: AbortSignal.timeout(1000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
+
 async function waitForApi() {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
     if (await apiIsRunning()) return true;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   return false;
 }
-function stop() { expoProcess?.kill('SIGINT'); apiProcess?.kill('SIGINT'); }
-async function main() {
-  if (!await apiIsRunning()) {
-    console.log('Starting MechanIQ picture-search service...');
-    apiProcess = spawn(npm, ['start'], { cwd: apiDirectory, stdio: 'inherit', shell: process.platform === 'win32' });
-    if (!await waitForApi()) throw new Error('Picture-search service did not start. Check its .env configuration.');
-  }
-  console.log('Starting Expo Go...');
-  expoProcess = spawn(npx, ['expo', 'start', '--go', ...process.argv.slice(2)], { cwd: appDirectory, stdio: 'inherit', shell: process.platform === 'win32' });
-  expoProcess.on('exit', (code) => { apiProcess?.kill('SIGINT'); process.exit(code ?? 0); });
+
+function stop() {
+  expoProcess?.kill('SIGINT');
+  apiProcess?.kill('SIGINT');
 }
+
+async function main() {
+  const isRunning = await apiIsRunning();
+  if (isRunning) {
+    console.log(`Backend service is already running at ${configuredApiUrl}`);
+  } else if (fs.existsSync(apiDirectory)) {
+    console.log(`Starting backend service from ${apiDirectory}...`);
+    try {
+      apiProcess = spawn(npm, ['start'], { cwd: apiDirectory, stdio: 'inherit', shell: process.platform === 'win32' });
+      const ready = await waitForApi();
+      if (!ready) {
+        console.warn('Backend service did not respond on /health yet, proceeding with Expo...');
+      }
+    } catch (err) {
+      console.warn(`Could not start backend service: ${err.message}. Proceeding with Expo...`);
+    }
+  } else {
+    console.log(`Local backend folder not found at ${apiDirectory}. Running Expo with configured API URL (${configuredApiUrl}).`);
+  }
+
+  console.log('Starting Expo...');
+  expoProcess = spawn(npx, ['expo', 'start', ...process.argv.slice(2)], {
+    cwd: appDirectory,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+
+  expoProcess.on('exit', (code) => {
+    apiProcess?.kill('SIGINT');
+    process.exit(code ?? 0);
+  });
+}
+
 process.on('SIGINT', () => { stop(); process.exit(0); });
 process.on('SIGTERM', () => { stop(); process.exit(0); });
-main().catch((error) => { console.error(error.message); stop(); process.exit(1); });
+main().catch((error) => {
+  console.error(error.message);
+  stop();
+  process.exit(1);
+});

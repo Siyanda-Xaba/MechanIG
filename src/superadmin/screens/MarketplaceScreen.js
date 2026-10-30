@@ -1,7 +1,8 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { Alert, View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radii, typography } from '../theme/theme';
-import { getMarketplaceOverview, updateListingStatus } from '../api/platformApi';
+import { deleteListing, getMarketplaceOverview, updateListingStatus } from '../api/platformApi';
 import useAsync from '../api/useAsync';
 import ScreenHeader from '../components/ScreenHeader';
 import StatCard from '../components/StatCard';
@@ -18,9 +19,19 @@ export default function MarketplaceScreen() {
   const { data, setData, loading, error, reload } = useAsync(getMarketplaceOverview);
 
   const setStatus = async (id, status) => {
-    await updateListingStatus(id, status); // TODO backend: handle errors
-    setData((d) => ({ ...d, items: d.items.map((i) => (i.id === id ? { ...i, status } : i)) }));
+    try {
+      await updateListingStatus(id, status);
+      setData((d) => ({ ...d, items: d.items.map((i) => (i.id === id ? { ...i, status } : i)) }));
+    } catch (e) { Alert.alert('Could not update listing', e.message); }
   };
+
+  const removeListing = (item) => Alert.alert('Delete listing?', `Remove ${item.name} from the marketplace?`, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: async () => {
+      try { await deleteListing(item.id); await reload(); }
+      catch (e) { Alert.alert('Could not delete listing', e.message); }
+    } },
+  ]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -63,6 +74,9 @@ export default function MarketplaceScreen() {
                           <Text style={[styles.btnText, { color: colors.danger }]}>Flag</Text>
                         </Pressable>
                       )}
+                      <Pressable style={[styles.btn, styles.btnDanger]} onPress={() => removeListing(item)}>
+                        <Text style={[styles.btnText, { color: colors.danger }]}>Delete</Text>
+                      </Pressable>
                     </View>
                   </View>
                 );

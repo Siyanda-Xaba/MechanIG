@@ -1,5 +1,6 @@
 import { get, ref, update } from 'firebase/database';
-import { auth, database } from '../firebase/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, database, db } from '../firebase/firebase';
 export async function getCurrentUser() {
     if (!auth.currentUser) {
         return null;
@@ -17,13 +18,15 @@ export async function updateCurrentUserProfile(input) {
     if (auth.currentUser?.uid !== input.userId) {
         throw new Error('You must be signed in to update your profile.');
     }
-    await update(ref(database, `users/${input.userId}`), {
+    const updates = {
         firstName: input.firstName.trim(),
         lastName: input.lastName.trim(),
         email: input.email.trim().toLowerCase(),
         phone: input.phone.trim(),
         updatedAt: new Date().toISOString(),
-    });
+    };
+    await update(ref(database, `users/${input.userId}`), updates);
+    await setDoc(doc(db, 'users', input.userId), { ...updates, id: input.userId }, { merge: true });
     const profile = await getCurrentUser();
     if (!profile) {
         throw new Error('Your profile could not be loaded after saving.');

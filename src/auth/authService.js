@@ -1,6 +1,7 @@
-import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getIdTokenResult, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, } from 'firebase/auth';
 import { ref, set } from 'firebase/database';
-import { auth, database } from '../firebase/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, database, db } from '../firebase/firebase';
 import { getCurrentUser, readUserProfile } from '../users/userService';
 export async function registerWithEmail({ email, password, role, profile, }) {
     const credential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
@@ -12,6 +13,15 @@ export async function registerWithEmail({ email, password, role, profile, }) {
             role,
             createdAt: new Date().toISOString(),
             emailVerified: credential.user.emailVerified,
+        });
+        await setDoc(doc(db, 'users', credential.user.uid), {
+            ...profile,
+            id: credential.user.uid,
+            email: credential.user.email,
+            role,
+            status: 'Active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         });
         await sendEmailVerification(credential.user);
         return await readUserProfile(credential.user);
@@ -29,6 +39,28 @@ export async function signInWithEmail(email, password) {
         await signOut(auth);
         throw new Error('This account does not have a MechanIQ profile. Please contact support.');
     }
+    const profileRole = String(profile.role || '').trim().toLowerCase();
+    if (profileRole === 'superadmin' || profileRole === 'super admin') {
+        const token = await getIdTokenResult(auth.currentUser, true);
+        if (token.claims.role !== 'superadmin') {
+            await signOut(auth);
+            throw new Error('This profile is marked Super Admin, but Firebase Authentication has not granted the superadmin custom claim. Ask the Firebase project owner to grant the claim, then sign in again.');
+        }
+    }
+    // Backfill profiles created before the Firestore admin directory was added.
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const existing = await getDoc(userRef);
+    if (existing.data()?.status === 'Suspended') {
+        await signOut(auth);
+        throw new Error('This account has been suspended. Please contact support.');
+    }
+    await setDoc(userRef, {
+        ...profile,
+        id: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        updatedAt: new Date().toISOString(),
+        ...(existing.exists() ? {} : { status: 'Active' }),
+    }, { merge: true });
     return profile;
 }
 export function sendPasswordReset(email) {
