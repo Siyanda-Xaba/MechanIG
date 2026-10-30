@@ -8,6 +8,7 @@ export function CustomerHomeProvider({ children, }) {
     const [homeData, setHomeData] = useState(null);
     const [isLoadingHome, setIsLoadingHome] = useState(false);
     const [homeError, setHomeError] = useState(null);
+    const [obdSnapshotsByVehicle, setObdSnapshotsByVehicle] = useState({});
     const refreshHomeData = useCallback(async () => {
         if (!selectedVehicle) {
             setHomeData(null);
@@ -31,8 +32,28 @@ export function CustomerHomeProvider({ children, }) {
     useEffect(() => {
         refreshHomeData();
     }, [refreshHomeData]);
+    const recordObdSnapshot = useCallback((vehicleId, snapshot) => {
+        if (!vehicleId || !snapshot?.capturedAt || !Array.isArray(snapshot.readings)) return;
+        const hasValidReading = snapshot.readings.some((reading) => (
+            reading.supported !== false && reading.value != null && Number.isFinite(Number(reading.value))
+        ));
+        if (!hasValidReading) return;
+        setObdSnapshotsByVehicle((current) => ({
+            ...current,
+            [String(vehicleId)]: {
+                capturedAt: snapshot.capturedAt,
+                readings: snapshot.readings,
+                source: snapshot.source ?? 'OBD adapter',
+            },
+        }));
+    }, []);
+    const liveObdSnapshot = selectedVehicle?.id
+        ? obdSnapshotsByVehicle[String(selectedVehicle.id)] ?? null
+        : null;
     return (_jsx(CustomerHomeContext.Provider, { value: {
             homeData,
+            liveObdSnapshot,
+            recordObdSnapshot,
             isLoadingHome,
             homeError,
             refreshHomeData,

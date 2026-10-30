@@ -1,7 +1,7 @@
 export async function getCustomerHomeData(vehicleId) {
-  // These values must come from an OBD session or a real service record.
-  // No connection/history is available to this dashboard yet, so report them
-  // as unavailable instead of showing fabricated demo values.
+  // Backend health and maintenance values remain unavailable until a real
+  // service record supplies them. Valid live OBD snapshots are shared with the
+  // dashboard separately by CustomerHomeContext; never invent missing values.
   void vehicleId;
 
   return {

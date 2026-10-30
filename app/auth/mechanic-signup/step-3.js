@@ -257,7 +257,7 @@ export default function MechanicSignUpStep3() {
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (
-                                <ActivityIndicator color="#050B14" />
+                                <ActivityIndicator color="#090B10" />
                             ) : (
                                 <Text style={styles.continueText}>Create Mechanic Account</Text>
                             )}
@@ -292,7 +292,7 @@ export default function MechanicSignUpStep3() {
                         </View>
 
                         <View style={localStyles.emailDisplayRow}>
-                            <Ionicons name="mail-outline" size={16} color="#8CA0B2" />
+                            <Ionicons name="mail-outline" size={16} color="#9AA3B2" />
                             <Text style={localStyles.emailDisplayText}>
                                 Communication Email: {step1Data.email}
                             </Text>
@@ -319,12 +319,12 @@ export default function MechanicSignUpStep3() {
 
 const localStyles = StyleSheet.create({
     summaryCard: {
-        backgroundColor: '#0F2236',
+        backgroundColor: '#161A22',
         borderRadius: 14,
         padding: 16,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#1D3B54',
+        borderColor: '#2C3342',
     },
     summaryHeader: {
         flexDirection: 'row',
@@ -342,7 +342,7 @@ const localStyles = StyleSheet.create({
         marginBottom: 6,
     },
     summaryLabel: {
-        color: '#8CA0B2',
+        color: '#9AA3B2',
         fontSize: 11,
     },
     summaryUsername: {
@@ -355,7 +355,7 @@ const localStyles = StyleSheet.create({
         fontSize: 14,
     },
     summaryNote: {
-        color: '#8CA0B2',
+        color: '#9AA3B2',
         fontSize: 11,
         marginTop: 6,
         lineHeight: 15,
@@ -368,14 +368,14 @@ const localStyles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     modalCard: {
-        backgroundColor: '#0A1726',
+        backgroundColor: '#090B10',
         borderRadius: 20,
         padding: 24,
         width: '100%',
         maxWidth: 380,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#1D3B54',
+        borderColor: '#2C3342',
     },
     modalIconContainer: {
         marginBottom: 12,
@@ -388,13 +388,13 @@ const localStyles = StyleSheet.create({
         textAlign: 'center',
     },
     modalSubtitle: {
-        color: '#8CA0B2',
+        color: '#9AA3B2',
         fontSize: 13,
         marginBottom: 16,
         textAlign: 'center',
     },
     usernameDisplayBox: {
-        backgroundColor: '#112940',
+        backgroundColor: '#161A22',
         borderRadius: 12,
         paddingVertical: 14,
         paddingHorizontal: 16,
@@ -424,11 +424,11 @@ const localStyles = StyleSheet.create({
         marginBottom: 14,
     },
     emailDisplayText: {
-        color: '#8CA0B2',
+        color: '#9AA3B2',
         fontSize: 12,
     },
     modalInstructions: {
-        color: '#D0E2EE',
+        color: '#FFFFFF',
         fontSize: 13,
         lineHeight: 18,
         textAlign: 'center',
@@ -442,7 +442,7 @@ const localStyles = StyleSheet.create({
         alignItems: 'center',
     },
     modalSignInButtonText: {
-        color: '#050B14',
+        color: '#090B10',
         fontSize: 16,
         fontWeight: 'bold',
     },

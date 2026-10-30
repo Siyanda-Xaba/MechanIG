@@ -7,7 +7,7 @@ import DiagnosticActionCard from '../components/DiagnosticActionCard';
 import { useTheme } from '../theme/ThemeContext';
 import { useProblemDescription } from './useProblemDescription';
 const MAX_DESCRIPTION_LENGTH = 1000;
-export default function CustomerProblemDescriptionAction() {
+export default function CustomerProblemDescriptionAction({ cardStyle }) {
     const router = useRouter();
     const { colors } = useTheme();
     const [isModalVisible, setIsModalVisible,] = useState(false);
@@ -41,7 +41,7 @@ export default function CustomerProblemDescriptionAction() {
             },
         });
     }
-    return (_jsxs(_Fragment, { children: [_jsx(DiagnosticActionCard, { title: "Describe a Problem", description: "Tell MechanIQ what you notice.", icon: "message-text", onPress: handleOpen }), _jsx(Modal, { visible: isModalVisible, transparent: true, animationType: "fade", onRequestClose: handleClose, children: _jsx(KeyboardAvoidingView, { style: styles.keyboardView, behavior: Platform.OS === 'ios'
+    return (_jsxs(_Fragment, { children: [_jsx(DiagnosticActionCard, { title: "Describe a Problem", description: "Tell MechanIQ what you notice.", icon: "message-text", onPress: handleOpen, cardStyle }), _jsx(Modal, { visible: isModalVisible, transparent: true, animationType: "fade", onRequestClose: handleClose, children: _jsx(KeyboardAvoidingView, { style: styles.keyboardView, behavior: Platform.OS === 'ios'
                         ? 'padding'
                         : undefined, children: _jsx(Pressable, { style: styles.overlay, onPress: handleClose, children: _jsxs(Pressable, { style: [
                                 styles.modalCard,

@@ -1,19 +1,18 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import CommonSymptomsGrid from '../../src/components/CommonSymptomsGrid';
 import DiagnosisInsightsCard from '../../src/components/DiagnosisInsightsCard';
 import LiveObdReadingsCard from '../../src/components/LiveObdReadingsCard';
 import RecentDiagnosticsList from '../../src/components/RecentDiagnosticsList';
 import StableScrollView from '../../src/components/StableScrollView';
 import SoundDiagnosisCard from '../../src/components/SoundDiagnosisCard';
 import { useCustomerDiagnostics } from '../../src/customer/CustomerDiagnosticsContext';
-import CustomerPartScanAction from '../../src/customer/CustomerPartScanAction';
+import { useCustomerHome } from '../../src/customer/CustomerHomeContext';
+import DashboardWarningLightAction from '../../src/customer/DashboardWarningLightAction';
 import CustomerProblemDescriptionAction from '../../src/customer/CustomerProblemDescriptionAction';
-import CustomerSymptomAnalysisModal from '../../src/customer/CustomerSymptomAnalysisModal';
 import { useDiagnosticScan } from '../../src/customer/useDiagnosticScan';
 import { useSoundDiagnosis } from '../../src/customer/useSoundDiagnosis';
 import { useTheme } from '../../src/theme/ThemeContext';
@@ -21,20 +20,30 @@ import { useVehicle } from '../../src/vehicles/VehicleContext';
 export default function CustomerDiagnostics() {
     const router = useRouter();
     const { colors } = useTheme();
-    const [selectedSymptom, setSelectedSymptom,] = useState(null);
     const { selectedVehicle, isLoadingVehicles, } = useVehicle();
     const activeVehicle = selectedVehicle || { make: 'Test', model: 'Vehicle', registration: 'TEST-OBD', fuelType: 'Standard', year: 2024 };
-    const { diagnosticsData, isLoadingDiagnostics, diagnosticsError, } = useCustomerDiagnostics();
-    const { scanResult, isStartingScan, isLive, liveReadings, liveCapturedAt, scanError, connectionState, currentOperation, startScan, stopLive, clearScanResult, } = useDiagnosticScan();
+    const { diagnosticsData, isLoadingDiagnostics, diagnosticsError, refreshDiagnostics, } = useCustomerDiagnostics();
+    const { liveObdSnapshot, recordObdSnapshot } = useCustomerHome();
+    const { scanResult, isStartingScan, isLive, liveReadings, liveCapturedAt, liveVehicleId, scanError, connectionState, currentOperation, startScan, stopLive, clearScanResult, } = useDiagnosticScan();
     const { captureStatus, recording, durationMillis, isSubmittingAnalysis, analysisResult, soundDiagnosisError, startRecording, stopRecording, submitRecordingForAnalysis, discardRecording, clearSoundDiagnosisError, clearAnalysisResult, } = useSoundDiagnosis();
     const isLoading = isLoadingVehicles || isLoadingDiagnostics;
-    const commonSymptoms = diagnosticsData?.commonSymptoms ?? [];
     const recentScans = diagnosticsData?.recentScans ?? [];
+    const displayedReadings = liveReadings.length ? liveReadings : liveObdSnapshot?.readings ?? [];
+    const displayedCapturedAt = liveCapturedAt ?? liveObdSnapshot?.capturedAt ?? null;
+    useEffect(() => {
+        if (!liveVehicleId || !liveCapturedAt || liveReadings.length === 0) return;
+        recordObdSnapshot(liveVehicleId, {
+            capturedAt: liveCapturedAt,
+            readings: liveReadings,
+            source: 'selected OBD adapter',
+        });
+    }, [liveCapturedAt, liveReadings, liveVehicleId, recordObdSnapshot]);
     async function handleScanAgain() {
         Alert.alert('Safe OBD scan', 'MechanIQ will read only ECU-supported standard live readings and stored emissions trouble codes. It will not clear codes or change vehicle settings. The raw read responses and interpreted report will be uploaded to your MechanIQ diagnostic history. Confirm that you are authorized to test this vehicle, follow its manufacturer instructions, and keep it safely stationary. Stop prevents further requests; a request already sent may finish.', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Continue', onPress: async () => {
                 const result = await startScan({ authorized: true, selectAdapter: chooseAdapter });
+                await refreshDiagnostics();
                 if (!result?.resultId) return;
             } },
         ]);
@@ -56,18 +65,28 @@ export default function CustomerDiagnostics() {
             if (signal?.aborted) return settle(null);
             signal?.addEventListener('abort', cancel, { once: true });
             const adapterLabel = (adapter) => `${adapter.name} (${adapter.transport === 'classic' ? 'Classic' : 'BLE'})`;
-            // Android Alert supports up to 3 buttons (2 choices + Cancel)
-            const topCandidates = candidateList.slice(0, 2);
-            const buttons = topCandidates.map((adapter) => ({
-                text: adapterLabel(adapter),
-                onPress: () => settle(adapter.id),
-            }));
-            buttons.push({ text: 'Cancel', style: 'cancel', onPress: () => settle(null) });
-            Alert.alert(
-                'Select your OBD adapter',
-                `Found ${candidateList.length} adapters:\n${candidateList.map((a) => `• ${adapterLabel(a)}`).join('\n')}\n\nSelect adapter to connect:`,
-                buttons
-            );
+            const showAdapterPage = (index) => {
+                if (settled || signal?.aborted) return settle(null);
+                const adapter = candidateList[index];
+                const buttons = [{
+                    text: adapterLabel(adapter),
+                    onPress: () => settle(adapter.id),
+                }];
+                if (index + 1 < candidateList.length) {
+                    buttons.push({
+                        text: `More adapters (${candidateList.length - index - 1} left)`,
+                        onPress: () => setTimeout(() => showAdapterPage(index + 1), 250),
+                    });
+                }
+                buttons.push({ text: 'Cancel', style: 'cancel', onPress: () => settle(null) });
+                Alert.alert(
+                    `Select OBD adapter (${index + 1} of ${candidateList.length})`,
+                    `${adapterLabel(adapter)}\nChoose this adapter or browse to the next one.`,
+                    buttons,
+                    { cancelable: false }
+                );
+            };
+            showAdapterPage(0);
         });
     }
     function handleViewSavedScan() {
@@ -231,7 +250,7 @@ export default function CustomerDiagnostics() {
                                         {
                                             color: colors.secondaryText,
                                         },
-                                    ], children: scanError }), Platform.OS === 'android' && /pair|disconnect|no recognizable/i.test(scanError || '') && !/ignition|computer|ecu/i.test(scanError || '') ? (_jsxs(TouchableOpacity, { activeOpacity: 0.7, onPress: () => { Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS').catch(() => {}); }, style: styles.openSettingsButton, children: [_jsx(MaterialCommunityIcons, { name: "bluetooth", size: 14, color: "#3B82F6" }), _jsx(Text, { style: styles.openSettingsButtonText, children: "Open Bluetooth Settings to Pair" })] })) : null] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearScanResult, accessibilityRole: "button", accessibilityLabel: "Dismiss scan error", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DiagnosisInsightsCard, { readings: liveReadings, dtcProblems: scanResult?.dtcProblems ?? [], isLive }), _jsx(LiveObdReadingsCard, { readings: liveReadings, capturedAt: liveCapturedAt, isLive: isLive, isStartingScan, connectionState, currentOperation, resultId: scanResult?.resultId, onStop: stopLive, onViewReport: handleViewSavedScan }), _jsx(SoundDiagnosisCard, { captureStatus: captureStatus, durationMillis: recording?.durationMillis ??
+                                    ], children: scanError }), Platform.OS === 'android' && /pair|disconnect|no recognizable/i.test(scanError || '') && !/ignition|computer|ecu/i.test(scanError || '') ? (_jsxs(TouchableOpacity, { activeOpacity: 0.7, onPress: () => { Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS').catch(() => {}); }, style: styles.openSettingsButton, children: [_jsx(MaterialCommunityIcons, { name: "bluetooth", size: 14, color: "#00EFFD" }), _jsx(Text, { style: styles.openSettingsButtonText, children: "Open Bluetooth Settings to Pair" })] })) : null] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearScanResult, accessibilityRole: "button", accessibilityLabel: "Dismiss scan error", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DiagnosisInsightsCard, { readings: displayedReadings, dtcProblems: scanResult?.dtcProblems ?? [], isLive }), _jsx(LiveObdReadingsCard, { readings: displayedReadings, capturedAt: displayedCapturedAt, isLive: isLive, isStartingScan, connectionState, currentOperation, resultId: scanResult?.resultId, onStop: stopLive, onViewReport: handleViewSavedScan }), _jsxs(View, { style: styles.diagnosticActionsRow, children: [_jsx(CustomerProblemDescriptionAction, { cardStyle: styles.diagnosticActionCard }), _jsx(DashboardWarningLightAction, { cardStyle: styles.diagnosticActionCard })] }), _jsx(SoundDiagnosisCard, { captureStatus: captureStatus, durationMillis: recording?.durationMillis ??
                         durationMillis, hasRecording: Boolean(recording), isSubmittingAnalysis: isSubmittingAnalysis, onStartRecording: handleStartSoundRecording, onStopRecording: handleStopSoundRecording, onDiscardRecording: discardRecording, onSubmitForAnalysis: handleSubmitSoundAnalysis }), soundDiagnosisError ? (_jsxs(View, { style: [
                         styles.scanFeedbackCard,
                         {
@@ -289,11 +308,7 @@ export default function CustomerDiagnostics() {
                                         {
                                             color: colors.secondaryText,
                                         },
-                                    ], children: analysisResult.message })] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearAnalysisResult, accessibilityRole: "button", accessibilityLabel: "Dismiss sound analysis message", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsxs(View, { style: styles.actionsRow, children: [_jsx(CustomerPartScanAction, {}), _jsx(CustomerProblemDescriptionAction, {})] }), _jsx(CommonSymptomsGrid, { symptoms: commonSymptoms, onSymptomPress: (symptom) => {
-                        setSelectedSymptom(symptom);
-                    } }), _jsx(CustomerSymptomAnalysisModal, { symptom: selectedSymptom, onClose: () => {
-                        setSelectedSymptom(null);
-                    } }), _jsx(RecentDiagnosticsList, { scans: recentScans, onViewAllPress: () => {
+                                    ], children: analysisResult.message })] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearAnalysisResult, accessibilityRole: "button", accessibilityLabel: "Dismiss sound analysis message", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(RecentDiagnosticsList, { scans: recentScans.slice(0, 2), onViewAllPress: () => {
                         router.push('/diagnostic-history');
                     }, onScanPress: (scan) => {
                         if (!scan.resultId) {
@@ -434,15 +449,21 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(59, 130, 246, 0.12)',
         alignSelf: 'flex-start',
     },
+    diagnosticActionsRow: {
+        marginTop: 18,
+        marginBottom: 18,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    diagnosticActionCard: {
+        width: '48%',
+        minHeight: 142,
+    },
     openSettingsButtonText: {
-        color: '#3B82F6',
+        color: '#00EFFD',
         fontSize: 11.5,
         fontWeight: '600',
-    },
-    actionsRow: {
-        marginTop: 16,
-        flexDirection: 'row',
-        gap: 12,
     },
     message: {
         textAlign: 'center',

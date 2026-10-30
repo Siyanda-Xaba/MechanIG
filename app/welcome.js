@@ -1,8 +1,9 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Ionicons, } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { useTheme } from '../src/theme/ThemeContext';
+import ThemeLogo from '../src/components/ThemeLogo';
 export default function WelcomeScreen() {
     const router = useRouter();
     const { colors } = useTheme();
@@ -17,7 +18,7 @@ export default function WelcomeScreen() {
             {
                 backgroundColor: colors.background,
             },
-        ], children: [_jsx(View, { style: styles.logoContainer, children: _jsx(Image, { source: require('../assets/images/mechaniq-logo.png'), style: styles.logo, resizeMode: "contain" }) }), _jsx(Text, { style: [
+        ], children: [_jsx(View, { style: styles.logoContainer, children: _jsx(ThemeLogo, { style: styles.logo }) }), _jsx(Text, { style: [
                     styles.title,
                     {
                         color: colors.text,

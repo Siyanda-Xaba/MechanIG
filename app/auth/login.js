@@ -2,12 +2,13 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { AntDesign, Ionicons, } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../../src/components/StableScrollView';
 import { getFirebaseAuthErrorMessage, sendPasswordReset, signInWithEmail, } from '../../src/auth/authService';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useUser } from '../../src/users/UserContext';
+import ThemeLogo from '../../src/components/ThemeLogo';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -39,6 +40,10 @@ export default function LoginScreen() {
             setIsSubmitting(true);
             const user = await signInWithEmail(emailOrPhone, password);
             setUser(user);
+            if (user?.role === 'superadmin') {
+                router.replace('/(superadmin)');
+                return;
+            }
             const email = (user?.email || '').toLowerCase();
             const username = (user?.username || emailOrPhone || '').toLowerCase();
             const isMechanic =
@@ -83,7 +88,7 @@ export default function LoginScreen() {
             },
         ], children: _jsx(KeyboardAvoidingView, { style: styles.keyboardView, behavior: Platform.OS === 'ios'
                 ? 'padding'
-                : undefined, children: _jsxs(StableScrollView, { showsVerticalScrollIndicator: false, keyboardShouldPersistTaps: "handled", contentContainerStyle: styles.content, children: [_jsx(View, { style: styles.backButtonSpacer }), _jsx(View, { style: styles.logoContainer, children: _jsx(Image, { source: require('../../assets/images/mechaniq-logo.png'), style: styles.logo, resizeMode: "contain" }) }), _jsx(Text, { style: [
+                : undefined, children: _jsxs(StableScrollView, { showsVerticalScrollIndicator: false, keyboardShouldPersistTaps: "handled", contentContainerStyle: styles.content, children: [_jsx(View, { style: styles.backButtonSpacer }), _jsx(View, { style: styles.logoContainer, children: _jsx(ThemeLogo, { style: styles.logo }) }), _jsx(Text, { style: [
                             styles.title,
                             {
                                 color: colors.text,

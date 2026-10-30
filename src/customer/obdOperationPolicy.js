@@ -2,6 +2,67 @@ const policy = require('../../diagnostic-policy.json');
 
 const ranges = new Set(policy.operations.readSupportedPidRange.allowedPids);
 const livePids = new Set(Object.keys(policy.operations.readLivePid.allowedPids));
+const OBD_PROTOCOL_ATTEMPTS = Object.freeze([
+  null, // ELM327 automatic detection
+  'ATSP6', 'ATSP7', 'ATSP8', 'ATSP9', // ISO 15765-4 CAN
+  'ATSP3', 'ATSP4', 'ATSP5', // ISO 9141-2 and ISO 14230-4 KWP
+  'ATSP1', 'ATSP2', // SAE J1850
+]);
+
+function isProtocolNegotiationFailure(error) {
+  const message = typeof error === 'string' ? error : error?.message || '';
+  return error?.code === 'OBD_PROTOCOL_NEGOTIATION'
+    || error?.code === 'OBD_REQUEST_TIMEOUT'
+    || /CAN ERROR|CAN bus communication error|UNABLE TO CONNECT|BUS INIT|could not reach the car's computer|NO DATA|NO RESPONSE|TIMEOUT|timed out|STOPPED|communication was interrupted/i.test(message);
+}
+
+function protocolError(message, adapterResponse) {
+  const error = new Error(message);
+  error.code = 'OBD_PROTOCOL_NEGOTIATION';
+  if (adapterResponse) error.adapterResponse = adapterResponse;
+  return error;
+}
+
+async function negotiateSupportedPidRange({
+  attempts = OBD_PROTOCOL_ATTEMPTS,
+  setProtocol = async () => {},
+  readSupportedPidRange,
+  isCancelled = () => false,
+  onProtocol = () => {},
+}) {
+  let lastError = null;
+  let consecutiveTimeouts = 0;
+  for (const protocol of attempts) {
+    if (isCancelled()) {
+      const error = new Error('The OBD protocol search was cancelled.');
+      error.name = 'AbortError';
+      throw error;
+    }
+    if (protocol) {
+      onProtocol(protocol);
+      try {
+        await setProtocol(protocol);
+      } catch (error) {
+        if (isCancelled()) throw error;
+        // The following ECU request determines whether this protocol works.
+      }
+    }
+    try {
+      const response = await readSupportedPidRange();
+      if (response) return { response, lastError };
+      lastError = protocolError('The ECU returned no supported-PID response.', 'NO DATA or empty response');
+      consecutiveTimeouts = 0;
+    } catch (error) {
+      lastError = error;
+      if (!isProtocolNegotiationFailure(error)) throw error;
+      consecutiveTimeouts = error?.code === 'OBD_REQUEST_TIMEOUT' ? consecutiveTimeouts + 1 : 0;
+      // A silent adapter is usually a transport/device problem, not a reason
+      // to wait through every remaining vehicle protocol timeout.
+      if (consecutiveTimeouts >= 2) break;
+    }
+  }
+  return { response: null, lastError };
+}
 
 function buildApprovedDiagnosticRequest(operation, parameters = {}, sessionState) {
   if (sessionState !== 'connected') {
@@ -40,8 +101,16 @@ function validateApprovedResponse(response, request) {
   if (typeof response !== 'string' || response.length > policy.limits.responseCharacters) {
     throw new Error('The adapter response is invalid or too large.');
   }
-  const noDataResponse = response.replace(/SEARCHING\.\.\./gi, '').replace(/[>\r\n]/g, ' ').trim().toUpperCase();
-  if (noDataResponse === 'NO DATA' || noDataResponse === request.command + ' NO DATA') return null;
+  const echoedCommand = new RegExp(`^\\s*${request.command}\\b`, 'i');
+  const noDataResponse = response
+    .replace(/SEARCHING\.\.\./gi, '')
+    .replace(/[>\r\n]/g, ' ')
+    .replace(echoedCommand, '')
+    .replace(/\bNO DATA\b/gi, '')
+    .replace(/BUS\s*INIT:\s*(?:OK|\.\.\.)/gi, '')
+    .replace(/\bOK\b/gi, '')
+    .trim();
+  if (!noDataResponse) return null;
   let cleaned = response
     .replace(/SEARCHING\.\.\./gi, '')
     .replace(/\bNO DATA\b/gi, '');
@@ -55,23 +124,18 @@ function validateApprovedResponse(response, request) {
   cleaned = cleaned.replace(/\bOK\b/gi, '');
   cleaned = cleaned.replace(/[\r\n\t>]/g, ' ').trim();
 
-  if (/STOPPED|UNABLE TO CONNECT|CAN ERROR|BUS INIT:?\s*ERROR|\?/i.test(cleaned)) {
-    if (/UNABLE TO CONNECT|BUS INIT/i.test(cleaned)) {
-      throw new Error(
-        "The OBD adapter connected successfully, but could not reach the car's computer. Please ensure your car's ignition is turned ON (dashboard lights on or engine running) so the vehicle ECU is active, then try scanning again."
-      );
+  if (/STOPPED|UNABLE TO CONNECT|CAN ERROR|BUS INIT:?\s*ERROR|BUS BUSY|BUFFER FULL|DATA ERROR|FB ERROR|\bERROR\b|\?/i.test(cleaned)) {
+    const token = cleaned.match(/STOPPED|UNABLE TO CONNECT|CAN ERROR|BUS INIT:?\s*ERROR|BUS BUSY|BUFFER FULL|DATA ERROR|FB ERROR|\bERROR\b|\?/i)?.[0] || 'ECU communication error';
+    if (/STOPPED/i.test(token)) {
+      throw protocolError('Vehicle communication was interrupted while reading the ECU.', token);
     }
-    if (/CAN ERROR/i.test(cleaned)) {
-      throw new Error(
-        "Vehicle CAN bus communication error. Make sure your car's ignition is turned ON and the adapter is firmly connected."
-      );
+    if (/UNABLE TO CONNECT|BUS INIT/i.test(token)) {
+      throw protocolError('The adapter could not initialize communication with the vehicle ECU.', token);
     }
-    if (/STOPPED/i.test(cleaned)) {
-      throw new Error(
-        "Vehicle communication was interrupted. Check that the adapter is securely plugged into the OBD-II port."
-      );
+    if (/CAN ERROR/i.test(token)) {
+      throw protocolError('The adapter reported a CAN bus initialization error while contacting the vehicle ECU.', token);
     }
-    throw new Error("The adapter or vehicle did not complete the read request. Make sure your car's ignition is turned ON.");
+    throw protocolError(`The adapter could not complete ECU communication (${token}).`, token);
   }
 
   // Strip any remaining harmless bus init text before hex validation
@@ -89,8 +153,19 @@ function validateApprovedResponse(response, request) {
   if (request.maxResponseBytes && bytes.length - index > request.maxResponseBytes) {
     throw new Error('The adapter returned an oversized diagnostic response.');
   }
-  if (request.dataBytes != null && bytes.length - index !== requiredLength) {
+  const responseLength = bytes.length - index;
+  if (request.dataBytes != null && responseLength < requiredLength) {
     throw new Error('The adapter returned an incomplete diagnostic response.');
+  }
+  if (request.dataBytes != null && responseLength > requiredLength) {
+    const extraLength = responseLength - requiredLength;
+    const repeatedFrames = extraLength % requiredLength === 0
+      && Array.from({ length: extraLength / requiredLength }, (_, frameIndex) => {
+        const frameStart = index + requiredLength * (frameIndex + 1);
+        return bytes[frameStart] === request.responseService
+          && (request.pid == null || bytes[frameStart + 1] === request.pid);
+      }).every(Boolean);
+    if (!repeatedFrames) throw new Error('The adapter returned an incomplete diagnostic response.');
   }
   if (request.maxResponseBytes && bytes.length - index < 2) {
     throw new Error('The adapter returned an incomplete diagnostic response.');
@@ -102,4 +177,13 @@ function getDiagnosticOperationList() {
   return Object.entries(policy.operations).map(([name, definition]) => ({ name, ...definition }));
 }
 
-module.exports = { buildApprovedDiagnosticRequest, validateApprovedResponse, getDiagnosticOperationList, requireScanAuthorization, obdDiagnosticPolicy: policy };
+module.exports = {
+  buildApprovedDiagnosticRequest,
+  validateApprovedResponse,
+  getDiagnosticOperationList,
+  requireScanAuthorization,
+  isProtocolNegotiationFailure,
+  negotiateSupportedPidRange,
+  OBD_PROTOCOL_ATTEMPTS,
+  obdDiagnosticPolicy: policy,
+};

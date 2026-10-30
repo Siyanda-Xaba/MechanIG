@@ -1,4 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { Ionicons, MaterialCommunityIcons, } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -7,9 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MarketplaceActivityCard from '../../src/components/MarketplaceActivityCard';
 import MarketplaceProductCard from '../../src/components/MarketplaceProductCard';
 import MarketplaceStoreCard from '../../src/components/MarketplaceStoreCard';
+import MarketplaceTextPartSearchResults from '../../src/components/MarketplaceTextPartSearchResults';
 import StableScrollView from '../../src/components/StableScrollView';
 import { useCustomerMarketplace } from '../../src/customer/CustomerMarketplaceContext';
 import { useTheme } from '../../src/theme/ThemeContext';
+import { useVehicle } from '../../src/vehicles/VehicleContext';
+import { searchMarketplacePartByText } from '../../src/customer/marketplaceService';
 const defaultProductFilters = {
     compatibleOnly: false,
     sortBy: 'recommended',
@@ -35,45 +38,55 @@ const sortOptions = [
 export default function CustomerMarketplace() {
     const router = useRouter();
     const { colors } = useTheme();
+    const { selectedVehicle } = useVehicle();
     const { marketplaceData, isLoadingMarketplace, marketplaceError, } = useCustomerMarketplace();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory,] = useState(null);
+    const [submittedQuery, setSubmittedQuery] = useState('');
+    const [partSearchResult, setPartSearchResult] = useState(null);
+    const [isSearchingPart, setIsSearchingPart] = useState(false);
+    const [partSearchError, setPartSearchError] = useState(null);
     const [productFilters, setProductFilters,] = useState(defaultProductFilters);
     const [draftProductFilters, setDraftProductFilters,] = useState(defaultProductFilters);
     const [isFilterVisible, setIsFilterVisible,] = useState(false);
-    const categories = marketplaceData?.categories ?? [];
-    const products = marketplaceData?.recommendedProducts ?? [];
-    const nearbyStores = marketplaceData?.nearbyStores ?? [];
-    const recentActivity = marketplaceData?.recentActivity ?? [];
+    const products = Array.isArray(marketplaceData?.recommendedProducts)
+        ? marketplaceData.recommendedProducts.filter(isRecord)
+        : [];
+    const nearbyStores = Array.isArray(marketplaceData?.nearbyStores)
+        ? marketplaceData.nearbyStores.filter(isRecord)
+        : [];
+    const recentActivity = Array.isArray(marketplaceData?.recentActivity)
+        ? marketplaceData.recentActivity.filter(isRecord)
+        : [];
     const filteredProducts = products
         .filter((product) => {
-        const matchesCategory = selectedCategory === null ||
-            product.category ===
-                selectedCategory;
-        const normalizedQuery = searchQuery
-            .trim()
-            .toLowerCase();
+        const normalizedQuery = searchQuery.trim().toLowerCase();
         const matchesSearch = normalizedQuery.length === 0 ||
-            product.name
-                .toLowerCase()
-                .includes(normalizedQuery) ||
-            product.subtitle
-                .toLowerCase()
-                .includes(normalizedQuery) ||
-            product.category
-                .toLowerCase()
-                .includes(normalizedQuery);
+            String(product.name || '').toLowerCase().includes(normalizedQuery) ||
+            String(product.subtitle || '').toLowerCase().includes(normalizedQuery) ||
+            String(product.category || '').toLowerCase().includes(normalizedQuery);
         const matchesCompatibility = !productFilters.compatibleOnly ||
-            product.compatibleWithSelectedVehicle ===
-                true;
-        return (matchesCategory &&
-            matchesSearch &&
-            matchesCompatibility);
+            product.compatibleWithSelectedVehicle === true;
+        return matchesSearch && matchesCompatibility;
     })
         .sort((first, second) => compareProducts(first, second, productFilters.sortBy));
     const hasActiveFilters = productFilters.compatibleOnly ||
-        productFilters.sortBy !==
-            'recommended';
+        productFilters.sortBy !== 'recommended';
+    const showProductSearchResults = hasActiveFilters;
+    async function handleTextPartSearch() {
+        const query = searchQuery.trim();
+        if (!query || isSearchingPart) return;
+        setSubmittedQuery(query);
+        setIsSearchingPart(true);
+        setPartSearchError(null);
+        setPartSearchResult(null);
+        try {
+            setPartSearchResult(await searchMarketplacePartByText(query, selectedVehicle));
+        } catch (error) {
+            setPartSearchError(error?.message || 'Part search could not be completed.');
+        } finally {
+            setIsSearchingPart(false);
+        }
+    }
     function openFilters() {
         setDraftProductFilters(productFilters);
         setIsFilterVisible(true);
@@ -125,13 +138,13 @@ export default function CustomerMarketplace() {
                                         backgroundColor: colors.card,
                                         borderColor: colors.border,
                                     },
-                                ], children: [_jsx(Ionicons, { name: "search-outline", size: 20, color: colors.secondaryText }), _jsx(TextInput, { value: searchQuery, onChangeText: setSearchQuery, placeholder: "Search for parts, brands, or stores...", placeholderTextColor: colors.secondaryText, returnKeyType: "search", style: [
+                                ], children: [_jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: handleTextPartSearch, accessibilityLabel: "Search parts", children: _jsx(Ionicons, { name: "search-outline", size: 20, color: colors.accent }) }), _jsx(TextInput, { value: searchQuery, onChangeText: setSearchQuery, onSubmitEditing: handleTextPartSearch, placeholder: "Search for parts or brands...", placeholderTextColor: colors.secondaryText, returnKeyType: "search", style: [
                                             styles.searchInput,
                                             {
                                                 color: colors.text,
                                             },
                                         ] }), searchQuery.length >
-                                        0 ? (_jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: () => setSearchQuery(''), children: _jsx(Ionicons, { name: "close-circle", size: 18, color: colors.secondaryText }) })) : null] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, style: [
+                                        searchQuery.length > 0 ? (_jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: () => { setSearchQuery(''); setSubmittedQuery(''); setPartSearchResult(null); setPartSearchError(null); }, children: _jsx(Ionicons, { name: "close-circle", size: 18, color: colors.secondaryText }) })) : null] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, style: [
                                     styles.filterButton,
                                     {
                                         backgroundColor: colors.card,
@@ -145,7 +158,7 @@ export default function CustomerMarketplace() {
                                                 backgroundColor: colors.accent,
                                                 borderColor: colors.card,
                                             },
-                                        ] })) : null] })] }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, style: [
+                                        ] })) : null] })] }), _jsx(MarketplaceTextPartSearchResults, { query: submittedQuery, isLoading: isSearchingPart, error: partSearchError, result: partSearchResult }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, style: [
                             styles.imageSearchCard,
                             {
                                 backgroundColor: colors.card,
@@ -166,55 +179,22 @@ export default function CustomerMarketplace() {
                                             {
                                                 color: colors.secondaryText,
                                             },
-                                        ], children: "Take or upload a photo to identify a vehicle part." })] }), _jsx(Ionicons, { name: "chevron-forward", size: 19, color: colors.secondaryText })] }), _jsx(Text, { style: [
-                            styles.sectionTitle,
-                            {
-                                color: colors.text,
-                            },
-                        ], children: "Categories" }), isLoadingMarketplace ? (_jsx(Text, { style: [
+                                        ], children: "Take or upload a photo to identify a vehicle part." })] }), _jsx(Ionicons, { name: "chevron-forward", size: 19, color: colors.secondaryText })] }), isLoadingMarketplace ? (_jsx(Text, { style: [
                             styles.message,
                             {
                                 color: colors.secondaryText,
                             },
-                        ], children: "Loading marketplace..." })) : (_jsx(ScrollView, { horizontal: true, showsHorizontalScrollIndicator: false, contentContainerStyle: styles.categoriesRow, children: categories.map((category) => {
-                            const isSelected = selectedCategory ===
-                                category;
-                            return (_jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: () => {
-                                    setSelectedCategory(isSelected
-                                        ? null
-                                        : category);
-                                }, style: [
-                                    styles.categoryCard,
-                                    {
-                                        backgroundColor: isSelected
-                                            ? colors.accent
-                                            : colors.card,
-                                        borderColor: isSelected
-                                            ? colors.accent
-                                            : colors.border,
-                                    },
-                                ], children: [_jsx(MaterialCommunityIcons, { name: getCategoryIcon(category), size: 22, color: isSelected
-                                            ? '#000000'
-                                            : colors.accent }), _jsx(Text, { style: [
-                                            styles.categoryLabel,
-                                            {
-                                                color: isSelected
-                                                    ? '#000000'
-                                                    : colors.text,
-                                            },
-                                        ], children: category })] }, category));
-                        }) })), _jsxs(View, { style: styles.sectionHeader, children: [_jsx(Text, { style: [
+                        ], children: "Loading marketplace..." })) : showProductSearchResults ? (_jsxs(_Fragment, { children: [_jsxs(View, { style: styles.sectionHeader, children: [_jsx(Text, { style: [
                                     styles.sectionTitleInline,
                                     {
                                         color: colors.text,
                                     },
-                                ], children: "Recommended for Your Vehicle" }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: () => router.push('/marketplace-products'), children: _jsx(Text, { style: [
+                                ], children: "Product Search Results" }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: () => router.push('/marketplace-products'), children: _jsx(Text, { style: [
                                         styles.viewAll,
                                         {
                                             color: colors.accent,
                                         },
-                                    ], children: "View All" }) })] }), filteredProducts.length ===
-                        0 ? (_jsxs(View, { style: [
+                                    ], children: "View All" }) })] }), filteredProducts.length === 0 ? (_jsxs(View, { style: [
                             styles.emptyProducts,
                             {
                                 backgroundColor: colors.card,
@@ -225,7 +205,7 @@ export default function CustomerMarketplace() {
                                     {
                                         color: colors.secondaryText,
                                     },
-                                ], children: "No matching products found." })] })) : (_jsx(ScrollView, { horizontal: true, showsHorizontalScrollIndicator: false, contentContainerStyle: styles.productsRow, children: filteredProducts.map((product) => (_jsx(MarketplaceProductCard, { product: product, onPress: handleProductPress }, product.id))) })), _jsxs(View, { style: styles.sectionHeader, children: [_jsx(Text, { style: [
+                                ], children: "No matching products found." })] })) : (_jsx(ScrollView, { horizontal: true, showsHorizontalScrollIndicator: false, contentContainerStyle: styles.productsRow, children: filteredProducts.map((product) => (_jsx(MarketplaceProductCard, { product: product, onPress: handleProductPress }, product.id))) }))] })) : null, _jsxs(View, { style: styles.sectionHeader, children: [_jsx(Text, { style: [
                                     styles.sectionTitleInline,
                                     {
                                         color: colors.text,
@@ -384,6 +364,14 @@ export default function CustomerMarketplace() {
                                                 },
                                             ], children: _jsx(Text, { style: styles.applyButtonText, children: "Apply Filters" }) })] })] })] }) })] }));
 }
+function isRecord(value) {
+
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+
+}
+
+
+
 function compareProducts(first, second, sortBy) {
     switch (sortBy) {
         case 'price-low-to-high':
@@ -411,22 +399,6 @@ function compareNullableNumbers(first, second, direction) {
     return direction === 'ascending'
         ? first - second
         : second - first;
-}
-function getCategoryIcon(category) {
-    switch (category) {
-        case 'Brakes':
-            return 'disc';
-        case 'Engine':
-            return 'engine-outline';
-        case 'Battery':
-            return 'car-battery';
-        case 'Tyres':
-            return 'tire';
-        case 'Fluids':
-            return 'oil';
-        default:
-            return 'car-cog';
-    }
 }
 const styles = StyleSheet.create({
     safeArea: {
@@ -517,30 +489,6 @@ const styles = StyleSheet.create({
         marginTop: 4,
         fontSize: 9,
         lineHeight: 14,
-    },
-    sectionTitle: {
-        marginTop: 20,
-        marginBottom: 10,
-        fontSize: 17,
-        fontWeight: '700',
-    },
-    categoriesRow: {
-        gap: 9,
-        paddingRight: 4,
-    },
-    categoryCard: {
-        width: 82,
-        minHeight: 74,
-        paddingHorizontal: 8,
-        borderWidth: 1,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    categoryLabel: {
-        marginTop: 7,
-        fontSize: 9,
-        fontWeight: '700',
     },
     sectionHeader: {
         marginTop: 22,

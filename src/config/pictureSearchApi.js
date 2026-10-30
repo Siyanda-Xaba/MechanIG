@@ -1,14 +1,28 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { auth } from '../firebase/firebase';
 
 const configuredUrl = process.env.EXPO_PUBLIC_PICTURE_SEARCH_API_URL?.replace(/\/$/, '');
-const candidates = [
-  configuredUrl,
-  'http://127.0.0.1:3002',
-  'http://192.168.137.1:3002',
-  'http://172.16.41.210:3002',
-].filter(Boolean);
+const isPhysicalDevice = Constants.isDevice === true;
+const isWeb = Platform.OS === 'web';
+const isLoopbackUrl = (value) => {
+  if (!value) return false;
+  try {
+    return ['127.0.0.1', 'localhost', '::1', '0.0.0.0'].includes(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+};
+const metroHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const runtimeHostUrl = metroHost ? `http://${metroHost}:3002` : null;
+const candidates = [...new Set([
+  configuredUrl && (!isPhysicalDevice || isWeb || !isLoopbackUrl(configuredUrl)) ? configuredUrl : null,
+  isPhysicalDevice && !isWeb ? runtimeHostUrl : null,
+  !isPhysicalDevice && Platform.OS === 'android' ? 'http://10.0.2.2:3002' : null,
+  !isPhysicalDevice || isWeb ? (configuredUrl || 'http://127.0.0.1:3002') : null,
+].filter(Boolean))];
 
-let activeBaseUrl = configuredUrl || 'http://127.0.0.1:3002';
+let activeBaseUrl = candidates[0] || null;
 
 (async () => {
   for (const candidate of candidates) {
@@ -25,12 +39,16 @@ let activeBaseUrl = configuredUrl || 'http://127.0.0.1:3002';
 export const pictureSearchApiUrl = activeBaseUrl;
 
 export function getPictureSearchEndpoint(path) {
-  const base = activeBaseUrl || configuredUrl || 'http://127.0.0.1:3002';
+  const base = activeBaseUrl || candidates[0];
+  if (!base) throw new Error('The vehicle image service address is missing. Start the app with npm start or configure its API URL.');
   return `${base}${path}`;
 }
 
 export async function fetchWithPictureSearchFallback(path, options = {}) {
-  const targetUrls = [activeBaseUrl, ...candidates.filter((u) => u !== activeBaseUrl)];
+  const targetUrls = [activeBaseUrl, ...candidates.filter((u) => u !== activeBaseUrl)].filter(Boolean);
+  if (!targetUrls.length) {
+    throw new Error('The vehicle image service has no address for this device. Start the app with npm start or configure a reachable API URL.');
+  }
   let lastError;
   for (const baseUrl of targetUrls) {
     try {
@@ -41,7 +59,7 @@ export async function fetchWithPictureSearchFallback(path, options = {}) {
       lastError = err;
     }
   }
-  throw lastError || new Error('Cannot reach the Picture Search backend. Check that the service is running.');
+  throw lastError || new Error('Cannot reach the vehicle image service. Start the app with npm start and keep the phone and computer on the same network.');
 }
 
 export async function getPictureSearchAuthHeaders() {

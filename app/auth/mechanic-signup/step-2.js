@@ -445,7 +445,7 @@ const docPickerStyles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#162C3D',
+        borderBottomColor: '#2C3342',
     },
     iconCircle: {
         width: 42,

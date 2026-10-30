@@ -31,7 +31,7 @@ export default function AppDateTimePicker({ value, mode = 'date', minimumDate, o
     'aria-label': mode === 'time' ? 'Select delivery time' : 'Select delivery date',
     style: {
       width: '100%', minHeight: 44, boxSizing: 'border-box', padding: '8px 10px',
-      border: '1px solid #4b5563', borderRadius: 8, background: '#111827', color: '#ffffff',
+      border: '1px solid #2C3342', borderRadius: 12, background: '#161A22', color: '#FFFFFF',
       colorScheme: 'dark', fontSize: 14,
     },
   });

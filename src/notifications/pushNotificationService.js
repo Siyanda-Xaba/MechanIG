@@ -66,7 +66,7 @@ export async function requestExpoPushToken() {
                 name: 'MechanIQ Updates',
                 importance:
                     Notifications.AndroidImportance.DEFAULT,
-                lightColor: '#00E5FF',
+                lightColor: '#00EFFD',
             }
         );
     }

@@ -1,27 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { startCustomerDiagnosticScan } from './diagnosticScanService';
 import { useVehicle } from '../vehicles/VehicleContext';
 
 export function useDiagnosticScan(customVehicle = null) {
   const { selectedVehicle: contextVehicle } = useVehicle();
-  const selectedVehicle = customVehicle || contextVehicle || {
+  const selectedVehicle = useMemo(() => customVehicle || contextVehicle || {
     id: 'workshop-vehicle',
     make: 'Workshop',
     model: 'Test Vehicle',
     year: 2024,
     registration: 'DIAGNOSTIC-SCAN',
     fuelType: 'Petrol',
-  };
+  }, [customVehicle, contextVehicle]);
   const [scanResult, setScanResult] = useState(null);
   const [isStartingScan, setIsStartingScan] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [liveReadings, setLiveReadings] = useState([]);
   const [liveCapturedAt, setLiveCapturedAt] = useState(null);
+  const [liveVehicleId, setLiveVehicleId] = useState(null);
   const [scanError, setScanError] = useState(null);
   const [connectionState, setConnectionState] = useState('idle');
   const [currentOperation, setCurrentOperation] = useState(null);
   const sessionRef = useRef(null);
   const pendingAbortRef = useRef(null);
+  const scanInProgressRef = useRef(false);
   const mountedRef = useRef(true);
   const vehicleId = selectedVehicle?.id ?? 'workshop-vehicle';
 
@@ -42,6 +44,8 @@ export function useDiagnosticScan(customVehicle = null) {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      pendingAbortRef.current?.abort();
+      pendingAbortRef.current = null;
       const session = sessionRef.current;
       sessionRef.current = null;
       if (session) void session.stop();
@@ -64,14 +68,18 @@ export function useDiagnosticScan(customVehicle = null) {
       setScanError(null);
       return result;
     }
+    if (scanInProgressRef.current) return null;
+    scanInProgressRef.current = true;
     const controller = new AbortController();
     try {
       await stopLive();
+      if (!mountedRef.current) return null;
       pendingAbortRef.current = controller;
       setIsStartingScan(true);
       setScanError(null);
       setLiveReadings([]);
       setLiveCapturedAt(null);
+      setLiveVehicleId(null);
       const result = await startCustomerDiagnosticScan(
         { vehicleId, source: 'obd', vehicle: selectedVehicle, authorized },
         {
@@ -82,12 +90,15 @@ export function useDiagnosticScan(customVehicle = null) {
           onConnected: (session) => {
             session.vehicleId = vehicleId;
             sessionRef.current = session;
-            if (mountedRef.current) setIsLive(true);
           },
           onUpdate: (snapshot) => {
             if (!mountedRef.current) return;
             setLiveReadings(snapshot.readings);
             setLiveCapturedAt(snapshot.capturedAt);
+            setLiveVehicleId(vehicleId);
+            // A Bluetooth link is only an adapter connection. Mark the scan live
+            // after the ECU has returned a valid reading.
+            setIsLive(true);
           },
           onError: (error) => {
             sessionRef.current = null;
@@ -112,6 +123,7 @@ export function useDiagnosticScan(customVehicle = null) {
       }
       return null;
     } finally {
+      scanInProgressRef.current = false;
       pendingAbortRef.current = null;
       if (mountedRef.current) setIsStartingScan(false);
     }
@@ -128,6 +140,7 @@ export function useDiagnosticScan(customVehicle = null) {
     isLive,
     liveReadings,
     liveCapturedAt,
+    liveVehicleId,
     scanError,
     connectionState,
     currentOperation,

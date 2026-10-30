@@ -1,108 +1,89 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { Ionicons, MaterialCommunityIcons, } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-export default function MaintenanceReminderCard({ reminder, onPress, }) {
+
+export default function MaintenanceReminderCard({ onPress, reminder }) {
     const { colors } = useTheme();
-    return (_jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: onPress, style: [
-            styles.card,
-            {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-            },
-        ], children: [_jsxs(View, { style: styles.header, children: [_jsx(Text, { style: [
-                            styles.title,
-                            {
-                                color: colors.text,
-                            },
-                        ], children: "Maintenance Reminders" }), _jsx(View, { style: [
-                            styles.reminderBell,
-                            {
-                                borderColor: colors.accent,
-                            },
-                        ], children: _jsx(Ionicons, { name: "notifications-outline", size: 16, color: colors.accent }) })] }), reminder ? (_jsxs(View, { style: styles.reminderContent, children: [_jsx(View, { style: [
-                            styles.iconContainer,
-                            {
-                                borderColor: colors.accent,
-                            },
-                        ], children: _jsx(MaterialCommunityIcons, { name: "oil", size: 24, color: colors.accent }) }), _jsxs(View, { style: styles.textContainer, children: [_jsx(Text, { style: [
-                                    styles.reminderTitle,
-                                    {
-                                        color: colors.text,
-                                    },
-                                ], children: reminder.title }), _jsx(Text, { style: [
-                                    styles.description,
-                                    {
-                                        color: colors.secondaryText,
-                                    },
-                                ], children: reminder.description })] }), _jsx(Ionicons, { name: "chevron-forward", size: 20, color: colors.secondaryText })] })) : (_jsx(View, { style: styles.emptyContainer, children: _jsx(Text, { style: [
-                        styles.emptyText,
-                        {
-                            color: colors.secondaryText,
-                        },
-                    ], children: "No maintenance reminders" }) }))] }));
+    return (
+        <TouchableOpacity
+            accessibilityLabel="Maintenance reminders"
+            accessibilityRole="button"
+            activeOpacity={0.75}
+            onPress={onPress}
+            style={[styles.card, { backgroundColor: colors.card }]}
+        >
+            <View style={styles.header}>
+                <Text style={[styles.title, { color: colors.text }]}>Maintenance Reminders</Text>
+                <Ionicons color={colors.text} name="notifications-outline" size={18} />
+            </View>
+            {reminder ? (
+                <View style={styles.reminderContent}>
+                    <MaterialCommunityIcons color={colors.text} name="oil" size={22} />
+                    <View style={styles.textContainer}>
+                        <Text selectable style={[styles.reminderTitle, { color: colors.text }]}>
+                            {reminder.title}
+                        </Text>
+                        <Text style={[styles.description, { color: colors.secondaryText }]}>{reminder.description}</Text>
+                    </View>
+                    <Ionicons color={colors.secondaryText} name="chevron-forward" size={18} />
+                </View>
+            ) : (
+                <View style={styles.emptyContainer}>
+                    <Text style={[styles.emptyText, { color: colors.secondaryText }]}>No maintenance reminders</Text>
+                </View>
+            )}
+        </TouchableOpacity>
+    );
 }
+
 const styles = StyleSheet.create({
     card: {
-        flex: 1,
-        minHeight: 150,
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 12,
+        borderCurve: 'continuous',
+        borderRadius: 20,
+        boxShadow: '0 10px 24px rgba(0, 0, 0, 0.24)',
+        padding: 18,
+        width: '100%',
+    },
+    description: {
+        fontSize: 12,
+        lineHeight: 16,
+        marginTop: 4,
+    },
+    emptyContainer: {
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        paddingVertical: 18,
+    },
+    emptyText: {
+        fontSize: 13,
+        textAlign: 'center',
     },
     header: {
-        flexDirection: 'row',
         alignItems: 'flex-start',
-    },
-    title: {
-        flex: 1,
-        paddingRight: 8,
-        fontSize: 14,
-        fontWeight: '700',
-        lineHeight: 17,
-    },
-    reminderBell: {
-        width: 32,
-        height: 32,
-        flexShrink: 0,
-        borderWidth: 1,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
+        justifyContent: 'space-between',
     },
     reminderContent: {
+        alignItems: 'center',
         flex: 1,
-        marginTop: 14,
         flexDirection: 'row',
-        alignItems: 'center',
         gap: 10,
+        marginTop: 16,
     },
-    iconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+    reminderTitle: {
+        fontSize: 14,
+        fontWeight: '700',
     },
     textContainer: {
         flex: 1,
+        minWidth: 0,
     },
-    reminderTitle: {
-        fontSize: 13,
-        fontWeight: '700',
-    },
-    description: {
-        marginTop: 4,
-        fontSize: 10,
-        lineHeight: 14,
-    },
-    emptyContainer: {
+    title: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyText: {
-        fontSize: 11,
+        fontSize: 15,
+        fontWeight: '700',
+        letterSpacing: -0.2,
+        lineHeight: 19,
     },
 });

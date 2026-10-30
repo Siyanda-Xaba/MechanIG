@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
 import { Ionicons, MaterialCommunityIcons, } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Switch, Text, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ImageSourcePickerModal from '../../src/components/ImageSourcePickerModal';
 import ProfileAvatar from '../../src/components/ProfileAvatar';
@@ -15,7 +15,7 @@ import { useVehicle } from '../../src/vehicles/VehicleContext';
 import { signOutUser } from '../../src/auth/authService';
 export default function CustomerProfile() {
     const router = useRouter();
-    const { colors } = useTheme();
+    const { colors, mode, toggleThemeMode } = useTheme();
     const { user, isLoadingUser, setUser, } = useUser();
     const { selectedVehicle, isLoadingVehicles, } = useVehicle();
     const { profileData, isLoadingProfile, profileError, } = useCustomerProfile();
@@ -61,6 +61,9 @@ export default function CustomerProfile() {
     }
     function handleSettingPress(setting) {
         switch (setting.id) {
+            case 'messages':
+                router.push('/customer-messages');
+                return;
             case 'personal-information':
                 router.push('/personal-information');
                 return;
@@ -267,7 +270,7 @@ export default function CustomerProfile() {
                             {
                                 color: colors.text,
                             },
-                        ], children: "Account Settings" }), _jsx(View, { style: [
+                        ], children: "Account Settings" }), _jsxs(View, { style: [styles.themeRow, { backgroundColor: colors.card, borderColor: colors.border }], children: [_jsxs(View, { style: styles.themeInfo, children: [_jsx(MaterialCommunityIcons, { name: mode === 'light' ? "white-balance-sunny" : "moon-waning-crescent", size: 22, color: colors.accent }), _jsxs(View, { style: styles.themeTextBlock, children: [_jsx(Text, { style: [styles.themeLabel, { color: colors.text }], children: mode === 'light' ? "Light mode" : "Dark mode" }), _jsx(Text, { style: [styles.themeDescription, { color: colors.secondaryText }], children: mode === 'light' ? "Cream background" : "Use the dark appearance" })] })] }), _jsx(Switch, { value: mode === 'light', onValueChange: toggleThemeMode, trackColor: { false: colors.border, true: colors.accent }, thumbColor: mode === 'light' ? colors.card : colors.secondaryText, accessibilityLabel: "Toggle light mode" })] }), _jsx(View, { style: [
                             styles.settingsCard,
                             {
                                 backgroundColor: colors.card,
@@ -386,6 +389,8 @@ function getQuickActionIcon(id) {
 }
 function getSettingIcon(id) {
     switch (id) {
+        case 'messages':
+            return 'message-text-outline';
         case 'personal-information':
             return 'account-outline';
         case 'notifications':
@@ -646,6 +651,20 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
     },
+    themeRow: {
+        minHeight: 64,
+        marginBottom: 10,
+        paddingHorizontal: 13,
+        borderWidth: 1,
+        borderRadius: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    themeInfo: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+    themeTextBlock: { gap: 3 },
+    themeLabel: { fontSize: 12, fontWeight: '700' },
+    themeDescription: { fontSize: 10 },
     settingsCard: {
         borderWidth: 1,
         borderRadius: 14,

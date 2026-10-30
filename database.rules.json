@@ -3,37 +3,153 @@
     ".read": false,
     ".write": false,
     "users": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid && ((!data.exists() && newData.child('role').val() === 'customer' && !newData.hasChild('isAdmin') && !newData.hasChild('isVerified') && !newData.hasChild('isMechanicApproved') && !newData.hasChild('accountStatus')) || (data.exists() && newData.child('role').val() === data.child('role').val() && newData.child('isAdmin').val() === data.child('isAdmin').val() && newData.child('isVerified').val() === data.child('isVerified').val() && newData.child('isMechanicApproved').val() === data.child('isMechanicApproved').val() && newData.child('accountStatus').val() === data.child('accountStatus').val()))"
+        ".write": "auth != null && auth.uid === $uid && ((!data.exists() && newData.child('role').val() === 'customer' && !newData.hasChild('isAdmin') && !newData.hasChild('isVerified') && !newData.hasChild('isMechanicApproved') && !newData.hasChild('accountStatus')) || (data.exists() && newData.child('role').val() === data.child('role').val() && newData.child('isAdmin').val() === data.child('isAdmin').val() && newData.child('isVerified').val() === data.child('isVerified').val() && newData.child('isMechanicApproved').val() === data.child('isMechanicApproved').val() && newData.child('accountStatus').val() === data.child('accountStatus').val()))",
+        "accountStatus": {
+          ".write": "auth != null && auth.token.role === 'superadmin'",
+          ".validate": "newData.isString() && (newData.val() === 'Active' || newData.val() === 'Suspended' || newData.val() === 'Deleted')"
+        },
+        "notificationPreferences": {
+          ".validate": "newData.hasChildren(['ownerUid', 'categoryPreferences', 'updatedAt']) && newData.child('ownerUid').val() === $uid && newData.child('updatedAt').isString()",
+          "categoryPreferences": {
+            ".validate": "newData.hasChildren()",
+            "$category": {
+              ".validate": "($category === 'diagnostics' || $category === 'service' || $category === 'fuel' || $category === 'marketplace' || $category === 'account') && newData.hasChildren(['pushEnabled', 'emailEnabled']) && newData.child('pushEnabled').isBoolean() && newData.child('emailEnabled').isBoolean()"
+            }
+          }
+        },
+        "fuelDeliveries": {
+          "$deliveryId": {
+            ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.child('ownerUid').val() === auth.uid && newData.child('customerId').val() === auth.uid && newData.child('status').val() === 'requested'",
+            ".validate": "newData.hasChildren(['ownerUid', 'customerId', 'vehicleId', 'requestType', 'fuelType', 'quantityLitres', 'destination', 'status', 'createdAt']) && newData.child('quantityLitres').isNumber() && newData.child('quantityLitres').val() > 0 && newData.child('quantityLitres').val() <= 1000"
+          }
+        }
       }
     },
     "mechanics": {
       ".read": "auth != null",
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid && ((!data.exists() && newData.child('role').val() === 'mechanic' && !newData.hasChild('isAdmin') && !newData.hasChild('isVerified') && !newData.hasChild('isMechanicApproved') && !newData.hasChild('accountStatus')) || (data.exists() && newData.child('role').val() === data.child('role').val() && newData.child('isAdmin').val() === data.child('isAdmin').val() && newData.child('isVerified').val() === data.child('isVerified').val() && newData.child('isMechanicApproved').val() === data.child('isMechanicApproved').val() && newData.child('accountStatus').val() === data.child('accountStatus').val()))",
+        "accountStatus": {
+          ".write": "auth != null && auth.token.role === 'superadmin'",
+          ".validate": "newData.isString() && (newData.val() === 'Active' || newData.val() === 'Suspended' || newData.val() === 'Deleted')"
+        }
+      }
+    },
+    "mechanicPrivate": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && ((!data.exists() && !newData.hasChild('isAdmin') && !newData.hasChild('isVerified') && !newData.hasChild('isMechanicApproved') && !newData.hasChild('accountStatus')) || (data.exists() && newData.child('isAdmin').val() === data.child('isAdmin').val() && newData.child('isVerified').val() === data.child('isVerified').val() && newData.child('isMechanicApproved').val() === data.child('isMechanicApproved').val() && newData.child('accountStatus').val() === data.child('accountStatus').val()))"
       }
     },
     "mechanic_usernames": {
       ".read": true,
       "$username": {
-        ".write": "auth != null"
+        ".write": "auth != null && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid)"
       }
     },
     "fuelDeliveries": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
       "$deliveryId": {
-        ".read": "auth != null && data.child('customerId').val() === auth.uid",
+        ".read": "auth != null && (auth.token.role === 'superadmin' || data.child('customerId').val() === auth.uid)",
         ".write": "auth != null && !data.exists() && newData.child('customerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['customerId', 'vehicleId', 'requestType', 'fuelType', 'quantityLitres', 'destination', 'status', 'createdAt']) && newData.child('status').val() === 'requested' && (newData.child('requestType').val() === 'standard' || newData.child('requestType').val() === 'emergency') && newData.child('quantityLitres').isNumber() && newData.child('quantityLitres').val() > 0 && newData.child('quantityLitres').val() <= 1000",
-        "customerId": { ".validate": "newData.isString() && newData.val() === auth.uid" },
-        "vehicleId": { ".validate": "newData.isString() && newData.val().length > 0" },
-        "fuelType": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
-        "status": { ".validate": "newData.val() === 'requested'" },
+        "customerId": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "vehicleId": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "fuelType": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+        },
+        "status": {
+          ".validate": "newData.val() === 'requested'"
+        },
         "destination": {
           ".validate": "newData.hasChildren(['latitude', 'longitude'])",
-          "latitude": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
-          "longitude": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" }
+          "latitude": {
+            ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+          },
+          "longitude": {
+            ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+          }
+        }
+      }
+    },
+    "marketplacePartSearches": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".indexOn": [
+          "searchedAt"
+        ],
+        "$searchId": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['ownerUid', 'searchTerm', 'searchedAt', 'resultCount']) && newData.child('ownerUid').val() === auth.uid && newData.child('searchTerm').isString() && newData.child('searchTerm').val().length > 0 && newData.child('searchTerm').val().length <= 120 && newData.child('searchedAt').isNumber() && newData.child('resultCount').isNumber() && newData.child('resultCount').val() >= 0 && newData.child('resultCount').val() <= 500"
+        }
+      }
+    },
+    "marketplaceActivity": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$activityId": {
+          ".write": "auth != null && auth.uid === $uid && (!data.exists() || !newData.exists() || newData.child('ownerUid').val() === auth.uid)",
+          ".validate": "newData.hasChildren(['ownerUid', 'title', 'type', 'createdAt']) && newData.child('ownerUid').val() === auth.uid && newData.child('title').isString() && newData.child('title').val().length > 0 && newData.child('title').val().length <= 200 && (newData.child('type').val() === 'viewed' || newData.child('type').val() === 'saved' || newData.child('type').val() === 'cart' || newData.child('type').val() === 'purchased') && newData.child('createdAt').isString()"
+        }
+      }
+    },
+    "bookings": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".indexOn": [
+        "customerUid",
+        "mechanicUid",
+        "createdAt"
+      ],
+      "$bookingId": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || data.child('customerUid').val() === auth.uid || data.child('mechanicUid').val() === auth.uid)",
+        ".write": "auth != null && !data.exists() && newData.child('customerUid').val() === auth.uid && newData.child('status').val() === 'requested'",
+        ".validate": "newData.hasChildren(['id', 'customerUid', 'mechanicUid', 'vehicleId', 'serviceType', 'scheduledDate', 'scheduledTime', 'serviceLocationType', 'status', 'createdAt', 'updatedAt']) && newData.child('id').val() === $bookingId && newData.child('customerUid').val() === auth.uid && newData.child('mechanicUid').isString() && newData.child('vehicleId').isString() && newData.child('serviceType').isString() && newData.child('serviceType').val().length <= 100 && newData.child('status').val() === 'requested' && newData.child('serviceLocationType').val() === 'workshop'"
+      }
+    },
+    "serviceRequests": {
+      ".read": "auth != null && auth.token.role === 'superadmin'",
+      ".indexOn": [
+        "customerUid",
+        "mechanicUid",
+        "createdAt"
+      ],
+      "$requestId": {
+        ".read": "auth != null && (auth.token.role === 'superadmin' || data.child('customerUid').val() === auth.uid || data.child('mechanicUid').val() === auth.uid)",
+        ".write": "auth != null && !data.exists() && newData.child('customerUid').val() === auth.uid && newData.child('status').val() === 'requested'",
+        ".validate": "newData.hasChildren(['id', 'customerUid', 'mechanicUid', 'vehicleId', 'requestType', 'serviceLocation', 'status', 'createdAt', 'updatedAt']) && newData.child('id').val() === $requestId && newData.child('customerUid').val() === auth.uid && newData.child('mechanicUid').isString() && newData.child('vehicleId').isString() && newData.child('requestType').val() === 'mobile' && newData.child('status').val() === 'requested' && newData.child('serviceLocation').child('address').isString() && newData.child('serviceLocation').child('address').val().length > 0 && newData.child('serviceLocation').child('address').val().length <= 300"
+      }
+    },
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".indexOn": [
+          "createdAt"
+        ]
+      }
+    },
+    "notificationReads": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$notificationId": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['ownerUid', 'readAt']) && newData.child('ownerUid').val() === auth.uid && newData.child('readAt').isString()"
+        }
+      }
+    },
+    "emergencyDrafts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$requestId": {
+          ".write": "auth != null && auth.uid === $uid && (!newData.exists() || (newData.child('ownerUid').val() === auth.uid && newData.child('status').val() === 'saved' && (!data.exists() || data.child('status').val() === 'saved'))) ",
+          ".validate": "newData.hasChildren(['ownerUid', 'localId', 'clientRequestId', 'owner', 'serviceType', 'contact', 'location', 'vehicle', 'details', 'status', 'createdAt', 'updatedAt']) && newData.child('ownerUid').val() === auth.uid && newData.child('localId').val() === $requestId && newData.child('owner').child('type').val() === 'customer' && newData.child('owner').child('accountId').val() === auth.uid && (newData.child('serviceType').val() === 'fuel' || newData.child('serviceType').val() === 'mechanic') && newData.child('status').val() === 'saved' && newData.child('clientRequestId').isString() && newData.child('createdAt').isString() && newData.child('updatedAt').isString()"
         }
       }
     }

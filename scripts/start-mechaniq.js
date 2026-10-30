@@ -1,3 +1,4 @@
+/* global __dirname */
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -5,11 +6,14 @@ const path = require('node:path');
 
 const appDirectory = path.resolve(__dirname, '..');
 const localEnvironmentPath = path.join(appDirectory, '.env.local');
-if (fs.existsSync(localEnvironmentPath)) {
-  for (const line of fs.readFileSync(localEnvironmentPath, 'utf8').split(/\r?\n/)) {
-    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-    if (!match || match[2].startsWith('#') || process.env[match[1]] !== undefined) continue;
-    process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2');
+const backendEnvironmentPath = path.join(appDirectory, '.env.backend.local');
+for (const environmentPath of [localEnvironmentPath, backendEnvironmentPath]) {
+  if (fs.existsSync(environmentPath)) {
+    for (const line of fs.readFileSync(environmentPath, 'utf8').split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!match || match[2].startsWith('#') || process.env[match[1]] !== undefined) continue;
+      process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
   }
 }
 const bundledApiDirectory = path.join(appDirectory, 'backend');
@@ -61,6 +65,20 @@ function getLanAddress() {
   }
   candidates.sort((left, right) => right.score - left.score);
   return candidates[0]?.address || '127.0.0.1';
+}
+function getAppServiceUrl(configuredUrl, port, isWebLaunch) {
+  if (!configuredUrl) return `http://${getLanAddress()}:${port}`;
+  if (isWebLaunch) return configuredUrl.replace(/\/$/, '');
+
+  try {
+    const url = new URL(configuredUrl);
+    if (['127.0.0.1', 'localhost', '::1', '0.0.0.0'].includes(url.hostname)) {
+      url.hostname = getLanAddress();
+    }
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return configuredUrl.replace(/\/$/, '');
+  }
 }
 function getGradleOptions(buildPlatform) {
   const currentOptions = process.env.GRADLE_OPTS || '';
@@ -159,20 +177,22 @@ async function main() {
     }
   }
   console.log(buildPlatform ? `Building and starting the ${buildPlatform} app...` : 'Starting Expo development client...');
-  const pictureSearchUrl = process.env.EXPO_PUBLIC_PICTURE_SEARCH_API_URL || `http://${getLanAddress()}:${pictureSearchPort}`;
-  const obdApiUrl = process.env.EXPO_PUBLIC_OBD_API_URL || `http://${getLanAddress()}:${obdApiPort}`;
-  const soundDiagnosisApiUrl = process.env.EXPO_PUBLIC_SOUND_DIAGNOSIS_API_URL || `http://${getLanAddress()}:${soundDetectionPort}`;
+  const pictureSearchUrl = getAppServiceUrl(process.env.EXPO_PUBLIC_PICTURE_SEARCH_API_URL, pictureSearchPort, isWebLaunch);
+  const obdApiUrl = getAppServiceUrl(process.env.EXPO_PUBLIC_OBD_API_URL, obdApiPort, isWebLaunch);
+  const soundDiagnosisApiUrl = getAppServiceUrl(process.env.EXPO_PUBLIC_SOUND_DIAGNOSIS_API_URL, soundDetectionPort, isWebLaunch);
   console.log(`Picture-search API for the app: ${pictureSearchUrl}`);
   console.log(`OBD diagnostics API for the app: ${obdApiUrl}`);
   console.log(`Sound diagnosis API for the app: ${soundDiagnosisApiUrl}`);
   const expoCommandArgs = buildPlatform
     ? ['run', buildPlatform, ...expoArgs]
     : ['start', ...(isWebLaunch ? [] : ['--dev-client']), ...expoArgs];
+  const expoEnvironment = { ...process.env };
+  delete expoEnvironment.POLLINATIONS_API_KEY;
   expoProcess = spawn(process.execPath, [expoCli, ...expoCommandArgs], {
     cwd: appDirectory,
     stdio: 'inherit',
     env: {
-      ...process.env,
+      ...expoEnvironment,
       GRADLE_OPTS: getGradleOptions(buildPlatform),
       JAVA_TOOL_OPTIONS: getJavaToolOptions(buildPlatform),
       EXPO_PUBLIC_PICTURE_SEARCH_API_URL: pictureSearchUrl,

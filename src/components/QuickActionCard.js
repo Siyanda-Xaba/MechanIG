@@ -1,59 +1,52 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-export default function QuickActionCard({ title, description, icon, onPress, }) {
+
+export default function QuickActionCard({ description, icon, onPress, title }) {
     const { colors } = useTheme();
-    return (_jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: onPress, style: [
-            styles.card,
-            {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-            },
-        ], children: [_jsx(View, { style: [
-                    styles.iconContainer,
-                    {
-                        borderColor: colors.accent,
-                    },
-                ], children: _jsx(MaterialCommunityIcons, { name: icon, size: 24, color: colors.accent }) }), _jsxs(View, { style: styles.textContainer, children: [_jsx(Text, { style: [
-                            styles.title,
-                            {
-                                color: colors.text,
-                            },
-                        ], children: title }), _jsx(Text, { style: [
-                            styles.description,
-                            {
-                                color: colors.secondaryText,
-                            },
-                        ], children: description })] })] }));
+    return (
+        <TouchableOpacity
+            accessibilityLabel={title}
+            accessibilityRole="button"
+            activeOpacity={0.75}
+            onPress={onPress}
+            style={[styles.card, { backgroundColor: colors.card }]}
+        >
+            <MaterialCommunityIcons color={colors.accent} name={icon} size={22} />
+            <View style={styles.textContainer}>
+                <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                <Text style={[styles.description, { color: colors.secondaryText }]}>{description}</Text>
+            </View>
+        </TouchableOpacity>
+    );
 }
+
 const styles = StyleSheet.create({
     card: {
+        borderCurve: 'continuous',
+        borderRadius: 20,
+        boxShadow: '0 10px 24px rgba(0, 0, 0, 0.24)',
+        flexGrow: 0,
+        flexShrink: 0,
+        gap: 12,
+        minHeight: 118,
+        minWidth: 0,
         width: '48%',
-        minHeight: 92,
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 12,
+        padding: 16,
     },
-    iconContainer: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 9,
+    description: {
+        fontSize: 12,
+        lineHeight: 16,
+        marginTop: 4,
     },
     textContainer: {
         flex: 1,
+        justifyContent: 'flex-end',
     },
     title: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: '700',
-    },
-    description: {
-        marginTop: 3,
-        fontSize: 9,
-        lineHeight: 13,
+        letterSpacing: -0.2,
+        lineHeight: 19,
     },
 });

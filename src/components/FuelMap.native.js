@@ -40,18 +40,18 @@ function createMapDocument(customer, stations, deliveryVehicle, routeCoordinates
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
 <style>
   html,body,#map{height:100%;width:100%;margin:0;background:#edf1f4}
-  .leaflet-popup-content{font:14px Arial,sans-serif;line-height:1.45}
+  .leaflet-popup-content{font:14px Arial,sans-serif;line-height:1.45;color:#FFFFFF}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#161A22;color:#FFFFFF}
   .leaflet-container{font:12px Arial,sans-serif}
-  .map-legend{position:absolute;z-index:1000;top:12px;left:12px;padding:9px 11px;border-radius:10px;background:#fff;box-shadow:0 2px 12px #17212b30;color:#24313c;font:12px Arial,sans-serif}
+  .map-legend{position:absolute;z-index:1000;top:12px;left:12px;padding:9px 11px;border:1px solid #2C3342;border-radius:12px;background:#161A22;box-shadow:0 2px 12px #090B1060;color:#FFFFFF;font:12px Arial,sans-serif}
   .legend-row{display:flex;align-items:center;gap:7px;white-space:nowrap}.legend-row+.legend-row{margin-top:6px}
-  .legend-dot{width:11px;height:11px;border-radius:50%;background:#2563eb;border:2px solid #fff;box-shadow:0 0 0 1px #2563eb}
-  .legend-pump{width:16px;height:16px;border-radius:50%;background:#0b8f83;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px}
+  .legend-dot{width:11px;height:11px;border-radius:50%;background:#00EFFD;border:2px solid #fff;box-shadow:0 0 0 1px #00EFFD}
+  .legend-pump{width:16px;height:16px;border-radius:50%;background:#3DDC97;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px}
   .map-marker-wrap{background:transparent;border:0}
-  .station-pin{box-sizing:border-box;width:38px;height:38px;border:2px solid #fff;border-radius:50% 50% 50% 0;background:#07877d;box-shadow:0 3px 9px #102a3560;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center}
+  .station-pin{box-sizing:border-box;width:38px;height:38px;border:2px solid #fff;border-radius:50% 50% 50% 0;background:#3DDC97;box-shadow:0 3px 9px #090B1060;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center}
   .station-pin svg{width:21px;height:21px;transform:rotate(45deg)}
-  .user-pin{width:24px;height:24px;border:3px solid #fff;border-radius:50%;background:#2563eb;box-shadow:0 2px 8px #102a3570;display:flex;align-items:center;justify-content:center}
+  .user-pin{width:24px;height:24px;border:3px solid #fff;border-radius:50%;background:#00EFFD;box-shadow:0 2px 8px #090B1070;display:flex;align-items:center;justify-content:center}
   .user-pin svg{width:14px;height:14px}
-  .delivery-pin{width:32px;height:32px;border:2px solid #fff;border-radius:50%;background:#f5c542;box-shadow:0 2px 8px #102a3570;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .delivery-pin{width:32px;height:32px;border:2px solid #fff;border-radius:50%;background:#f5c542;box-shadow:0 2px 8px #090B1070;display:flex;align-items:center;justify-content:center;font-size:17px}
 </style>
 </head><body>
 <div id="map"></div>
@@ -69,7 +69,7 @@ function drawMap(){
   if(data.customer){const p=[data.customer.latitude,data.customer.longitude];points.push(p);L.marker(p,{icon:userIcon,zIndexOffset:1000}).addTo(map).bindPopup('<b>Your location</b>')}
   data.stations.forEach(station=>{const p=[station.latitude,station.longitude];points.push(p);const title=station.name+(station.area?' · '+station.area:'');const address=station.address?'<br>'+station.address:'';const distance=station.distanceKm!=null?'<br>'+Number(station.distanceKm).toFixed(1)+' km away':'';L.marker(p,{icon:stationIcon}).addTo(map).bindPopup('<b>'+title+'</b>'+address+distance)});
   if(data.deliveryVehicle){const p=[data.deliveryVehicle.latitude,data.deliveryVehicle.longitude];points.push(p);const icon=L.divIcon({className:'map-marker-wrap',html:'<div class="delivery-pin">🚚</div>',iconSize:[36,36],iconAnchor:[18,18]});L.marker(p,{icon,zIndexOffset:1200}).addTo(map).bindPopup('<b>Fuel delivery vehicle</b>')}
-  if(data.route.length>1){L.polyline(data.route,{color:'#2563eb',weight:4,opacity:.85}).addTo(map);points.push(...data.route)}
+  if(data.route.length>1){L.polyline(data.route,{color:'#00EFFD',weight:4,opacity:.85}).addTo(map);points.push(...data.route)}
   if(points.length>1)map.fitBounds(points,{padding:[48,48],maxZoom:15});else if(points.length===1)map.setView(points[0],14);else map.setView([-26.2041,28.0473],12);
   requestAnimationFrame(()=>map.invalidateSize());setTimeout(()=>map.invalidateSize(),400);
 }

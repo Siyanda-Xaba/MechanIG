@@ -580,46 +580,19 @@ export default function MechanicProfile() {
         >
           <VerificationRow
             label="Identity Document"
-            isVerified={
-              user?.documents?.idDocument
-                ? true
-                : (verification?.identityVerified ?? null)
-            }
-            statusText={
-              user?.documents?.idDocument
-                ? 'Submitted'
-                : 'N/A'
-            }
+            isVerified={verification?.identityVerified ?? null}
             colors={colors}
           />
 
           <VerificationRow
             label="Trade Certificate"
-            isVerified={
-              user?.documents?.tradeCertificate
-                ? true
-                : (verification?.tradeCertificateVerified ?? null)
-            }
-            statusText={
-              user?.documents?.tradeCertificate
-                ? 'Submitted'
-                : 'N/A'
-            }
+            isVerified={verification?.tradeCertificateVerified ?? null}
             colors={colors}
           />
 
           <VerificationRow
             label="Workshop Registration"
-            isVerified={
-              user?.documents?.workshopRegistration
-                ? true
-                : (verification?.businessVerified ?? null)
-            }
-            statusText={
-              user?.documents?.workshopRegistration
-                ? 'Submitted'
-                : 'N/A'
-            }
+            isVerified={verification?.businessVerified ?? null}
             colors={colors}
             isLast
           />
@@ -1369,22 +1342,20 @@ function VerificationBadge({
 function VerificationRow({
   label,
   isVerified,
-  statusText,
   colors,
   isLast = false,
 }) {
-  const isComplete = isVerified === true
-  const color = isComplete
+  const color = isVerified === true
     ? colors.success
     : isVerified === false
       ? colors.warning
       : colors.secondaryText
 
-  const displayState = statusText || (isComplete
+  const displayState = isVerified === true
     ? 'Verified'
     : isVerified === false
-      ? 'Pending'
-      : 'N/A')
+      ? 'Not verified'
+      : 'Unavailable'
 
   return (
     <View
@@ -1401,7 +1372,7 @@ function VerificationRow({
     >
       <MaterialCommunityIcons
         name={
-          isComplete
+          isVerified === true
             ? 'check-circle-outline'
             : isVerified === false
               ? 'clock-outline'

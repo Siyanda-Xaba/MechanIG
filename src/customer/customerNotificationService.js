@@ -1,67 +1,37 @@
-const developmentNotifications = {
-    unreadCount: 3,
-    notifications: [
-        {
-            id: 'notification-001',
-            category: 'diagnostics',
-            title: 'Vehicle health check available',
-            message: 'Review the latest diagnostic information for your selected vehicle.',
-            createdAt: 'Today, 09:30',
-            isRead: false,
-            action: {
-                type: 'diagnostics',
-            },
-        },
-        {
-            id: 'notification-002',
-            category: 'service',
-            title: 'Service reminder',
-            message: 'Your vehicle is approaching its next recommended service interval.',
-            createdAt: 'Today, 08:10',
-            isRead: false,
-            action: {
-                type: 'service',
-            },
-        },
-        {
-            id: 'notification-003',
-            category: 'fuel',
-            title: 'Fuel level reminder',
-            message: 'Check your current fuel level and available fuel options.',
-            createdAt: 'Yesterday, 18:45',
-            isRead: false,
-            action: {
-                type: 'fuel',
-            },
-        },
-        {
-            id: 'notification-004',
-            category: 'marketplace',
-            title: 'Marketplace activity',
-            message: 'Continue browsing parts and accessories for your vehicle.',
-            createdAt: 'Yesterday, 14:20',
-            isRead: true,
-            action: {
-                type: 'marketplace',
-            },
-        },
-    ],
-};
+import { get, ref, set } from 'firebase/database';
+import { auth, database } from '../firebase/firebase';
+
 export async function getCustomerNotifications(userId) {
-    // userId is part of the backend-ready contract.
-    //
-    // Later this will call the MechanIQ backend and return:
-    // - real notification records
-    // - real read/unread state
-    // - service/job updates
-    // - mechanic responses
-    // - diagnostics alerts
-    // - fuel updates
-    // - marketplace updates
-    //
-    // Push delivery and cross-user events must remain
-    // backend/provider-owned rather than being simulated
-    // as production behavior in the frontend.
-    void userId;
-    return developmentNotifications;
+    const user = auth.currentUser;
+    if (!user || user.uid !== userId) throw new Error('Sign in to the matching account to view notifications.');
+    const snapshot = await get(ref(database, `notifications/${user.uid}`));
+    let readReceipts = {};
+    try {
+        const readSnapshot = await get(ref(database, `notificationReads/${user.uid}`));
+        readReceipts = readSnapshot.val() || {};
+    } catch {
+        // Show server notification state if receipt rules are not yet published.
+    }
+    const notifications = Object.entries(snapshot.val() || {})
+        .map(([id, notification]) => ({ id, ...notification, isRead: notification.isRead === true || Boolean(readReceipts[id]?.readAt) }))
+        .filter((item) => typeof item.title === 'string' && typeof item.message === 'string')
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    return {
+        unreadCount: notifications.filter((item) => item.isRead !== true).length,
+        notifications,
+    };
+}
+
+export async function markCustomerNotificationRead(userId, notificationId) {
+    const user = auth.currentUser;
+    if (!user || user.uid !== userId) throw new Error('Sign in to the matching account to update notifications.');
+    if (typeof notificationId !== 'string' || !notificationId.trim()) throw new Error('A notification ID is required.');
+    const notificationRef = ref(database, `notifications/${user.uid}/${notificationId}`);
+    const snapshot = await get(notificationRef);
+    if (!snapshot.exists()) throw new Error('Notification not found.');
+    await set(ref(database, `notificationReads/${user.uid}/${notificationId}`), {
+        ownerUid: user.uid,
+        readAt: new Date().toISOString(),
+    });
+    return { id: notificationId, isRead: true };
 }

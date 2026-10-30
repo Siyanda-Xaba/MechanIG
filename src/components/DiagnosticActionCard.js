@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-export default function DiagnosticActionCard({ title, description, icon, onPress, }) {
+export default function DiagnosticActionCard({ title, description, icon, onPress, cardStyle, }) {
     const { colors } = useTheme();
     return (_jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: onPress, style: [
             styles.card,
@@ -10,6 +10,7 @@ export default function DiagnosticActionCard({ title, description, icon, onPress
                 backgroundColor: colors.card,
                 borderColor: colors.border,
             },
+            cardStyle,
         ], children: [_jsx(View, { style: [
                     styles.iconContainer,
                     {
@@ -29,7 +30,8 @@ export default function DiagnosticActionCard({ title, description, icon, onPress
 }
 const styles = StyleSheet.create({
     card: {
-        flex: 1,
+        width: '100%',
+        alignSelf: 'stretch',
         minHeight: 96,
         borderWidth: 1,
         borderRadius: 12,

@@ -105,21 +105,28 @@ export default function MechanicDiagnostics() {
       signal?.addEventListener('abort', cancel, { once: true })
       const adapterLabel = (adapter) =>
         `${adapter.name} (${adapter.transport === 'classic' ? 'Classic' : 'BLE'})`
-      const topCandidates = candidateList.slice(0, 2)
-      const buttons = topCandidates.map((adapter) => ({
-        text: adapterLabel(adapter),
-        onPress: () => settle(adapter.id),
-      }))
-      buttons.push({
-        text: 'Cancel',
-        style: 'cancel',
-        onPress: () => settle(null),
-      })
-      Alert.alert(
-        'Select your OBD adapter',
-        `Found ${candidateList.length} adapters:\n${candidateList.map((a) => `• ${adapterLabel(a)}`).join('\n')}\n\nSelect adapter to connect:`,
-        buttons
-      )
+      const showAdapterPage = (index) => {
+        if (settled || signal?.aborted) return settle(null)
+        const adapter = candidateList[index]
+        const buttons = [{
+          text: adapterLabel(adapter),
+          onPress: () => settle(adapter.id),
+        }]
+        if (index + 1 < candidateList.length) {
+          buttons.push({
+            text: `More adapters (${candidateList.length - index - 1} left)`,
+            onPress: () => setTimeout(() => showAdapterPage(index + 1), 250),
+          })
+        }
+        buttons.push({ text: 'Cancel', style: 'cancel', onPress: () => settle(null) })
+        Alert.alert(
+          `Select OBD adapter (${index + 1} of ${candidateList.length})`,
+          `${adapterLabel(adapter)}\nChoose this adapter or browse to the next one.`,
+          buttons,
+          { cancelable: false }
+        )
+      }
+      showAdapterPage(0)
     })
   }
 
@@ -448,7 +455,7 @@ export default function MechanicDiagnostics() {
                   }}
                   style={styles.openSettingsButton}
                 >
-                  <MaterialCommunityIcons name="bluetooth" size={14} color="#3B82F6" />
+                  <MaterialCommunityIcons name="bluetooth" size={14} color="#00EFFD" />
                   <Text style={styles.openSettingsButtonText}>
                     Open Bluetooth Settings to Pair
                   </Text>
@@ -1372,7 +1379,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   openSettingsButtonText: {
-    color: '#3B82F6',
+    color: '#00EFFD',
     fontSize: 11.5,
     fontWeight: '600',
   },

@@ -5,7 +5,6 @@ import {
 import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,6 +19,7 @@ import { useMechanicHome } from '../../src/mechanic/MechanicHomeContext'
 import { useMechanicNotifications } from '../../src/mechanic/useMechanicNotifications'
 import { useTheme } from '../../src/theme/ThemeContext'
 import { useUser } from '../../src/users/UserContext'
+import ThemeLogo from '../../src/components/ThemeLogo'
 
 export default function MechanicHome() {
   const router = useRouter()
@@ -76,10 +76,10 @@ export default function MechanicHome() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/images/mechaniq-logo.png')}
+          <ThemeLogo
+            accessibilityLabel="MechanIQ"
+            matchAppBackground
             style={styles.logo}
-            resizeMode="contain"
           />
 
           <View style={styles.headerRight}>

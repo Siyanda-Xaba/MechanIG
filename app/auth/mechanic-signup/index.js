@@ -312,12 +312,12 @@ export default function MechanicSignUpStep1() {
 
 const localStyles = StyleSheet.create({
     usernamePreviewCard: {
-        backgroundColor: '#0F2236',
+        backgroundColor: '#161A22',
         borderRadius: 14,
         padding: 14,
         marginBottom: 14,
         borderWidth: 1,
-        borderColor: '#1D3B54',
+        borderColor: '#2C3342',
     },
     usernameHeader: {
         flexDirection: 'row',
@@ -339,7 +339,7 @@ const localStyles = StyleSheet.create({
         marginVertical: 4,
     },
     usernameNote: {
-        color: '#8CA0B2',
+        color: '#9AA3B2',
         fontSize: 12,
         lineHeight: 16,
     },

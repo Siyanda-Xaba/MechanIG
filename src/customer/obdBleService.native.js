@@ -2,7 +2,13 @@ import { Alert, Linking, PermissionsAndroid, Platform } from 'react-native';
 import { decodeLiveResponses, LIVE_DATA_PIDS } from './obdPidDecoder';
 import obdOperationPolicy from './obdOperationPolicy';
 import obdScanScheduler from './obdScanScheduler';
-const { buildApprovedDiagnosticRequest, obdDiagnosticPolicy, requireScanAuthorization, validateApprovedResponse } = obdOperationPolicy;
+const {
+  buildApprovedDiagnosticRequest,
+  obdDiagnosticPolicy,
+  requireScanAuthorization,
+  validateApprovedResponse,
+  negotiateSupportedPidRange,
+} = obdOperationPolicy;
 const { createPidReadQueue } = obdScanScheduler;
 
 const OBD_NAME = /(obd|elm|kw903|konnwei|v[- ]?link|veepeak|viecar|obdlink|carista|carly|vlink|vgate|icar|scanner|diag|ecu|auto|can|torque)/i;
@@ -107,7 +113,8 @@ async function waitForBluetooth(signal) {
       clearTimeout(timeout);
       subscription?.remove();
       signal?.removeEventListener('abort', cancel);
-      error ? reject(error) : resolve();
+      if (error) reject(error);
+      else resolve();
     };
     const cancel = () => finish(new Error('The Bluetooth check was cancelled.'));
     const timeout = setTimeout(() => finish(new Error('Bluetooth is still off. Turn it on in your phone settings, then return to MechanIQ.')), 120000);
@@ -138,7 +145,8 @@ async function findAdapters(signal) {
       clearTimeout(timeout);
       signal?.removeEventListener('abort', cancel);
       manager.stopDeviceScan();
-      error ? reject(error) : resolve();
+      if (error) reject(error);
+      else resolve();
     };
     const cancel = () => finish(new Error('The adapter search was cancelled.'));
     const timeout = setTimeout(() => finish(), 9000);
@@ -165,7 +173,19 @@ async function connectToAdapter(device, signal) {
   let connected;
   let stage = 'Connecting to the Bluetooth LE adapter';
   try {
-    connected = await device.connect({ timeout: obdDiagnosticPolicy.limits.connectionTimeoutMs });
+    try {
+      connected = await device.connect({ timeout: obdDiagnosticPolicy.limits.connectionTimeoutMs });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      const transientAndroidFailure = Platform.OS === 'android'
+        && /133|gatt|disconnect|connection failed|timed? out/i.test(detail);
+      if (!transientAndroidFailure || signal?.aborted) throw error;
+      try { await device.cancelConnection(); } catch { /* connection did not open */ }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (signal?.aborted) throw new Error('The scan was cancelled.');
+      stage = 'Retrying Bluetooth LE adapter connection';
+      connected = await device.connect({ timeout: obdDiagnosticPolicy.limits.connectionTimeoutMs });
+    }
     if (signal?.aborted) throw new Error('The scan was cancelled.');
     stage = 'Discovering Bluetooth LE services and characteristics';
     await connected.discoverAllServicesAndCharacteristics();
@@ -280,8 +300,47 @@ function createElmSession(connection, onOperation) {
     return validateApprovedResponse(await response, request);
   }
 
+  async function sendRaw(command) {
+    if (pending) throw new Error('The OBD adapter is already processing a request.');
+    const waitMs = Math.max(0, obdDiagnosticPolicy.limits.minimumRequestIntervalMs - (Date.now() - lastRequestAt));
+    if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
+    if (sessionState !== 'connected') throw new Error('The OBD adapter connection is no longer active.');
+    const response = new Promise((resolve, reject) => {
+      pending = {
+        response: '', resolve, reject,
+        timeout: setTimeout(() => {
+          const active = pending;
+          pending = null;
+          if (active) {
+            const timeout = new Error('The adapter request timed out.');
+            timeout.code = 'OBD_REQUEST_TIMEOUT';
+            active.reject(timeout);
+          }
+        }, 5000),
+      };
+    });
+    const payload = encodeBase64(command + '\r');
+    lastRequestAt = Date.now();
+    try {
+      if (connection.write.isWritableWithoutResponse) {
+        await connection.device.writeCharacteristicWithoutResponseForService(connection.write.serviceUUID, connection.write.uuid, payload);
+      } else {
+        await connection.device.writeCharacteristicWithResponseForService(connection.write.serviceUUID, connection.write.uuid, payload);
+      }
+    } catch (error) {
+      const active = pending;
+      pending = null;
+      if (active) {
+        clearTimeout(active.timeout);
+        active.reject(new Error(`Failed to send command to adapter: ${error instanceof Error ? error.message : String(error)}`));
+      }
+    }
+    return response;
+  }
+
   return {
     perform,
+    sendRaw,
     close: () => {
       sessionState = 'disconnected';
       subscription.remove();
@@ -316,6 +375,40 @@ function createClassicElmSession(device, onOperation) {
       active.resolve(active.response.replace(/>/g, '').trim());
     }
   });
+
+  async function sendRaw(command) {
+    if (pending) throw new Error('The OBD adapter is already processing a request.');
+    const waitMs = Math.max(0, obdDiagnosticPolicy.limits.minimumRequestIntervalMs - (Date.now() - lastRequestAt));
+    if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
+    if (sessionState !== 'connected') throw new Error('The OBD adapter connection is no longer active.');
+    const response = new Promise((resolve, reject) => {
+      pending = {
+        response: '', resolve, reject,
+        timeout: setTimeout(() => {
+          const active = pending;
+          pending = null;
+          if (active) {
+            const timeout = new Error('The adapter request timed out.');
+            timeout.code = 'OBD_REQUEST_TIMEOUT';
+            active.reject(timeout);
+          }
+        }, 5000),
+      };
+    });
+    lastRequestAt = Date.now();
+    try {
+      await device.write(`${command}\r`);
+    } catch {
+      const active = pending;
+      pending = null;
+      if (active) {
+        clearTimeout(active.timeout);
+        active.reject(new Error('The diagnostic request could not be sent to the adapter.'));
+      }
+    }
+    return response;
+  }
+
   return {
     perform: async (operation, parameters = {}) => {
       if (pending) throw new Error('The OBD adapter is already processing a request.');
@@ -351,6 +444,7 @@ function createClassicElmSession(device, onOperation) {
       }
       return validateApprovedResponse(await response, request);
     },
+    sendRaw,
     close: () => {
       sessionState = 'disconnected';
       subscription.remove();
@@ -394,13 +488,28 @@ function chooseAdapter(adapters, signal) {
       reject(new Error('The adapter search was cancelled.'));
     };
     signal?.addEventListener('abort', cancel, { once: true });
-    Alert.alert('Choose OBD adapter', 'Only the selected Bluetooth connection will be opened.', [
-      ...adapters.slice(0, 3).map((adapter) => ({
+    const showAdapterPage = (index) => {
+      if (settled || signal?.aborted) return finish(null);
+      const adapter = adapters[index];
+      const buttons = [{
         text: `${adapter.name} · ${adapter.transport === 'classic' ? 'Bluetooth Classic (Paired - Recommended)' : 'Bluetooth LE'}`,
         onPress: () => finish(adapter.id),
-      })),
-      { text: 'Cancel', style: 'cancel', onPress: () => finish(null) },
-    ], { cancelable: false, onDismiss: () => finish(null) });
+      }];
+      if (index + 1 < adapters.length) {
+        buttons.push({
+          text: `More adapters (${adapters.length - index - 1} left)`,
+          onPress: () => setTimeout(() => showAdapterPage(index + 1), 250),
+        });
+      }
+      buttons.push({ text: 'Cancel', style: 'cancel', onPress: () => finish(null) });
+      Alert.alert(
+        `Choose OBD adapter (${index + 1} of ${adapters.length})`,
+        'Select one Bluetooth connection to open.',
+        buttons,
+        { cancelable: false }
+      );
+    };
+    showAdapterPage(0);
   });
 }
 
@@ -410,8 +519,28 @@ async function connectClassicAdapter(adapter, signal) {
   const abort = () => { void device.disconnect().catch(() => {}); };
   signal?.addEventListener('abort', abort, { once: true });
   try {
-    const connected = await device.connect({ CONNECTOR_TYPE: 'rfcomm', DELIMITER: '', DEVICE_CHARSET: 'ascii' });
-    if (!connected || signal?.aborted) throw new Error('Could not connect to the paired Bluetooth Classic adapter.');
+    let connected = false;
+    // 1. Try insecure RFCOMM socket (standard for virtually all ELM327 Bluetooth Classic clones)
+    try {
+      connected = await device.connect({
+        connectorType: 'rfcomm',
+        secureSocket: false,
+        delimiter: '',
+        charset: 'ascii',
+      });
+    } catch {
+      connected = false;
+    }
+    // 2. Fallback to secure if device requires secure pairing
+    if (!connected) {
+      connected = await device.connect({
+        connectorType: 'rfcomm',
+        secureSocket: true,
+        delimiter: '',
+        charset: 'ascii',
+      });
+    }
+    if (!connected || signal?.aborted) throw new Error('Could not connect to the paired Bluetooth Classic adapter. Make sure it is paired in phone Settings and the car ignition is ON.');
     return { device, disconnect: () => device.disconnect() };
   } catch (error) {
     try { await device.disconnect(); } catch { /* already disconnected */ }
@@ -461,8 +590,14 @@ async function discoverSupportedPids(elm, firstRangeResponse) {
     for (const pid of range) supported.add(pid);
     if (base === 0x40 || !range.has(base + 0x20)) break;
     base += 0x20;
-    response = await elm.perform('readSupportedPidRange', { pid: base.toString(16).padStart(2, '0').toUpperCase() });
-    if (!response) throw new Error('The ECU did not complete its supported-PID response; the scan stopped safely.');
+    try {
+      response = await elm.perform('readSupportedPidRange', { pid: base.toString(16).padStart(2, '0').toUpperCase() });
+    } catch {
+      // Keep the valid PID ranges already discovered when a later optional
+      // range is unavailable; those supported values can still be read.
+      break;
+    }
+    if (!response) break;
   }
   return supported;
 }
@@ -515,7 +650,11 @@ export async function startObdLiveSession({ authorized, selectAdapter, signal, o
   let resolveFirstReadings;
   let rejectFirstReadings;
   let resolveSessionReady;
-  const sessionReady = new Promise((resolve) => { resolveSessionReady = resolve; });
+  let rejectSessionReady;
+  const sessionReady = new Promise((resolve, reject) => {
+    resolveSessionReady = resolve;
+    rejectSessionReady = reject;
+  });
   const closeConnection = async () => {
     if (closed) return;
     closed = true;
@@ -541,6 +680,9 @@ export async function startObdLiveSession({ authorized, selectAdapter, signal, o
       return stopPromise;
     },
   };
+  // The session may fail before it is returned; observe this rejection while
+  // preserving the original promise for callers that do receive the session.
+  void session.firstReadings.catch(() => {});
   let currentOperation = 'initializing OBD connection';
   const handleOperation = (op) => {
     currentOperation = op;
@@ -552,10 +694,51 @@ export async function startObdLiveSession({ authorized, selectAdapter, signal, o
   try {
     onConnected?.(session);
     onState?.('reading');
-    const rangeResponse = await elm.perform('readSupportedPidRange', { pid: '00' });
+
+    // Step 1: Initialize ELM327 adapter
+    handleOperation('Initializing OBD adapter (ATZ/ATE0)');
+    try {
+      await elm.sendRaw('ATZ').catch(() => {});
+      await new Promise((r) => setTimeout(r, 600)); // allow adapter reboot
+      await elm.sendRaw('ATE0').catch(() => {});
+      await elm.sendRaw('ATL0').catch(() => {});
+      await elm.sendRaw('ATH0').catch(() => {});
+      await elm.sendRaw('ATSP0').catch(() => {}); // set protocol to auto
+    } catch {}
+
+    if (stopped) throw new Error('The scan was stopped.');
+
+    // Step 2: Try auto-detection first, then every standardized ELM327 OBD-II
+    // protocol family. The registered vehicle is app metadata and must not
+    // constrain which protocol is tried against the physically connected car.
+    const { response: rangeResponse, lastError } = await negotiateSupportedPidRange({
+      isCancelled: () => stopped,
+      onProtocol: (protocol) => handleOperation(`Trying vehicle protocol ${protocol}`),
+      setProtocol: async (protocol) => {
+        await elm.sendRaw(protocol);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      },
+      readSupportedPidRange: () => {
+        handleOperation('Connecting to vehicle ECU');
+        return elm.perform('readSupportedPidRange', { pid: '00' });
+      },
+    });
+
+    if (!rangeResponse) {
+      const adapterDetail = lastError?.adapterResponse ? ` Adapter response: ${lastError.adapterResponse}.` : '';
+      throw new Error(
+        `Bluetooth connected to the adapter, but the engine ECU did not return a valid Mode 01 response after automatic detection and supported protocol checks. Since the engine is running, check the adapter's OBD-II compatibility and firmware, and try a known-good OBD app or adapter.${adapterDetail}`
+      );
+    }
     if (stopped) throw new Error('The scan was stopped.');
     const supportedPids = await discoverSupportedPids(elm, rangeResponse);
-    const dtcResponse = await elm.perform('readStoredEmissionDtcs');
+    let dtcResponse = null;
+    try {
+      dtcResponse = await elm.perform('readStoredEmissionDtcs');
+    } catch {
+      // Stored-code reads are useful, but a vehicle/adapter that cannot
+      // complete Mode 03 can still provide valid Mode 01 live data.
+    }
     if (stopped) throw new Error('The scan was stopped.');
     session.rawDtcResponse = dtcResponse && modeResponse(dtcResponse, '43') ? modeResponse(dtcResponse, '43') : null;
     const readablePids = LIVE_DATA_PIDS.filter((pid) => supportedPids.has(Number.parseInt(pid, 16)));
@@ -570,6 +753,9 @@ export async function startObdLiveSession({ authorized, selectAdapter, signal, o
     const waitBetweenSnapshots = () => new Promise((resolve) => { snapshotTimer = setTimeout(resolve, obdDiagnosticPolicy.limits.snapshotIntervalMs); });
     const readSnapshot = async () => {
       const { rawResponses, unavailablePids } = await pidReadQueue.readPids(readablePids);
+      if (first && rawResponses.length === 0) {
+        throw new Error('The ECU did not return any usable live readings. Check the ignition and adapter connection, then try again.');
+      }
       const unavailable = new Set([...unsupportedPids, ...unavailablePids]);
       return {
         rawResponses,
@@ -600,7 +786,7 @@ export async function startObdLiveSession({ authorized, selectAdapter, signal, o
       } catch (error) {
         if (first) {
           rejectFirstReadings(error);
-          resolveSessionReady(null);
+          rejectSessionReady(error);
         }
         if (!stopped) onError?.(new Error(`The scan stopped during ${currentOperation || 'vehicle data read'}: ${error instanceof Error ? error.message : String(error)}`));
       } finally {

@@ -1,5 +1,9 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
+const path = require('node:path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env.backend.local'), override: false });
+const { formatPredictions } = require('./dashboard-scanner/services/responseFormatter');
+const { detectWarningLights } = require('./dashboard-scanner/services/roboflowService');
 
 const PORT = Number(process.env.PICTURE_SEARCH_PORT || 3001);
 const HOST = process.env.PICTURE_SEARCH_HOST || '0.0.0.0';
@@ -10,13 +14,20 @@ const GEMINI_FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.
   .filter(Boolean);
 const GEMINI_RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_DASHBOARD_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_DASHBOARD_REQUEST_BYTES = MAX_DASHBOARD_IMAGE_BYTES + 64 * 1024;
 const requestWindows = new Map();
+const vehicleHeroImageCache = new Map();
+const pendingVehicleHeroImages = new Map();
+const MAX_VEHICLE_HERO_IMAGE_BYTES = 10 * 1024 * 1024;
 const REQUEST_WINDOW_MS = 60_000;
 const ROUTE_LIMITS = new Map([
   ['/api/v1/part-searches', 8],
+  ['/api/v1/dashboard-warning-scans', 8],
   ['/api/v1/part-searches/offers', 20],
   ['/api/v1/nearby-fuel-stations', 20],
   ['/api/v1/nearby-stores', 20],
+  ['/api/v1/vehicle-hero-image', 6],
 ]);
 const allowedOrigins = new Set((process.env.PICTURE_SEARCH_CORS_ORIGINS || '')
   .split(',').map((origin) => origin.trim()).filter(Boolean));
@@ -426,6 +437,27 @@ async function handlePartSearch(request, response) {
   return sendJson(response, 200, { searchId: crypto.randomUUID(), recognition, catalogueMatches: [], offers: [], notice: 'Recognition is an estimate. Confirm the OEM number or VIN before buying a part.' });
 }
 
+async function handleDashboardWarningScan(request, response) {
+  const body = await readBody(request, MAX_DASHBOARD_REQUEST_BYTES);
+  let files;
+  try {
+    ({ files } = parseMultipart(body, request.headers['content-type'] || ''));
+  } catch (error) {
+    error.status = 400;
+    throw error;
+  }
+  const image = files.image;
+  if (!image?.data?.length) return sendJson(response, 400, { success: false, message: 'Please upload a dashboard image.' });
+  if (image.data.length > MAX_DASHBOARD_IMAGE_BYTES) {
+    return sendJson(response, 413, { success: false, message: 'Dashboard images must be 5 MB or smaller.' });
+  }
+  if (!imageSignatureIsValid(image)) {
+    return sendJson(response, 400, { success: false, message: 'Use a valid JPEG, PNG, or WebP dashboard image.' });
+  }
+  const roboflowResponse = await detectWarningLights(image);
+  return sendJson(response, 200, formatPredictions(roboflowResponse));
+}
+
 async function handleOffers(request, response) {
   const body = await readBody(request, 1024 * 1024);
   let input;
@@ -452,6 +484,139 @@ async function handleNearbyFuelStations(request, response) {
   return sendJson(response, 200, await findNearbyFuelStations(input.location));
 }
 
+
+function normalizeVehiclePromptField(value, maxLength = 60) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^a-zA-Z0-9 .+_-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength);
+}
+
+function buildVehicleHeroImagePrompt(make, model, year) {
+  return 'Photorealistic automotive editorial photograph of a real production ' + year + ' ' + make + ' ' + model +
+    '. Match the model-specific body silhouette, generation, headlights, grille, windows and wheelbase for that model year; do not substitute a similar vehicle. Front three-quarter driver-side view at a slightly low eye-level camera angle, with the full car facing toward the right side of the frame and filling most of a wide landscape composition. Parked in a clean modern outdoor car park, soft natural daylight, realistic paint and glass reflections, crisp vehicle detail, believable photographic background. Keep the car unobstructed. No people, no text, no watermark, no overlay, no decorative border.';
+}
+
+async function generateVehicleHeroImage(make, model, year, cacheKey) {
+  if (!process.env.POLLINATIONS_API_KEY) {
+    const error = new Error('Vehicle image generation is not configured on the MechanIQ server.');
+    error.status = 503;
+    error.code = 'POLLINATIONS_KEY_MISSING';
+    throw error;
+  }
+  const prompt = buildVehicleHeroImagePrompt(make, model, year);
+  const seed = crypto.createHash('sha256').update(cacheKey).digest().readUInt32BE(0);
+  const upstreamUrl = new URL('https://gen.pollinations.ai/image/' + encodeURIComponent(prompt));
+  upstreamUrl.searchParams.set('model', process.env.POLLINATIONS_IMAGE_MODEL || 'flux');
+  upstreamUrl.searchParams.set('width', '1280');
+  upstreamUrl.searchParams.set('height', '720');
+  upstreamUrl.searchParams.set('seed', String(seed));
+  upstreamUrl.searchParams.set('nologo', 'true');
+
+  let upstream;
+  try {
+    upstream = await fetch(upstreamUrl, {
+      headers: { Authorization: 'Bearer ' + process.env.POLLINATIONS_API_KEY },
+      signal: AbortSignal.timeout(120_000),
+    });
+  } catch (cause) {
+    const error = new Error('The vehicle image service could not be reached.');
+    error.status = 503;
+    error.code = 'POLLINATIONS_NETWORK_ERROR';
+    error.cause = cause;
+    throw error;
+  }
+  if (!upstream.ok) {
+    const upstreamMessage = (await upstream.text().catch(() => '')).slice(0, 500)
+      .replace(/sk_[A-Za-z0-9_-]+/g, '[redacted key]');
+    const error = new Error(upstream.status === 401 || upstream.status === 403
+      ? 'Pollinations rejected the configured API key. Check that the key is active and authorized for image generation.'
+      : upstream.status === 402
+        ? 'Pollinations requires available credits or image-generation access for this API key.'
+        : upstream.status === 429
+          ? 'Vehicle image generation is rate limited. Please try again later.'
+          : `Pollinations could not generate this image (HTTP ${upstream.status}). Please try again later.`);
+    error.status = 503;
+    error.code = `POLLINATIONS_HTTP_${upstream.status}`;
+    error.upstreamStatus = upstream.status;
+    error.upstreamMessage = upstreamMessage.replace(/\s+/g, ' ').trim();
+    throw error;
+  }
+  const contentType = String(upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType)) {
+    const error = new Error('The vehicle image service returned an unsupported image.');
+    error.status = 503;
+    error.code = 'POLLINATIONS_UNSUPPORTED_CONTENT_TYPE';
+    throw error;
+  }
+  const image = Buffer.from(await upstream.arrayBuffer());
+  if (!image.length || image.length > MAX_VEHICLE_HERO_IMAGE_BYTES) {
+    const error = new Error('The generated vehicle image is too large to display.');
+    error.status = 503;
+    error.code = 'POLLINATIONS_IMAGE_TOO_LARGE';
+    throw error;
+  }
+  if (!imageSignatureIsValid({ data: image, mimeType: contentType })) {
+    const error = new Error('The vehicle image service returned invalid image data.');
+    error.status = 503;
+    error.code = 'POLLINATIONS_INVALID_IMAGE';
+    throw error;
+  }
+  const imageData = {
+    image,
+    contentType,
+    etag: '"' + crypto.createHash('sha256').update(image).digest('hex') + '"',
+  };
+  vehicleHeroImageCache.set(cacheKey, imageData);
+  if (vehicleHeroImageCache.size > 60) {
+    const oldestKey = vehicleHeroImageCache.keys().next().value;
+    if (oldestKey) vehicleHeroImageCache.delete(oldestKey);
+  }
+  return imageData;
+}
+
+async function handleVehicleHeroImage(response, url, request) {
+  const make = normalizeVehiclePromptField(url.searchParams.get('make'));
+  const model = normalizeVehiclePromptField(url.searchParams.get('model'));
+  const requestedYear = String(url.searchParams.get('year') || '').trim();
+  const year = /^\d{4}$/.test(requestedYear) ? Number(requestedYear) : NaN;
+  const currentYear = new Date().getFullYear();
+  if (!make || !model || !Number.isInteger(year) || year < 1886 || year > currentYear + 1) {
+    return sendJson(response, 400, { error: 'A valid vehicle make, model, and year are required.' });
+  }
+
+  // Cache by vehicle specifications only; never use a registration, VIN, or account identifier.
+  const cacheKey = [make.toLowerCase(), model.toLowerCase(), year].join('|');
+  let generated = vehicleHeroImageCache.get(cacheKey);
+  if (!generated) {
+    let pending = pendingVehicleHeroImages.get(cacheKey);
+    if (!pending) {
+      pending = generateVehicleHeroImage(make, model, year, cacheKey)
+        .finally(() => pendingVehicleHeroImages.delete(cacheKey));
+      pendingVehicleHeroImages.set(cacheKey, pending);
+    }
+    generated = await pending;
+  }
+
+  if (request.headers['if-none-match'] === generated.etag) {
+    response.writeHead(304, {
+      'Cache-Control': 'private, max-age=2592000',
+      ETag: generated.etag,
+      Vary: 'Authorization',
+    });
+    return response.end();
+  }
+  response.writeHead(200, {
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Methods': 'GET,OPTIONS',
+    'Cache-Control': 'private, max-age=2592000',
+    'Content-Length': generated.image.length,
+    'Content-Type': generated.contentType,
+    ETag: generated.etag,
+    Vary: 'Authorization',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  return response.end(generated.image);
+}
+
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
@@ -464,13 +629,15 @@ const server = http.createServer(async (request, response) => {
     response.setHeader('Cache-Control', 'no-store');
     if (request.method === 'OPTIONS') return sendJson(response, 204, {});
     if (request.method === 'GET' && url.pathname === '/health') {
-      return sendJson(response, 200, { ok: true, recognitionConfigured: Boolean(process.env.GEMINI_API_KEY), offersConfigured: Boolean(process.env.SERPAPI_API_KEY), model: GEMINI_MODEL });
+      return sendJson(response, 200, { ok: true, recognitionConfigured: Boolean(process.env.GEMINI_API_KEY), dashboardWarningScannerConfigured: Boolean(process.env.ROBOFLOW_API_KEY), offersConfigured: Boolean(process.env.SERPAPI_API_KEY), vehicleImageConfigured: Boolean(process.env.POLLINATIONS_API_KEY), model: GEMINI_MODEL });
     }
     if (ROUTE_LIMITS.has(url.pathname)) {
       if (isRateLimited(request, url.pathname)) return sendJson(response, 429, { error: 'Too many requests. Please wait and try again.' });
       if (!await authenticateRequest(request)) return sendJson(response, 401, { error: 'Sign in again to use this service.' });
     }
+    if (request.method === 'GET' && url.pathname === '/api/v1/vehicle-hero-image') return await handleVehicleHeroImage(response, url, request);
     if (request.method === 'POST' && url.pathname === '/api/v1/part-searches') return await handlePartSearch(request, response);
+    if (request.method === 'POST' && url.pathname === '/api/v1/dashboard-warning-scans') return await handleDashboardWarningScan(request, response);
     if (request.method === 'POST' && url.pathname === '/api/v1/part-searches/offers') return await handleOffers(request, response);
     if (request.method === 'POST' && url.pathname === '/api/v1/nearby-fuel-stations') return await handleNearbyFuelStations(request, response);
     if (request.method === 'POST' && url.pathname === '/api/v1/nearby-stores') {
@@ -486,14 +653,18 @@ const server = http.createServer(async (request, response) => {
     console.error('Picture-search request failed:', {
       name: error?.name || 'Error',
       status: error?.status || null,
-      code: error?.code || null,
+      code: error?.code || 'UNCLASSIFIED_ERROR',
+      upstreamStatus: error?.upstreamStatus || null,
+      message: error?.message || 'Unknown error',
+      upstreamMessage: error?.upstreamMessage || undefined,
     });
     const message = error instanceof Error ? error.message : 'The picture-search request failed.';
     const clientError = error?.status === 400 || error?.status === 413;
-    const safeMessage = clientError || process.env.NODE_ENV !== 'production'
+    const status = clientError ? error.status : error?.status === 503 ? 503 : 502;
+    const safeMessage = clientError || error?.code?.startsWith('POLLINATIONS_') || process.env.NODE_ENV !== 'production'
       ? message
       : 'The request could not be completed. Please try again later.';
-    return sendJson(response, clientError ? error.status : 502, { error: safeMessage });
+    return sendJson(response, status, { error: safeMessage, code: error?.code || 'REQUEST_FAILED' });
   }
 });
 
@@ -504,6 +675,8 @@ if (require.main === module) {
   server.listen(PORT, HOST, () => {
     console.log(`MechanIQ picture-search API listening on http://${HOST}:${PORT}`);
     if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is missing; health checks work, but recognition requests will be rejected.');
+    if (!process.env.ROBOFLOW_API_KEY) console.warn('ROBOFLOW_API_KEY is missing; the instrument-cluster warning-light scanner will be unavailable.');
+    if (!process.env.POLLINATIONS_API_KEY) console.warn('POLLINATIONS_API_KEY is missing; registered-vehicle hero images will use their fallback.');
   });
 }
 

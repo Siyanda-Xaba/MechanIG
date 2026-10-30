@@ -3,11 +3,14 @@ import {
     push,
     ref,
     runTransaction,
+    update,
 } from 'firebase/database';
+import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 
 import {
     auth,
     database,
+    storage,
 } from '../firebase/firebase';
 
 function normalizeVehicle(vehicle, id) {
@@ -26,7 +29,69 @@ function normalizeVehicle(vehicle, id) {
             '',
         isPrimary: vehicle.isPrimary === true,
         modelKey: vehicle.modelKey ?? null,
+        heroImageUrl: typeof vehicle.heroImageUrl === 'string' ? vehicle.heroImageUrl : null,
     };
+}
+
+/** Upload and persist a generated vehicle image against the signed-in owner's vehicle. */
+export async function saveVehicleHeroImage(vehicleId, imageUri, contentType = 'image/jpeg') {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) throw new Error('Sign in to save this vehicle image.');
+    if (typeof vehicleId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(vehicleId)) {
+        throw new Error('Select a valid vehicle before saving its image.');
+    }
+    if (typeof imageUri !== 'string' || !imageUri) {
+        throw new Error('The generated vehicle image is unavailable.');
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType)) {
+        throw new Error('The generated vehicle image format is not supported.');
+    }
+
+    const ownerUid = firebaseUser.uid;
+    const profileSnapshot = await get(ref(database, `users/${ownerUid}`));
+    const profile = profileSnapshot.val();
+    if (!profile || !getVehicleEntries(profile).some(([id]) => id === vehicleId)) {
+        throw new Error('This vehicle is not attached to the signed-in account.');
+    }
+
+    const extension = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+    const response = await fetch(imageUri);
+    if (!response.ok) throw new Error('The generated vehicle image could not be read.');
+    const blob = await response.blob();
+    if (!blob.size || blob.size > 5 * 1024 * 1024) {
+        throw new Error('The generated vehicle image must be 5 MB or smaller.');
+    }
+
+    const imageRef = storageRef(storage, `users/${ownerUid}/vehicleHero_${vehicleId}.${extension}`);
+    const uploaded = await uploadBytes(imageRef, blob, { contentType });
+    const downloadUrl = await getDownloadURL(uploaded.ref);
+
+    if (auth.currentUser?.uid !== ownerUid) {
+        throw new Error('Your account changed while saving the vehicle image.');
+    }
+
+    const vehiclePath = profile.vehicles?.[vehicleId]
+        ? `users/${ownerUid}/vehicles/${vehicleId}`
+        : `users/${ownerUid}/vehicle`;
+    await update(ref(database, vehiclePath), { heroImageUrl: downloadUrl });
+    return downloadUrl;
+}
+
+/** Remove a broken cached image URL so the home screen can regenerate and save a replacement. */
+export async function clearVehicleHeroImage(vehicleId) {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return false;
+    if (typeof vehicleId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(vehicleId)) return false;
+
+    const profileSnapshot = await get(ref(database, `users/${firebaseUser.uid}`));
+    const profile = profileSnapshot.val();
+    if (!profile || !getVehicleEntries(profile).some(([id]) => id === vehicleId)) return false;
+
+    const vehiclePath = profile.vehicles?.[vehicleId]
+        ? `users/${firebaseUser.uid}/vehicles/${vehicleId}`
+        : `users/${firebaseUser.uid}/vehicle`;
+    await update(ref(database, vehiclePath), { heroImageUrl: null });
+    return true;
 }
 
 function isValidLegacyVehicle(vehicle) {
@@ -137,12 +202,15 @@ export async function createUserVehicle(input) {
         throw new Error('Unable to generate a vehicle ID.');
     }
 
+    const now = new Date().toISOString();
     const vehicle = {
         ...input,
+        ownerUid: userId,
         registration:
             input.registration.trim().toUpperCase(),
         isPrimary: input.isPrimary === true,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
     };
 
     const result = await runTransaction(
@@ -168,6 +236,8 @@ export async function createUserVehicle(input) {
 
                 updatedVehicles['primary-vehicle'] = {
                     ...profile.vehicle,
+                    ownerUid: userId,
+                    year: Number(profile.vehicle.year) || new Date().getFullYear(),
                     isPrimary:
                         !vehicle.isPrimary &&
                         !existingPrimary,
@@ -184,6 +254,8 @@ export async function createUserVehicle(input) {
                     ) {
                         updatedVehicles[id] = {
                             ...existingVehicle,
+                            ownerUid: userId,
+                            year: Number(existingVehicle.year) || new Date().getFullYear(),
                             isPrimary: false,
                         };
                     }
@@ -272,6 +344,8 @@ export async function setPrimaryUserVehicle(vehicleId) {
             ) {
                 updatedVehicles['primary-vehicle'] = {
                     ...profile.vehicle,
+                    ownerUid: userId,
+                    year: Number(profile.vehicle.year) || new Date().getFullYear(),
                     isPrimary: false,
                 };
             }
@@ -289,6 +363,8 @@ export async function setPrimaryUserVehicle(vehicleId) {
                 if (vehicle && typeof vehicle === 'object') {
                     updatedVehicles[id] = {
                         ...vehicle,
+                        ownerUid: userId,
+                        year: Number(vehicle.year) || new Date().getFullYear(),
                         isPrimary: id === targetId,
                     };
                 }
@@ -422,6 +498,7 @@ export async function updateUserVehicle(vehicleId, input) {
 
             updatedVehicles[targetId] = {
                 ...existingVehicle,
+                ownerUid: userId,
                 make,
                 model,
                 year,
@@ -433,6 +510,9 @@ export async function updateUserVehicle(vehicleId, input) {
                 modelKey: vehicleIdentityChanged
                     ? null
                     : existingVehicle.modelKey ?? null,
+                heroImageUrl: vehicleIdentityChanged
+                    ? null
+                    : existingVehicle.heroImageUrl ?? null,
                 updatedAt: new Date().toISOString(),
             };
 
@@ -524,6 +604,8 @@ export async function deleteUserVehicle(vehicleId) {
 
                 vehicles['primary-vehicle'] = {
                     ...currentProfile.vehicle,
+                    ownerUid: userId,
+                    year: Number(currentProfile.vehicle.year) || new Date().getFullYear(),
                     isPrimary: !hasPrimary,
                 };
             }
@@ -567,6 +649,8 @@ export async function deleteUserVehicle(vehicleId) {
                 for (const id of remainingIds) {
                     vehicles[id] = {
                         ...vehicles[id],
+                        ownerUid: userId,
+                        year: Number(vehicles[id].year) || new Date().getFullYear(),
                         isPrimary: id === nextPrimaryId,
                     };
                 }

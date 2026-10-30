@@ -1,7 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { Ionicons } from '@expo/vector-icons';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { darkColors } from '../../theme/colors';
+import ThemeLogo from '../../components/ThemeLogo';
 // Legacy export names are kept because the existing mechanic signup
 // screens import them. Their values now come from the shared theme.
 export const CYAN = darkColors.accent;
@@ -45,7 +46,7 @@ export function UploadRow({ label, document, onPress, onRemove, }) {
         : null;
     return (_jsxs(TouchableOpacity, { style: [
             styles.fieldWrapper,
-            hasDoc && { borderColor: CYAN, backgroundColor: '#0B1E28' },
+            hasDoc && { borderColor: CYAN, backgroundColor: 'rgba(0, 239, 253, 0.12)' },
         ], activeOpacity: 0.8, onPress: onPress, children: [_jsx(View, { style: styles.fieldIcon, children: _jsx(Ionicons, { name: hasDoc ? "checkmark-circle" : "document-text-outline", size: 19, color: hasDoc ? GREEN : MUTED }) }), _jsxs(View, { style: styles.fieldTextArea, children: [_jsx(Text, { style: styles.fieldLabel, children: label }), _jsx(Text, { style: hasDoc
                             ? { color: TEXT, fontSize: 13, fontWeight: '500' }
                             : styles.fieldPlaceholder, numberOfLines: 1, children: hasDoc
@@ -53,7 +54,7 @@ export function UploadRow({ label, document, onPress, onRemove, }) {
                             : "Tap to upload (PDF, Image)" })] }), hasDoc ? (_jsx(TouchableOpacity, { onPress: (event) => {
                     event.stopPropagation?.();
                     onRemove?.();
-                }, hitSlop: { top: 10, bottom: 10, left: 10, right: 10 }, children: _jsx(Ionicons, { name: "trash-outline", size: 18, color: "#FF6B6B" }) })) : (_jsx(Ionicons, { name: "cloud-upload-outline", size: 18, color: MUTED }))] }));
+                }, hitSlop: { top: 10, bottom: 10, left: 10, right: 10 }, children: _jsx(Ionicons, { name: "trash-outline", size: 18, color: "#FF5C5C" }) })) : (_jsx(Ionicons, { name: "cloud-upload-outline", size: 18, color: MUTED }))] }));
 }
 export function PasswordRow({ label, placeholder, value, onChangeText, visible, onToggleVisible, }) {
     return (_jsxs(View, { style: styles.fieldWrapper, children: [_jsx(View, { style: styles.fieldIcon, children: _jsx(Ionicons, { name: "lock-closed-outline", size: 18, color: MUTED }) }), _jsxs(View, { style: styles.fieldTextArea, children: [_jsx(Text, { style: styles.fieldLabel, children: label }), _jsx(TextInput, { style: styles.fieldInput, placeholder: placeholder, placeholderTextColor: SECONDARY_TEXT, value: value, onChangeText: onChangeText, secureTextEntry: !visible })] }), _jsx(TouchableOpacity, { onPress: onToggleVisible, hitSlop: 8, activeOpacity: 0.7, children: _jsx(Ionicons, { name: visible
@@ -90,7 +91,7 @@ export function StepIndicator({ currentStep, }) {
         }) }));
 }
 export function SignUpHeader({ onBack, step, }) {
-    return (_jsxs(_Fragment, { children: [_jsx(TouchableOpacity, { style: styles.backButton, onPress: onBack, activeOpacity: 0.7, accessibilityRole: "button", accessibilityLabel: "Go back", children: _jsx(Ionicons, { name: "arrow-back", size: 24, color: TEXT }) }), _jsx(View, { style: styles.logoContainer, children: _jsx(Image, { source: require('../../../assets/images/mechaniq-logo.png'), style: styles.logo, resizeMode: "contain" }) }), _jsx(Text, { style: styles.title, children: "Create Your Account" }), _jsx(Text, { style: styles.subtitle, children: STEP_SUBTITLES[step] }), _jsx(StepIndicator, { currentStep: step })] }));
+    return (_jsxs(_Fragment, { children: [_jsx(TouchableOpacity, { style: styles.backButton, onPress: onBack, activeOpacity: 0.7, accessibilityRole: "button", accessibilityLabel: "Go back", children: _jsx(Ionicons, { name: "arrow-back", size: 24, color: TEXT }) }), _jsx(View, { style: styles.logoContainer, children: _jsx(ThemeLogo, { style: styles.logo }) }), _jsx(Text, { style: styles.title, children: "Create Your Account" }), _jsx(Text, { style: styles.subtitle, children: STEP_SUBTITLES[step] }), _jsx(StepIndicator, { currentStep: step })] }));
 }
 export function SignUpFooter({ onSignIn, }) {
     return (_jsxs(View, { style: styles.footerRow, children: [_jsxs(Text, { style: styles.footerText, children: ["Already have an account?", ' '] }), _jsx(TouchableOpacity, { onPress: onSignIn, activeOpacity: 0.7, children: _jsx(Text, { style: styles.footerLink, children: "Log in" }) })] }));

@@ -92,7 +92,10 @@ export async function createFuelDeliveryRequest(input) {
     destination, destinationLabel: input.deliveryLocation.label ?? input.deliveryLocation.address ?? 'Delivery location', scheduledFor: input.scheduledFor ?? null,
     status: 'requested', createdAt, updatedAt: createdAt,
   };
-  await update(ref(database), { [`fuelDeliveries/${deliveryId}`]: delivery, [`users/${user.uid}/fuelDeliveries/${deliveryId}`]: delivery });
+  await update(ref(database), {
+    [`fuelDeliveries/${deliveryId}`]: delivery,
+    [`users/${user.uid}/fuelDeliveries/${deliveryId}`]: { ...delivery, ownerUid: user.uid },
+  });
   return { deliveryId, ...normalizeDelivery(deliveryId, delivery) };
 }
 

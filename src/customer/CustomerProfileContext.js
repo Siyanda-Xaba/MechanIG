@@ -1,43 +1,131 @@
-import { jsx as _jsx } from "react/jsx-runtime";
-import { createContext, useCallback, useContext, useEffect, useState, } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import { useUser } from '../users/UserContext';
 import { getCustomerProfileData } from './customerProfileService';
+
 const CustomerProfileContext = createContext(undefined);
-export function CustomerProfileProvider({ children, }) {
-    const { user } = useUser();
-    const [profileData, setProfileData] = useState(null);
-    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-    const [profileError, setProfileError] = useState(null);
-    const refreshProfileData = useCallback(async () => {
-        if (!user) {
-            setProfileData(null);
-            setProfileError(null);
-            return;
-        }
-        try {
-            setIsLoadingProfile(true);
-            setProfileError(null);
-            const data = await getCustomerProfileData(user.id);
-            setProfileData(data);
-        }
-        catch {
-            setProfileData(null);
-            setProfileError('Unable to load profile information.');
-        }
-        finally {
-            setIsLoadingProfile(false);
-        }
-    }, [user]);
-    useEffect(() => {
-        refreshProfileData();
-    }, [refreshProfileData]);
-    return (_jsx(CustomerProfileContext.Provider, { value: {
-            profileData,
-            isLoadingProfile,
-            profileError,
-            refreshProfileData,
-        }, children: children }));
+const emptyProfileState = {
+    customerId: null,
+    data: null,
+    isLoading: false,
+    error: null,
+};
+
+async function loadCustomerProfileData(customerId) {
+    const data = await getCustomerProfileData(customerId);
+    if (
+        !data
+        || typeof data !== 'object'
+        || Array.isArray(data)
+        || !Array.isArray(data.quickActions)
+        || !Array.isArray(data.settings)
+        || !Array.isArray(data.recentActivity)
+    ) {
+        throw new Error('The customer profile service returned an invalid response.');
+    }
+    return data;
 }
+
+export function CustomerProfileProvider({ children }) {
+    const { user, isLoadingUser } = useUser();
+    const customerId = user?.role === 'customer'
+        && typeof user.id === 'string'
+        && user.id.trim()
+        ? user.id
+        : null;
+    const currentScopeRef = useRef({ customerId, isLoadingUser });
+    useLayoutEffect(() => {
+        currentScopeRef.current = { customerId, isLoadingUser };
+    }, [customerId, isLoadingUser]);
+    const requestVersionRef = useRef(0);
+    const [profileState, setProfileState] = useState(emptyProfileState);
+
+    const refreshProfileData = useCallback(async () => {
+        const requestVersion = ++requestVersionRef.current;
+        const isCurrentRequest = () => requestVersion === requestVersionRef.current
+            && currentScopeRef.current.customerId === customerId
+            && currentScopeRef.current.isLoadingUser === false;
+
+        if (isLoadingUser || !customerId) {
+            setProfileState({ ...emptyProfileState });
+            return false;
+        }
+
+        setProfileState({ customerId, data: null, isLoading: true, error: null });
+        try {
+            const data = await loadCustomerProfileData(customerId);
+            if (!isCurrentRequest()) return false;
+            setProfileState({ customerId, data, isLoading: false, error: null });
+            return true;
+        } catch (error) {
+            if (!isCurrentRequest()) return false;
+            setProfileState({
+                customerId,
+                data: null,
+                isLoading: false,
+                error: error instanceof Error
+                    ? error.message
+                    : 'Unable to load profile information.',
+            });
+            return false;
+        }
+    }, [customerId, isLoadingUser]);
+
+    useEffect(() => {
+        const requestVersion = ++requestVersionRef.current;
+        const isCurrentRequest = () => requestVersion === requestVersionRef.current
+            && currentScopeRef.current.customerId === customerId
+            && currentScopeRef.current.isLoadingUser === false;
+
+        if (!isLoadingUser && customerId) {
+            loadCustomerProfileData(customerId).then((data) => {
+                if (isCurrentRequest()) {
+                    setProfileState({ customerId, data, isLoading: false, error: null });
+                }
+            }).catch((error) => {
+                if (!isCurrentRequest()) return;
+                setProfileState({
+                    customerId,
+                    data: null,
+                    isLoading: false,
+                    error: error instanceof Error
+                        ? error.message
+                        : 'Unable to load profile information.',
+                });
+            });
+        }
+
+        return () => {
+            requestVersionRef.current += 1;
+        };
+    }, [customerId, isLoadingUser]);
+
+    const isCurrentAccount = !isLoadingUser
+        && customerId !== null
+        && profileState.customerId === customerId;
+    const value = {
+        profileData: isCurrentAccount ? profileState.data : null,
+        isLoadingProfile: isCurrentAccount
+            ? profileState.isLoading
+            : !isLoadingUser && customerId !== null,
+        profileError: isCurrentAccount ? profileState.error : null,
+        refreshProfileData,
+    };
+
+    return (
+        <CustomerProfileContext.Provider value={value}>
+            {children}
+        </CustomerProfileContext.Provider>
+    );
+}
+
 export function useCustomerProfile() {
     const context = useContext(CustomerProfileContext);
     if (!context) {

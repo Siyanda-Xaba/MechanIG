@@ -1,15 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, } from 'firebase/auth';
-import { ref, set } from 'firebase/database';
+import { ref, set, update } from 'firebase/database';
 import { auth, database } from '../firebase/firebase';
-import { getCurrentUser, readUserProfile } from '../users/userService';
+import { getCurrentUser } from '../users/userService';
 import { uploadAllMechanicDocuments } from '../mechanic/mechanicDocumentService';
+
+function localProfileCache(profile, isMechanic) {
+    if (!isMechanic) return profile;
+    const cached = { ...profile };
+    for (const key of ['idNumber', 'address', 'city', 'documents', 'licenseNumber', 'registrationNumber', 'communicationEmail']) delete cached[key];
+    if (cached.professionalDetails && typeof cached.professionalDetails === 'object') {
+        const publicKeys = ['specialisation', 'specialization', 'vehicleBrands', 'serviceRadius', 'yearsExperience'];
+        cached.professionalDetails = Object.fromEntries(Object.entries(cached.professionalDetails).filter(([key]) => publicKeys.includes(key)));
+    }
+    return cached;
+}
 export async function registerWithEmail({ email, password, role, profile, documents, }) {
     if (role !== 'customer' && role !== 'mechanic') {
         throw new Error('This account type cannot be assigned during public sign-up.');
     }
     const isMechanic = role === 'mechanic';
-    const targetTable = isMechanic ? 'mechanics' : 'users';
     const cleanEmail = email.trim().toLowerCase();
 
     let credential;
@@ -50,57 +60,90 @@ export async function registerWithEmail({ email, password, role, profile, docume
         // Upload verification documents if provided
         let uploadedDocs = safeProfile.documents || {};
         if (isMechanic && documents) {
-            try {
-                const uploaded = await uploadAllMechanicDocuments(credential.user.uid, documents);
-                uploadedDocs = { ...uploadedDocs, ...uploaded };
-            } catch (docErr) {
-                console.warn('Document upload during registration warning:', docErr);
-            }
+            const uploaded = await uploadAllMechanicDocuments(credential.user.uid, documents);
+            uploadedDocs = { ...uploadedDocs, ...uploaded };
         }
 
+        const now = new Date().toISOString();
+        const userId = credential.user.uid;
         const fullProfileRecord = {
             ...safeProfile,
-            id: credential.user.uid,
+            id: userId,
+            uid: userId,
             email: credential.user.email,
             username: safeProfile.username || (isMechanic ? credential.user.email.replace(/\.com$/, '') : null),
             role: isMechanic ? 'mechanic' : 'customer',
             documents: uploadedDocs,
-            createdAt: safeProfile.createdAt || new Date().toISOString(),
-            emailVerified: isMechanic ? true : credential.user.emailVerified,
+            createdAt: safeProfile.createdAt || now,
+            updatedAt: now,
+            emailVerified: credential.user.emailVerified,
         };
 
-        // Cache locally in AsyncStorage immediately so profile details are never lost
+        let firebaseUpdates;
+        if (isMechanic) {
+            const details = safeProfile.professionalDetails && typeof safeProfile.professionalDetails === 'object'
+                ? safeProfile.professionalDetails
+                : {};
+            const { idNumber, address, city, licenseNumber, registrationNumber, professionalDetails: _details, documents: _documents, communicationEmail, ...publicProfile } = fullProfileRecord;
+            const publicProfessionalDetails = Object.fromEntries(
+                Object.entries(details).filter(([key]) => ['specialisation', 'specialization', 'vehicleBrands', 'serviceRadius', 'yearsExperience'].includes(key))
+            );
+            const mechanicPublicRecord = {
+                ...publicProfile,
+                uid: userId,
+                ownerUid: userId,
+                role: 'mechanic',
+                publicName: `${fullProfileRecord.firstName || ''} ${fullProfileRecord.lastName || ''}`.trim() || fullProfileRecord.businessName || 'Mechanic',
+                province: fullProfileRecord.province || '',
+                professionalDetails: publicProfessionalDetails,
+                updatedAt: now,
+            };
+            const mechanicPrivateRecord = {
+                uid: userId,
+                ownerUid: userId,
+                legalName: `${fullProfileRecord.firstName || ''} ${fullProfileRecord.lastName || ''}`.trim(),
+                communicationEmail: communicationEmail || safeProfile.email || '',
+                idNumber: idNumber || '',
+                address: address || '',
+                city: city || '',
+                licenseNumber: details.licenseNumber || licenseNumber || '',
+                registrationNumber: details.registrationNumber || registrationNumber || '',
+                workshopAddress: details.workshopLocation || '',
+                qualifications: details.qualifications || '',
+                professionalDetails: details,
+                documents: uploadedDocs,
+                createdAt: fullProfileRecord.createdAt,
+                updatedAt: now,
+            };
+            firebaseUpdates = {
+                [`mechanics/${userId}`]: mechanicPublicRecord,
+                [`mechanicPrivate/${userId}`]: mechanicPrivateRecord,
+            };
+            if (fullProfileRecord.username) {
+                firebaseUpdates[`mechanic_usernames/${fullProfileRecord.username.toLowerCase()}`] = {
+                    uid: userId,
+                    username: fullProfileRecord.username,
+                    createdAt: now,
+                };
+            }
+        } else {
+            firebaseUpdates = {
+                [`users/${userId}`]: fullProfileRecord,
+            };
+        }
+
+        // Firebase is the authoritative record. Do not report registration success
+        // until its owner-scoped profile records have been committed.
+        await update(ref(database), firebaseUpdates);
+
+        // Keep an account-scoped cache for offline profile access.
         try {
             await AsyncStorage.setItem(
                 `@mechaniq_profile_${credential.user.uid}`,
-                JSON.stringify(fullProfileRecord)
+                JSON.stringify(localProfileCache(fullProfileRecord, isMechanic))
             );
-            if (isMechanic) {
-                await AsyncStorage.setItem(
-                    '@mechaniq_last_mechanic_profile',
-                    JSON.stringify(fullProfileRecord)
-                );
-            }
         } catch (storageErr) {
             console.warn('Could not cache profile locally:', storageErr);
-        }
-
-        // Save to Firebase Realtime Database (with non-blocking safety)
-        try {
-            await set(ref(database, `${targetTable}/${credential.user.uid}`), fullProfileRecord);
-        } catch (dbErr) {
-            console.warn(`Could not save profile to ${targetTable} in Realtime Database:`, dbErr);
-        }
-
-        if (safeProfile.username) {
-            try {
-                await set(ref(database, `mechanic_usernames/${safeProfile.username.toLowerCase()}`), {
-                    uid: credential.user.uid,
-                    username: safeProfile.username,
-                });
-            } catch (e) {
-                console.warn('Could not save mechanic_usernames index', e);
-            }
         }
 
         if (!isMechanic) {
@@ -122,12 +165,7 @@ export async function registerWithEmail({ email, password, role, profile, docume
     catch (error) {
         console.warn('Post-registration profile handling encountered an error:', error);
         await signOut(auth);
-        return {
-            id: credential.user.uid,
-            email: credential.user.email,
-            role: isMechanic ? 'mechanic' : 'customer',
-            username: safeProfile?.username || (isMechanic ? credential.user.email.replace(/\.com$/, '') : null),
-        };
+        throw new Error('Your account was created, but its profile could not be saved to Firebase. Sign in again and retry profile setup.');
     }
 }
 export async function signInWithEmail(emailOrUsername, password) {
@@ -155,31 +193,42 @@ export async function signInWithEmail(emailOrUsername, password) {
     }
 
     let profile = await getCurrentUser();
+    const accountStatus = String(profile?.accountStatus || '').trim().toLowerCase();
+    if (['deleted', 'suspended', 'disabled'].includes(accountStatus)) {
+        await signOut(auth);
+        throw new Error('This account no longer has access to MechanIQ. Please contact support if you believe this is a mistake.');
+    }
     const isMechanicLogin = raw.includes('@mechanic') || normalizedEmail.includes('@mechanic');
 
     if (!profile) {
         const fbUser = credential.user;
-        const targetTable = isMechanicLogin ? 'mechanics' : 'users';
         profile = {
             id: fbUser.uid,
+            uid: fbUser.uid,
             email: fbUser.email || normalizedEmail,
             username: isMechanicLogin ? (raw.endsWith('@mechanic') ? raw : `${raw}@mechanic`) : null,
             role: isMechanicLogin ? 'mechanic' : 'customer',
+            ownerUid: fbUser.uid,
             firstName: isMechanicLogin ? 'Mechanic' : 'Customer',
             lastName: '',
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
         try {
-            await set(ref(database, `${targetTable}/${fbUser.uid}`), profile);
+            if (isMechanicLogin) {
+                const { email, username, role, id, uid, ownerUid, firstName, lastName, createdAt, updatedAt } = profile;
+                await update(ref(database), {
+                    [`mechanics/${fbUser.uid}`]: { id, uid, ownerUid, username, role, publicName: `${firstName} ${lastName}`.trim(), firstName, lastName, createdAt, updatedAt },
+                    [`mechanicPrivate/${fbUser.uid}`]: { uid, ownerUid, communicationEmail: email, createdAt, updatedAt },
+                    [`mechanic_usernames/${username.toLowerCase()}`]: { uid, username, createdAt },
+                });
+            } else {
+                await set(ref(database, `users/${fbUser.uid}`), profile);
+            }
         } catch (e) {
-            console.warn(`Failed to save profile in Realtime Database (${targetTable})`, e);
-        }
-    } else if (isMechanicLogin && profile.role !== 'mechanic') {
-        profile.role = 'mechanic';
-        try {
-            await set(ref(database, `mechanics/${credential.user.uid}`), profile);
-        } catch (e) {
-            console.warn('Failed to update mechanic profile in Realtime Database', e);
+            console.warn('Failed to create the Firebase profile after sign-in:', e);
+            await signOut(auth);
+            throw new Error('Your account profile could not be saved. Please retry sign-in after checking Firebase access.');
         }
     }
 

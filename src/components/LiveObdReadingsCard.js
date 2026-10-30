@@ -58,6 +58,8 @@ export default function LiveObdReadingsCard({
   const { colors } = useTheme();
   if (!readings.length && !isLive && !isStartingScan) return null;
   const unavailableCount = readings.filter((reading) => reading.supported === false).length;
+  const checkingEcu = connectionState === 'reading' && !capturedAt;
+  const statusColor = isLive ? colors.success : checkingEcu ? colors.accent : colors.secondaryText;
   const connectionLabel = {
     starting: 'Preparing a safe scan',
     'checking-bluetooth': 'Checking Bluetooth permission and state',
@@ -74,11 +76,11 @@ export default function LiveObdReadingsCard({
       <View style={styles.header}>
         <View style={styles.heading}>
           <Text style={[styles.title, { color: colors.text }]}>Live readings & feedback</Text>
-          <Text style={[styles.status, { color: isLive ? colors.success : colors.secondaryText }]}>
-            {isLive ? 'CONNECTED · UPDATING' : 'CONNECTION STOPPED'}
+          <Text style={[styles.status, { color: statusColor }]}>
+            {isLive ? 'CONNECTED · UPDATING' : checkingEcu ? 'ADAPTER CONNECTED · CHECKING ECU' : isStartingScan ? 'CONNECTING TO ADAPTER' : 'CONNECTION STOPPED'}
           </Text>
         </View>
-        <MaterialCommunityIcons name={isLive ? 'access-point' : 'access-point-off'} size={22} color={isLive ? colors.success : colors.secondaryText} />
+        <MaterialCommunityIcons name={isLive || checkingEcu ? 'access-point' : 'access-point-off'} size={22} color={statusColor} />
       </View>
       <Text style={[styles.updated, { color: colors.secondaryText }]}>
         {capturedAt ? `Last updated ${new Date(capturedAt).toLocaleTimeString()}` : 'Waiting for the first readings…'}

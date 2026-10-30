@@ -1,6 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
+import { ref as storageRef, uploadBytes } from 'firebase/storage';
 import { storage } from '../firebase/firebase';
 
 export function formatFileSize(bytes) {
@@ -91,26 +91,17 @@ export async function uploadSingleDocument(mechanicId, docKey, docData) {
         const uploadSnapshot = await uploadBytes(sRef, blob, {
             contentType: docData.mimeType || 'application/octet-stream',
         });
-        const downloadUrl = await getDownloadURL(uploadSnapshot.ref);
         return {
             name: docData.name,
             size: docData.size,
             mimeType: docData.mimeType,
-            downloadUrl,
             storagePath: path,
-            uploadedAt: new Date().toISOString(),
-            status: 'verified_uploaded',
-        };
-    } catch (error) {
-        console.warn(`Firebase Storage upload for ${docKey} bypassed, storing document record:`, error);
-        return {
-            name: docData.name,
-            size: docData.size,
-            mimeType: docData.mimeType,
-            uri: docData.uri,
             uploadedAt: new Date().toISOString(),
             status: 'uploaded',
         };
+    } catch (error) {
+        console.warn(`Firebase Storage upload for ${docKey} failed:`, error);
+        throw new Error(`The ${docKey} document could not be securely uploaded. Check your connection and try again.`);
     }
 }
 

@@ -1,7 +1,8 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useState, } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onValue, ref } from 'firebase/database';
+import { auth, database } from '../firebase/firebase';
 import { getCurrentUser, readUserProfile } from './userService';
 
 const UserContext = createContext(undefined);
@@ -10,18 +11,52 @@ export function UserProvider({ children, }) {
     const [user, setUser] = useState(null);
     const [isLoadingUser, setIsLoadingUser] = useState(true);
     useEffect(() => {
+        let profileStatusUnsubscribe = () => {};
+        let revision = 0;
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            const currentRevision = ++revision;
+            profileStatusUnsubscribe();
+            profileStatusUnsubscribe = () => {};
             try {
                 setIsLoadingUser(true);
-                setUser(firebaseUser
-                    ? await readUserProfile(firebaseUser)
-                    : null);
+                if (!firebaseUser) {
+                    setUser(null);
+                    return;
+                }
+                const profile = await readUserProfile(firebaseUser);
+                if (currentRevision !== revision || auth.currentUser?.uid !== firebaseUser.uid) return;
+                const accountStatus = String(profile?.accountStatus || '').trim().toLowerCase();
+                if (['deleted', 'suspended', 'disabled'].includes(accountStatus)) {
+                    setUser(null);
+                    await signOut(auth);
+                    return;
+                }
+                setUser(profile);
+                if (profile?.role !== 'superadmin') {
+                    const table = profile?.role === 'mechanic' ? 'mechanics' : 'users';
+                    profileStatusUnsubscribe = onValue(
+                        ref(database, `${table}/${firebaseUser.uid}/accountStatus`),
+                        (snapshot) => {
+                            const status = String(snapshot.val() || '').trim().toLowerCase();
+                            if (['deleted', 'suspended', 'disabled'].includes(status)
+                                && auth.currentUser?.uid === firebaseUser.uid) {
+                                setUser(null);
+                                void signOut(auth);
+                            }
+                        },
+                        () => {},
+                    );
+                }
             }
             finally {
-                setIsLoadingUser(false);
+                if (currentRevision === revision) setIsLoadingUser(false);
             }
         });
-        return unsubscribe;
+        return () => {
+            revision += 1;
+            profileStatusUnsubscribe();
+            unsubscribe();
+        };
     }, []);
     async function refreshUser() {
         try {

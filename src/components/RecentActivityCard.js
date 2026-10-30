@@ -1,157 +1,162 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-export default function RecentActivityCard({ activities, onViewAllPress, onActivityPress, }) {
+
+export default function RecentActivityCard({ activities, onActivityPress, onViewAllPress }) {
     const { colors } = useTheme();
-    return (_jsxs(View, { style: styles.section, children: [_jsxs(View, { style: styles.sectionHeader, children: [_jsx(Text, { style: [
-                            styles.sectionTitle,
-                            {
-                                color: colors.text,
-                            },
-                        ], children: "Recent Activity" }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: onViewAllPress, children: _jsx(Text, { style: [
-                                styles.viewAll,
-                                {
-                                    color: colors.accent,
-                                },
-                            ], children: "View All" }) })] }), _jsx(View, { style: [
-                    styles.card,
-                    {
-                        backgroundColor: colors.card,
-                        borderColor: colors.border,
-                    },
-                ], children: activities.length === 0 ? (_jsx(View, { style: styles.emptyContainer, children: _jsx(Text, { style: [
-                            styles.emptyText,
-                            {
-                                color: colors.secondaryText,
-                            },
-                        ], children: "No recent activity" }) })) : (activities.map((activity, index) => {
-                    const isDiagnostic = activity.title
-                        .toLowerCase()
-                        .includes('diagnostic');
-                    const isScheduled = activity.status
-                        .toLowerCase()
-                        .includes('scheduled');
-                    return (_jsxs(TouchableOpacity, { activeOpacity: 0.7, onPress: () => onActivityPress(activity), style: [
-                            styles.activityRow,
-                            index < activities.length - 1 && {
-                                borderBottomWidth: 1,
-                                borderBottomColor: colors.border,
-                            },
-                        ], children: [_jsx(View, { style: [
-                                    styles.iconContainer,
-                                    {
-                                        borderColor: colors.accent,
-                                    },
-                                ], children: _jsx(MaterialCommunityIcons, { name: isDiagnostic
-                                        ? 'check-circle-outline'
-                                        : 'calendar-check-outline', size: 21, color: colors.accent }) }), _jsxs(View, { style: styles.activityContent, children: [_jsx(Text, { numberOfLines: 1, style: [
-                                            styles.activityTitle,
-                                            {
-                                                color: colors.text,
-                                            },
-                                        ], children: activity.title }), _jsx(Text, { numberOfLines: 1, style: [
-                                            styles.activityDescription,
-                                            {
-                                                color: colors.secondaryText,
-                                            },
-                                        ], children: activity.description })] }), _jsxs(View, { style: styles.activityRight, children: [_jsx(Text, { style: [
-                                            styles.activityTime,
-                                            {
-                                                color: colors.secondaryText,
-                                            },
-                                        ], children: activity.time }), _jsx(View, { style: [
+    return (
+        <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
+                <TouchableOpacity
+                    accessibilityLabel="View all activity"
+                    accessibilityRole="button"
+                    activeOpacity={0.7}
+                    onPress={onViewAllPress}
+                >
+                    <Text style={[styles.viewAll, { color: colors.accent }]}>View All</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
+                {activities.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={[styles.emptyText, { color: colors.secondaryText }]}>No recent activity</Text>
+                    </View>
+                ) : (
+                    activities.map((activity, index) => {
+                        const isDiagnostic = activity.title.toLowerCase().includes('diagnostic');
+                        const isScheduled = activity.status.toLowerCase().includes('scheduled');
+                        return (
+                            <TouchableOpacity
+                                accessibilityRole="button"
+                                activeOpacity={0.7}
+                                key={activity.id}
+                                onPress={() => onActivityPress(activity)}
+                                style={[
+                                    styles.activityRow,
+                                    index < activities.length - 1
+                                        ? {
+                                            borderBottomColor: colors.border,
+                                            borderBottomWidth: 1,
+                                        }
+                                        : null,
+                                ]}
+                            >
+                                <MaterialCommunityIcons
+                                    color={colors.text}
+                                    name={isDiagnostic ? 'check-circle-outline' : 'calendar-check-outline'}
+                                    size={20}
+                                />
+                                <View style={styles.activityContent}>
+                                    <Text numberOfLines={1} style={[styles.activityTitle, { color: colors.text }]}>
+                                        {activity.title}
+                                    </Text>
+                                    <Text numberOfLines={1} style={[styles.activityDescription, { color: colors.secondaryText }]}>
+                                        {activity.description}
+                                    </Text>
+                                </View>
+                                <View style={styles.activityRight}>
+                                    <Text style={[styles.activityTime, { color: colors.secondaryText }]}>{activity.time}</Text>
+                                    <View
+                                        style={[
                                             styles.statusPill,
                                             {
-                                                borderColor: isScheduled
-                                                    ? colors.accent
-                                                    : colors.success,
+                                                backgroundColor: isScheduled
+                                                    ? colors.accentWash
+                                                    : colors.successWash,
                                             },
-                                        ], children: _jsx(Text, { style: [
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
                                                 styles.statusText,
                                                 {
-                                                    color: isScheduled
-                                                        ? colors.accent
-                                                        : colors.success,
+                                                    color: isScheduled ? colors.accent : colors.success,
                                                 },
-                                            ], children: activity.status }) })] }), _jsx(Ionicons, { name: "chevron-forward", size: 18, color: colors.secondaryText })] }, activity.id));
-                })) })] }));
+                                            ]}
+                                        >
+                                            {activity.status}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Ionicons color={colors.secondaryText} name="chevron-forward" size={16} />
+                            </TouchableOpacity>
+                        );
+                    })
+                )}
+            </View>
+        </View>
+    );
 }
+
 const styles = StyleSheet.create({
-    section: {
-        marginTop: 18,
-    },
-    sectionHeader: {
-        marginBottom: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    sectionTitle: {
-        fontSize: 17,
-        fontWeight: '700',
-    },
-    viewAll: {
-        fontSize: 11,
-        fontWeight: '600',
-    },
-    card: {
-        width: '100%',
-        borderWidth: 1,
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    activityRow: {
-        minHeight: 72,
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    iconContainer: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
     activityContent: {
         flex: 1,
         minWidth: 0,
     },
-    activityTitle: {
-        fontSize: 12,
-        fontWeight: '700',
-    },
     activityDescription: {
+        fontSize: 12,
         marginTop: 3,
-        fontSize: 9,
     },
     activityRight: {
         alignItems: 'flex-end',
-        gap: 5,
+        gap: 6,
+    },
+    activityRow: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 10,
+        minHeight: 72,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
     },
     activityTime: {
-        fontSize: 8,
+        fontSize: 12,
+    },
+    activityTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    card: {
+        borderCurve: 'continuous',
+        borderRadius: 20,
+        boxShadow: '0 10px 24px rgba(0, 0, 0, 0.24)',
+        overflow: 'hidden',
+        width: '100%',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 88,
+    },
+    emptyText: {
+        fontSize: 13,
+    },
+    section: {
+        marginTop: 28,
+    },
+    sectionHeader: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     statusPill: {
-        borderWidth: 1,
-        borderRadius: 6,
-        paddingHorizontal: 7,
+        borderRadius: 8,
+        paddingHorizontal: 8,
         paddingVertical: 4,
     },
     statusText: {
-        fontSize: 8,
-        fontWeight: '600',
-    },
-    emptyContainer: {
-        minHeight: 80,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyText: {
         fontSize: 11,
+        fontWeight: '700',
+    },
+    viewAll: {
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

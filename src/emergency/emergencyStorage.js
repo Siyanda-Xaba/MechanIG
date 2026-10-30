@@ -1,7 +1,8 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
+import { get, ref, remove, set } from 'firebase/database';
 
-import { auth } from '../firebase/firebase';
+import { auth, database } from '../firebase/firebase';
 
 /**
  * MechanIQ Emergency Request Storage
@@ -27,6 +28,20 @@ const MAX_REQUESTS_PER_OWNER = 20;
 const MAX_REQUEST_LENGTH = 3500;
 
 let storageQueue = Promise.resolve();
+
+async function tryFirebaseDraftOperation(operation) {
+    let timeoutId;
+    try {
+        return await Promise.race([
+            Promise.resolve().then(operation),
+            new Promise((resolve) => { timeoutId = setTimeout(() => resolve(null), 1800); }),
+        ]);
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
 
 /**
  * Serialize storage operations to avoid overlapping
@@ -344,6 +359,33 @@ export async function loadEmergencyRequests(owner) {
             requests.push(request);
         }
 
+        // Merge owner-scoped Firebase drafts into SecureStore when online.
+        // Firebase is optional here so offline emergency preparation keeps working.
+        try {
+            await requireStorageOwner(owner);
+            const cloudSnapshot = await tryFirebaseDraftOperation(() => get(ref(database, `emergencyDrafts/${owner.accountId}`)));
+            if (!cloudSnapshot) return requests;
+            await requireStorageOwner(owner);
+            const knownIds = new Set(requests.map((request) => request.localId));
+            for (const [requestId, cloudValue] of Object.entries(cloudSnapshot.val() || {})) {
+                if (!cloudValue || cloudValue.ownerUid !== owner.accountId || cloudValue.status !== 'saved') continue;
+                const request = { ...cloudValue, backendRequestId: cloudValue.backendRequestId ?? null, lastError: cloudValue.lastError ?? null };
+                validateRequest(request);
+                if (request.localId !== requestId || !ownersMatch(request.owner, owner)) continue;
+                if (!knownIds.has(requestId) && requests.length < MAX_REQUESTS_PER_OWNER) {
+                    await SecureStore.setItemAsync(getRequestKey(requestId), JSON.stringify(request));
+                    requests.push(request);
+                    knownIds.add(requestId);
+                }
+            }
+            const mergedIds = requests.map((request) => request.localId);
+            if (mergedIds.length !== requestIds.length) await writeRequestIndex(owner, mergedIds);
+            await Promise.all(requests.filter((request) => !cloudSnapshot.child(request.localId).exists()).map((request) =>
+                tryFirebaseDraftOperation(() => set(ref(database, `emergencyDrafts/${owner.accountId}/${request.localId}`), { ...request, ownerUid: owner.accountId }))
+            ));
+        } catch {
+            // Keep the SecureStore copy available if Firebase or its rules are unavailable.
+        }
         return requests;
     });
 }
@@ -440,6 +482,11 @@ export async function saveEmergencyRequest(request) {
             serialized
         );
 
+        await tryFirebaseDraftOperation(() => set(ref(database, `emergencyDrafts/${request.owner.accountId}/${request.localId}`), {
+                ...request,
+                ownerUid: request.owner.accountId,
+            }));
+
         await requireStorageOwner(request.owner);
 
         if (existingIndex < 0) {
@@ -495,6 +542,8 @@ export async function deleteEmergencyRequest(
         await SecureStore.deleteItemAsync(
             getRequestKey(localId)
         );
+
+        await tryFirebaseDraftOperation(() => remove(ref(database, `emergencyDrafts/${owner.accountId}/${localId}`)));
 
         await requireStorageOwner(owner);
 

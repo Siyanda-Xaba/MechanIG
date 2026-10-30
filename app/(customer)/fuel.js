@@ -62,24 +62,8 @@ export default function CustomerFuel() {
             },
         });
     }
-    function handleTrackDelivery() {
-        const activeDeliveryId = fuelData?.activeDeliveryId;
-        if (activeDeliveryId) {
-            router.push({
-                pathname: '/fuel-delivery-tracking',
-                params: {
-                    deliveryId: activeDeliveryId,
-                },
-            });
-            return;
-        }
-        router.push('/fuel-delivery-tracking');
-    }
     function handleFuelHistory() {
         router.push('/fuel-history');
-    }
-    function handleSavedLocations() {
-        router.push('/fuel-saved-locations');
     }
     return (_jsx(SafeAreaView, { style: [
             styles.safeArea,
@@ -210,9 +194,7 @@ export default function CustomerFuel() {
                                 },
                             ], children: [_jsx(MaterialCommunityIcons, { name: "gas-station", size: 18, color: "#000000" }), _jsx(Text, { style: styles.requestButtonText, children: "Request Fuel" })] })] }), _jsxs(View, { style: styles.actionsGrid, children: [_jsx(FuelActionCard, { title: "Nearby Stations", description: "Find fuel stations close to you.", icon: "map-marker-radius-outline", onPress: () => {
                                 router.push('/nearby-fuel-stations');
-                            } }), _jsx(FuelActionCard, { title: "Emergency Fuel", description: "Request urgent fuel assistance.", icon: "alert-circle-outline", onPress: () => handleFuelRequest('emergency') }), _jsx(FuelActionCard, { title: "Track Delivery", description: "View your active fuel delivery.", icon: "truck-fast-outline", onPress: handleTrackDelivery }), _jsx(FuelActionCard, { title: "Schedule Top-up", description: "Plan a future fuel delivery.", icon: "calendar-clock-outline", onPress: handleScheduleTopUp }), _jsx(FuelActionCard, { title: "Fuel History", description: "View previous fuel activity.", icon: "history", onPress: handleFuelHistory }), _jsx(FuelActionCard, { title: "Saved Locations", description: "Manage your frequent delivery locations.", icon: "map-marker-star-outline", onPress: handleSavedLocations })] }), _jsx(FuelRecentActivityCard, { activities: recentActivity, onViewAllPress: handleFuelHistory, onActivityPress: (activity) => {
-                        console.log('Selected fuel activity:', activity.id);
-                    } }), fuelError ? (_jsx(Text, { style: [
+                            } }), _jsx(FuelActionCard, { title: "Emergency Fuel", description: "Request urgent fuel assistance.", icon: "alert-circle-outline", onPress: () => handleFuelRequest('emergency') }), _jsx(FuelActionCard, { title: "Schedule Top-up", description: "Plan a future fuel delivery.", icon: "calendar-clock-outline", onPress: handleScheduleTopUp })] }), _jsx(FuelRecentActivityCard, { activities: recentActivity.slice(0, 2), onViewAllPress: handleFuelHistory, onActivityPress: (activity) => { console.log('Selected fuel activity:', activity.id); } }), fuelError ? (_jsx(Text, { style: [
                         styles.errorText,
                         {
                             color: colors.danger,
