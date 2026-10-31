@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.role == 'superadmin';
+    }
+
+    // Users may create/update only their own non-admin profile mirror.
+    match /users/{userId} {
+      allow create: if isSuperAdmin() || (
+        request.auth != null && request.auth.uid == userId &&
+        request.resource.data.role in ['customer', 'mechanic'] &&
+        request.resource.data.status == 'Active'
+      );
+      allow read: if isSuperAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow update: if isSuperAdmin() || (
+        request.auth != null && request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.status == resource.data.status
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // Service Requests: Customer owner and assigned/eligible mechanics can read; write via backend/admins or customer create.
+    match /serviceRequests/{requestId} {
+      allow read: if isSuperAdmin() || (request.auth != null && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.assignedMechanicId == request.auth.uid ||
+        resource.data.status == 'broadcasting' ||
+        resource.data.status == 'awaiting_selection'
+      ));
+      allow create: if isSuperAdmin() || (request.auth != null && request.resource.data.customerId == request.auth.uid);
+      allow update: if isSuperAdmin() || (request.auth != null && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.assignedMechanicId == request.auth.uid
+      ));
+      
+      match /acceptanceAttempts/{mechanicId} {
+        allow read: if isSuperAdmin() || (request.auth != null && request.auth.uid == mechanicId);
+        allow write: if isSuperAdmin() || (request.auth != null && request.auth.uid == mechanicId);
+      }
+    }
+
+    // Conversations: Accessible only by customer, assigned mechanic, or superadmin
+    match /conversations/{conversationId} {
+      allow read: if isSuperAdmin() || (request.auth != null && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.mechanicId == request.auth.uid
+      ));
+      allow create, update: if isSuperAdmin() || (request.auth != null && (
+        request.resource.data.customerId == request.auth.uid ||
+        request.resource.data.mechanicId == request.auth.uid
+      ));
+
+      match /messages/{messageId} {
+        allow read, write: if isSuperAdmin() || (request.auth != null);
+      }
+    }
+
+    // Appointments: Accessible only by linked customer and mechanic
+    match /appointments/{appointmentId} {
+      allow read, write: if isSuperAdmin() || (request.auth != null && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.mechanicId == request.auth.uid ||
+        request.resource.data.customerId == request.auth.uid ||
+        request.resource.data.mechanicId == request.auth.uid
+      ));
+    }
+
+    // Other platform data is available only to accounts granted the claim by a trusted server.
+    match /{document=**} {
+      allow read, write: if isSuperAdmin();
+    }
+  }
+}

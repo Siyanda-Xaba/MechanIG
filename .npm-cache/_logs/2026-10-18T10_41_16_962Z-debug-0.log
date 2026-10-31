@@ -1,0 +1,43 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.11.0
+2 info using node@v25.8.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\Xsiya\OneDrive\Desktop\m\.npmrc
+5 silly config load:file:C:\Users\Xsiya\.npmrc
+6 silly config load:file:C:\Users\Xsiya\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm pack ninja-runtime@1.13.2
+8 verbose argv "pack" "ninja-runtime@1.13.2" "--pack-destination" ".npm-cache" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_41_16_962Z-
+10 verbose logfile C:\Users\Xsiya\OneDrive\Desktop\m\.npm-cache\_logs\2026-10-18T10_41_16_962Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 http fetch GET 200 https://registry.npmjs.org/ninja-runtime 465ms (cache miss)
+14 http cache https://registry.npmjs.org/ninja-runtime 12ms (cache hit)
+15 http cache https://registry.npmjs.org/ninja-runtime/-/ninja-runtime-1.13.2.tgz 0ms (cache hit)
+16 silly tarball no local data for https://registry.npmjs.org/ninja-runtime/-/ninja-runtime-1.13.2.tgz. Extracting by manifest.
+17 http fetch GET 200 https://registry.npmjs.org/ninja-runtime/-/ninja-runtime-1.13.2.tgz 352ms (cache miss)
+18 notice
+19 notice 📦  ninja-runtime@1.13.2
+20 notice Tarball Contents
+21 notice 11.4kB LICENSE
+21 notice 222B README.md
+21 notice 162B bin/ninja
+21 notice 827B index.js
+21 notice 633B lib/spawn.js
+21 notice 1.7kB package.json
+22 notice Tarball Details
+23 notice name: ninja-runtime
+24 notice version: 1.13.2
+25 notice filename: ninja-runtime-1.13.2.tgz
+26 notice package size: 5.4 kB
+27 notice unpacked size: 14.9 kB
+28 notice shasum: f2b418ea23c78094c7c6cc6cd6763f813cb508e0
+29 notice integrity: sha512-HLUFoYSUPeKpp[...]kE70GioBR2HkA==
+30 notice total files: 6
+31 notice
+32 verbose cwd C:\Users\Xsiya\OneDrive\Desktop\m
+33 verbose os Windows_NT 10.0.26300
+34 verbose node v25.8.0
+35 verbose npm  v11.11.0
+36 verbose exit 0
+37 info ok
