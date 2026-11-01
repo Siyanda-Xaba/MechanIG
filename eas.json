@@ -9,7 +9,13 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_PICTURE_SEARCH_API_URL": "https://mechaniq-parts-api.onrender.com",
+        "EXPO_PUBLIC_OBD_API_URL": "https://mechaniq-obd-api.onrender.com",
+        "EXPO_PUBLIC_SOUND_DIAGNOSIS_API_URL": "https://mechaniq-sound-api.onrender.com"
+      }
     },
     "production": {
       "autoIncrement": true
