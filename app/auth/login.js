@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { AntDesign, Ionicons, } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../../src/components/StableScrollView';
@@ -20,16 +20,10 @@ export default function LoginScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (paramUsername) {
-            setEmailOrPhone(String(paramUsername));
-        }
-    }, [paramUsername]);
-
     async function handleSignIn() {
         const input = emailOrPhone.trim();
         if (!input) {
-            Alert.alert('Required', 'Enter your mechanic username (e.g. mike@mechanic) or email.');
+            Alert.alert('Email or username needed', 'Enter your email address or mechanic username to continue.');
             return;
         }
         if (!password) {
@@ -98,7 +92,7 @@ export default function LoginScreen() {
                             {
                                 color: colors.secondaryText,
                             },
-                        ], children: "Login your account to continue" }), _jsxs(View, { style: [
+                        ], children: "Sign in to your account to continue" }), _jsxs(View, { style: [
                             styles.inputWrapper,
                             {
                                 backgroundColor: colors.card,

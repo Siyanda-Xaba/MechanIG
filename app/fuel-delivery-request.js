@@ -99,6 +99,7 @@ export default function FuelDeliveryRequestScreen() {
         }
         const result = await submitFuelRequest({
             vehicleId: selectedVehicle.id,
+            vehicle: selectedVehicle,
             requestType,
             fuelType: selectedFuelType,
             quantityLitres,

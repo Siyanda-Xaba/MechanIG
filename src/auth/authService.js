@@ -250,10 +250,19 @@ export function getFirebaseAuthErrorMessage(error) {
         'auth/wrong-password': 'The email or password is incorrect.',
         'auth/weak-password': 'Please choose a stronger password.',
         'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+        'auth/network-request-failed': 'We could not connect. Check your internet connection and try again.',
+        'auth/user-disabled': 'This account is unavailable. Please contact MechanIQ support for help.',
+        'auth/operation-not-allowed': 'This sign-in method is not available right now. Please contact MechanIQ support.',
+        'auth/invalid-verification-code': 'That verification code did not work. Check it and try again.',
+        'auth/expired-action-code': 'This link has expired. Request a new one and try again.',
+        'auth/missing-email': 'Enter the email address linked to your account.',
+        'auth/requires-recent-login': 'For your security, sign in again and then retry this change.',
     };
-    return messages[code] ??
-        (error instanceof Error
-            ? error.message
-            : 'Something went wrong. Please try again.');
+    if (messages[code]) return messages[code];
+    const message = error instanceof Error ? error.message.trim() : '';
+    const appearsTechnical = /^(Firebase:|auth\/|Error:)|\b(HTTP \d{3}|stack trace|undefined|null|permission denied|network request failed)\b/i.test(message);
+    return message && !appearsTechnical
+        ? message
+        : 'We could not complete that step. Check your details and connection, then try again.';
 }
 

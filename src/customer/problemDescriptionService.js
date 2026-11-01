@@ -19,6 +19,6 @@ export async function analyzeProblemDescription(request) {
     return {
         status: 'unavailable',
         resultId: null,
-        message: 'Problem description analysis is not connected to the MechanIQ backend yet. Your description can be submitted, but no diagnosis has been generated.',
+        message: 'This tool cannot assess written descriptions yet, so it has not identified a cause. Try the dashboard-symbol or sound checker, or contact a mechanic if you need help.',
     };
 }

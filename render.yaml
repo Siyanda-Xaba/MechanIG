@@ -1,0 +1,70 @@
+services:
+  - type: web
+    name: mechaniq-parts-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_CLOUD_PROJECT
+        value: mechaniq-3a0f2
+      - key: FIREBASE_DATABASE_URL
+        value: https://mechaniq-3a0f2-default-rtdb.firebaseio.com
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json
+      - key: PICTURE_SEARCH_CORS_ORIGINS
+        value: "*"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: ROBOFLOW_API_KEY
+        sync: false
+      - key: POLLINATIONS_API_KEY
+        sync: false
+
+  - type: web
+    name: mechaniq-obd-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: backend/obd-api
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health/ready
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OBD_AUTH_MODE
+        value: firebase
+      - key: OBD_STORAGE
+        value: firebase
+      - key: OBD_CORS_ORIGINS
+        value: "*"
+      - key: GOOGLE_CLOUD_PROJECT
+        value: mechaniq-3a0f2
+      - key: FIREBASE_DATABASE_URL
+        value: https://mechaniq-3a0f2-default-rtdb.firebaseio.com
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json
+
+  - type: web
+    name: mechaniq-sound-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: backend/sound-detection
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: python -m uvicorn src.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health/ready
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11

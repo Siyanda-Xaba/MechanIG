@@ -8,8 +8,19 @@ import FuelMap from '../src/components/FuelMap';
 import { useFuelDeliveryTracking } from '../src/customer/useFuelDeliveryTracking';
 import { useForegroundLocation } from '../src/location/useForegroundLocation';
 import { useTheme } from '../src/theme/ThemeContext';
+import { formatSouthAfricaDateTime } from '../src/utils/timeZone';
 function getStatusLabel(status) {
     switch (status) {
+        case 'requested':
+            return 'Request Submitted';
+        case 'broadcasting':
+            return 'Finding Mechanics Nearby';
+        case 'awaiting_selection':
+            return 'Selecting a Mechanic';
+        case 'no_mechanics':
+            return 'No Mechanics Nearby';
+        case 'assigned':
+            return 'Mechanic Assigned';
         case 'scheduled':
             return 'Scheduled';
         case 'driver-assigned':
@@ -161,7 +172,7 @@ export default function FuelDeliveryTrackingScreen() {
                         {
                             color: colors.secondaryText,
                         },
-                    ], children: "Follow your delivery status and driver location." }), tracking ? (_jsxs(_Fragment, { children: [_jsxs(View, { style: [
+                    ], children: "Follow your fuel request and mechanic assignment." }), tracking ? (_jsxs(_Fragment, { children: [_jsxs(View, { style: [
                                 styles.statusCard,
                                 {
                                     backgroundColor: colors.card,
@@ -198,7 +209,7 @@ export default function FuelDeliveryTrackingScreen() {
                                                         {
                                                             color: colors.text,
                                                         },
-                                                    ], children: tracking.destinationLabel })] })] })) : null] }), _jsx(View, { style: styles.mapSection, children: _jsx(FuelMap, { customerLocation: destinationLocation, deliveryVehicleLocation: driverLocation, routeCoordinates: tracking.routeCoordinates, isLoading: isLoading, errorMessage: mapError, height: 350 }) }), tracking.driver ? (_jsxs(View, { style: [
+                            ], children: tracking.destinationLabel })] })] })) : null] }), _jsx(View, { style: styles.mapSection, children: _jsx(FuelMap, { customerLocation: destinationLocation, deliveryVehicleLocation: driverLocation, routeCoordinates: tracking.routeCoordinates, isLoading: isLoading, errorMessage: mapError, height: 350 }) }), tracking.driver || tracking.assignedMechanicName ? (_jsxs(View, { style: [
                                 styles.driverCard,
                                 {
                                     backgroundColor: colors.card,
@@ -214,13 +225,13 @@ export default function FuelDeliveryTrackingScreen() {
                                                 {
                                                     color: colors.secondaryText,
                                                 },
-                                            ], children: "Your Driver" }), _jsx(Text, { style: [
+                                            ], children: tracking.assignedMechanicName ? "Your Mechanic" : "Your Driver" }), _jsx(Text, { style: [
                                                 styles.driverName,
                                                 {
                                                     color: colors.text,
                                                 },
-                                            ], children: tracking.driver.name ??
-                                                'Assigned driver' }), tracking.driver.vehicleDescription ? (_jsxs(Text, { style: [
+                                            ], children: tracking.assignedMechanicName || tracking.driver?.name ||
+                                                'Assigned mechanic' }), tracking.driver?.vehicleDescription ? (_jsxs(Text, { style: [
                                                 styles.driverVehicle,
                                                 {
                                                     color: colors.secondaryText,
@@ -240,17 +251,17 @@ export default function FuelDeliveryTrackingScreen() {
                                                 {
                                                     color: colors.text,
                                                 },
-                                            ], children: "Waiting for driver assignment" }), _jsx(Text, { style: [
+                                            ], children: tracking.status === 'no_mechanics' ? "No mechanics are available nearby" : "Waiting for a mechanic" }), _jsx(Text, { style: [
                                                 styles.waitingDescription,
                                                 {
                                                     color: colors.secondaryText,
                                                 },
-                                            ], children: "Driver details will appear when the delivery backend assigns a driver." })] })] })), tracking.updatedAt ? (_jsxs(Text, { style: [
+                                            ], children: tracking.status === 'no_mechanics' ? "Your request is saved. Try again when a mechanic is online within 15 km." : "A nearby mechanic can accept this request from the app." })] })] })), tracking.updatedAt ? (_jsxs(Text, { style: [
                                 styles.updatedText,
                                 {
                                     color: colors.secondaryText,
                                 },
-                            ], children: ["Last updated:", ' ', tracking.updatedAt] })) : null] })) : null] }) }));
+                            ], children: ["Last updated:", ' ', formatSouthAfricaDateTime(tracking.updatedAt)] })) : null] })) : null] }) }));
 }
 const styles = StyleSheet.create({
     safeArea: {

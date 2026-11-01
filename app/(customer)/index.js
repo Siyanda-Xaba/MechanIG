@@ -540,6 +540,12 @@ export default function CustomerHome() {
                 <Text style={styles.sectionTitle}>Quick Actions</Text>
                 <View style={styles.quickActionsGrid}>
                     <QuickActionCard
+                        description="Broadcast your problem to nearby mechanics"
+                        icon="account-wrench"
+                        onPress={() => router.push('/mechanic-request/broadcast')}
+                        title="Request Mechanic"
+                    />
+                    <QuickActionCard
                         description="Scan and check vehicle health"
                         icon="car-search"
                         onPress={() => router.push('/(customer)/diagnostics')}

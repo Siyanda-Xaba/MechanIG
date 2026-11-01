@@ -1,4 +1,5 @@
 import { File } from 'expo-file-system';
+import { formatSoundDiagnosisResponse, getFriendlyDiagnosticError } from '../data/userFriendlyResponses';
 
 const configuredSoundUrl = process.env.EXPO_PUBLIC_SOUND_DIAGNOSIS_API_URL?.replace(/\/$/, '');
 const soundCandidates = [
@@ -49,23 +50,12 @@ function getRecordingFile(uri) {
     return { name, type: typeByExtension[extension] || 'audio/mp4' };
 }
 
-function formatPredictionDetails(predictions) {
-    return predictions
-        .slice(0, 3)
-        .map((prediction, index) => {
-        const title = prediction.title || prediction.class_name || `Sound match ${index + 1}`;
-        const recommendation = prediction.recommended_action || prediction.description;
-        return recommendation ? `${index + 1}. ${title}\n${recommendation}` : `${index + 1}. ${title}`;
-    })
-        .join('\n\n');
-}
-
 export async function analyzeCustomerVehicleSound(request) {
     if (!soundDiagnosisApiUrl) {
-        throw new Error('Sound diagnosis is not configured. Restart MechanIQ from the project folder so it can connect to the sound backend.');
+        throw new Error('Sound check is not available right now. Please try again later.');
     }
     if (!request?.audioUri) {
-        throw new Error('The sound recording is missing. Record it again and retry.');
+        throw new Error('We could not find your recording. Record it again and try once more.');
     }
 
     const file = getRecordingFile(request.audioUri);
@@ -101,7 +91,7 @@ export async function analyzeCustomerVehicleSound(request) {
         }
     }
     if (!response) {
-        throw new Error('Cannot reach the sound detection backend. Keep the MechanIQ backend running and the phone connected to the computer.');
+        throw new Error('We could not connect to the sound checker. Check your connection and try again.');
     }
 
     let payload;
@@ -109,22 +99,16 @@ export async function analyzeCustomerVehicleSound(request) {
         payload = await response.json();
     }
     catch {
-        throw new Error('The sound detection backend returned an invalid response.');
+        throw new Error('We could not read the sound check result. Please try again.');
     }
     if (!response.ok) {
-        throw new Error(payload?.detail || `Sound analysis failed (HTTP ${response.status}).`);
+        throw new Error(getFriendlyDiagnosticError(payload?.detail, 'We could not analyse that recording. Try again, or ask a mechanic to listen to the sound.'));
     }
     if (typeof payload?.overall_message !== 'string' || !Array.isArray(payload?.top_results)) {
-        throw new Error('The sound detection backend response is missing its diagnosis details.');
+        throw new Error('The sound check did not return a result. Please try again or ask a mechanic to listen.');
     }
 
-    const predictions = payload.top_results;
-    const details = formatPredictionDetails(predictions);
-    const message = [
-        payload.overall_message,
-        details ? `Possible sound matches:\n${details}` : '',
-        'This model provides an estimate from its training samples, not a confirmed fault. Have a qualified mechanic verify any concern.',
-    ].filter(Boolean).join('\n\n');
+    const message = formatSoundDiagnosisResponse(payload);
 
     return {
         status: 'submitted',

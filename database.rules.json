@@ -127,6 +127,32 @@
         ".validate": "newData.hasChildren(['id', 'customerUid', 'mechanicUid', 'vehicleId', 'requestType', 'serviceLocation', 'status', 'createdAt', 'updatedAt']) && newData.child('id').val() === $requestId && newData.child('customerUid').val() === auth.uid && newData.child('mechanicUid').isString() && newData.child('vehicleId').isString() && newData.child('requestType').val() === 'mobile' && newData.child('status').val() === 'requested' && newData.child('serviceLocation').child('address').isString() && newData.child('serviceLocation').child('address').val().length > 0 && newData.child('serviceLocation').child('address').val().length <= 300"
       }
     },
+    "broadcastRequests": {
+      "$requestId": {
+        ".read": "auth != null && (data.child('customerId').val() === auth.uid || data.child('assignedMechanicId').val() === auth.uid)"
+      }
+    },
+    "fuelRequests": {
+      "$requestId": {
+        ".read": "auth != null && (data.child('customerId').val() === auth.uid || data.child('assignedMechanicId').val() === auth.uid)"
+      }
+    },
+    "mechanicIncomingRequests": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$requestId": {
+          ".write": "auth != null && auth.uid === $uid && data.exists() && (data.child('status').val() === 'broadcasting' || data.child('status').val() === 'awaiting_selection') && newData.child('status').val() === 'declined'"
+        }
+      }
+    },
+    "mechanicIncomingFuelRequests": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$requestId": {
+          ".write": "auth != null && auth.uid === $uid && data.exists() && (data.child('status').val() === 'broadcasting' || data.child('status').val() === 'awaiting_selection') && newData.child('status').val() === 'declined'"
+        }
+      }
+    },
     "notifications": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

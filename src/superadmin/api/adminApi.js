@@ -1,6 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
 import { auth, database, db } from '../../firebase/firebase';
 import { get, onValue, ref, update } from 'firebase/database';
+import { formatSouthAfricaDateTime } from '../../utils/timeZone';
 
 const col = (name) => collection(db, name);
 const rows = (snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
@@ -46,7 +47,7 @@ function countStatuses(records, statuses) {
   return values(records).filter((record) => statuses.includes(String(record.status || '').trim().toLowerCase())).length;
 }
 
-function buildDashboardStats(profileData, mechanicData, bookingData, serviceRequestData, fuelDeliveryData, administrators, products, stores) {
+function buildDashboardStats(profileData, mechanicData, bookingData, serviceRequestData, fuelRequestData, fuelDeliveryData, administrators, products, stores) {
   const accounts = getUniquePlatformUsers(profileData, mechanicData);
   const customers = accounts.filter((account) => account.role === 'customer');
   const mechanics = accounts.filter((account) => account.role === 'mechanic');
@@ -54,6 +55,7 @@ function buildDashboardStats(profileData, mechanicData, bookingData, serviceRequ
   const deletedUsers = accounts.filter((account) => String(account.accountStatus || account.status || '').trim().toLowerCase() === 'deleted').length;
   const bookingCount = values(bookingData).length;
   const serviceRequestCount = values(serviceRequestData).length;
+  const fuelRequestCount = values(fuelRequestData).length;
   const fuelDeliveryCount = values(fuelDeliveryData).length;
   const adminList = Array.isArray(administrators) ? administrators : [];
   const productList = Array.isArray(products) ? products : [];
@@ -71,7 +73,9 @@ function buildDashboardStats(profileData, mechanicData, bookingData, serviceRequ
     totalBookings: bookingCount,
     bookingsChange: `${countStatuses(bookingData, ['requested', 'pending'])} pending · ${countStatuses(bookingData, ['completed'])} completed`,
     serviceRequests: serviceRequestCount,
-    serviceRequestsChange: `${countStatuses(serviceRequestData, ['requested', 'pending'])} pending`,
+    serviceRequestsChange: `${countStatuses(serviceRequestData, ['requested', 'pending', 'broadcasting', 'awaiting_selection', 'no_mechanics'])} active or pending`,
+    fuelRequests: fuelRequestCount,
+    fuelRequestsChange: `${countStatuses(fuelRequestData, ['broadcasting', 'awaiting_selection', 'no_mechanics'])} open or awaiting response`,
     fuelDeliveries: fuelDeliveryCount,
     fuelDeliveriesChange: `${countStatuses(fuelDeliveryData, ['requested', 'pending'])} pending`,
     revenue: null,
@@ -88,31 +92,32 @@ function buildDashboardStats(profileData, mechanicData, bookingData, serviceRequ
 }
 
 export async function getDashboardStats() {
-  const [profileSnapshot, mechanicSnapshot, bookingSnapshot, serviceRequestSnapshot, fuelDeliverySnapshot, admins, products, stores] = await Promise.all([
+  const [profileSnapshot, mechanicSnapshot, bookingSnapshot, serviceRequestsSnapshot, fuelRequestsSnapshot, fuelDeliverySnapshot, admins, products, stores] = await Promise.all([
     get(ref(database, 'users')),
     get(ref(database, 'mechanics')),
     get(ref(database, 'bookings')),
-    get(ref(database, 'serviceRequests')),
+    getDocs(col('serviceRequests')),
+    getDocs(col('fuelRequests')),
     get(ref(database, 'fuelDeliveries')),
     getDocs(col('administrators')),
     getDocs(col('marketplaceProducts')),
     getDocs(col('marketplaceStores')),
   ]);
   return buildDashboardStats(
-    profileSnapshot.val(), mechanicSnapshot.val(), bookingSnapshot.val(), serviceRequestSnapshot.val(),
-    fuelDeliverySnapshot.val(), rows(admins), rows(products), rows(stores),
+    profileSnapshot.val(), mechanicSnapshot.val(), bookingSnapshot.val(), rows(serviceRequestsSnapshot),
+    rows(fuelRequestsSnapshot), fuelDeliverySnapshot.val(), rows(admins), rows(products), rows(stores),
   );
 }
 
 export function subscribeDashboardStats(onData, onError) {
   const current = {
-    profiles: null, mechanics: null, bookings: null, serviceRequests: null, fuelDeliveries: null,
+    profiles: null, mechanics: null, bookings: null, serviceRequests: null, fuelRequests: null, fuelDeliveries: null,
     administrators: null, products: null, stores: null,
   };
   const emit = () => {
     if (Object.values(current).some((value) => value === null)) return;
     onData(buildDashboardStats(
-      current.profiles, current.mechanics, current.bookings, current.serviceRequests, current.fuelDeliveries,
+      current.profiles, current.mechanics, current.bookings, current.serviceRequests, current.fuelRequests, current.fuelDeliveries,
       current.administrators, current.products, current.stores,
     ));
   };
@@ -129,8 +134,12 @@ export function subscribeDashboardStats(onData, onError) {
     current.bookings = snapshot.val() || {};
     emit();
   }, reportError);
-  const unsubscribeServiceRequests = onValue(ref(database, 'serviceRequests'), (snapshot) => {
-    current.serviceRequests = snapshot.val() || {};
+  const unsubscribeServiceRequests = onSnapshot(col('serviceRequests'), (snapshot) => {
+    current.serviceRequests = rows(snapshot);
+    emit();
+  }, reportError);
+  const unsubscribeFuelRequests = onSnapshot(col('fuelRequests'), (snapshot) => {
+    current.fuelRequests = rows(snapshot);
     emit();
   }, reportError);
   const unsubscribeFuelDeliveries = onValue(ref(database, 'fuelDeliveries'), (snapshot) => {
@@ -154,6 +163,7 @@ export function subscribeDashboardStats(onData, onError) {
     unsubscribeMechanics();
     unsubscribeBookings();
     unsubscribeServiceRequests();
+    unsubscribeFuelRequests();
     unsubscribeFuelDeliveries();
     unsubscribeAdministrators();
     unsubscribeProducts();
@@ -163,12 +173,12 @@ export function subscribeDashboardStats(onData, onError) {
 
 export async function getRecentActivity() {
   const snapshot = await getDocs(query(col('auditLogs'), orderBy('timestamp', 'desc'), limit(5)));
-  return rows(snapshot).map((item) => ({ id: item.id, type: item.targetType || 'system', title: item.action || 'Activity', details: item.details || '', time: item.timestamp || item.createdAt }));
+  return rows(snapshot).map((item) => ({ id: item.id, type: item.targetType || 'system', title: item.action || 'Activity', details: item.details || '', time: formatSouthAfricaDateTime(item.timestamp || item.createdAt) }));
 }
 
 export function subscribeRecentActivity(onData, onError) {
   return onSnapshot(query(col('auditLogs'), orderBy('timestamp', 'desc'), limit(5)),
-    (snapshot) => onData(rows(snapshot).map((item) => ({ id: item.id, type: item.targetType || 'system', title: item.action || 'Activity', details: item.details || '', time: item.timestamp || item.createdAt }))), onError);
+    (snapshot) => onData(rows(snapshot).map((item) => ({ id: item.id, type: item.targetType || 'system', title: item.action || 'Activity', details: item.details || '', time: formatSouthAfricaDateTime(item.timestamp || item.createdAt) }))), onError);
 }
 
 export async function getCurrentUserProfile() {
@@ -198,13 +208,13 @@ export async function getRolesAndPermissions() {
 export async function getRecentPermissionChanges() {
   const snapshot = await getDocs(query(col('auditLogs'), orderBy('timestamp', 'desc'), limit(30)));
   return rows(snapshot).filter((item) => item.targetType === 'role').slice(0, 5)
-    .map((item) => ({ id: item.id, type: item.action === 'DELETE' ? 'remove' : item.action === 'CREATE' ? 'add' : 'update', title: item.action, details: item.details, time: item.timestamp }));
+    .map((item) => ({ id: item.id, type: item.action === 'DELETE' ? 'remove' : item.action === 'CREATE' ? 'add' : 'update', title: item.action, details: item.details, time: formatSouthAfricaDateTime(item.timestamp || item.createdAt) }));
 }
 export async function getAuditLogs({ search = '', page = 1, pageSize = 10 } = {}) {
   const snapshot = await getDocs(query(col('auditLogs'), orderBy('timestamp', 'desc')));
   const all = rows(snapshot).filter((log) => `${log.actorEmail} ${log.details} ${log.action}`.toLowerCase().includes(search.toLowerCase()));
   const items = all.slice((page - 1) * pageSize, page * pageSize);
-  return { items, total: all.length, userActions: all.filter((x) => x.targetType === 'user').length,
+  return { items: items.map((item) => ({ ...item, displayTime: formatSouthAfricaDateTime(item.timestamp || item.createdAt) })), total: all.length, userActions: all.filter((x) => x.targetType === 'user').length,
     systemChanges: all.filter((x) => x.targetType !== 'user').length, securityEvents: all.filter((x) => /LOGIN|SECURITY|AUTH/.test(x.action || '')).length, page, pageSize };
 }
 export function subscribeAuditLogs(onData, onError) {

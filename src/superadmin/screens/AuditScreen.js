@@ -10,6 +10,7 @@ import StatGrid from '../components/StatGrid';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { LoadingView, ErrorView, EmptyView } from '../components/StateViews';
+import { formatSouthAfricaDateTime } from '../../utils/timeZone';
 
 const PAGE_SIZE = 10;
 
@@ -18,7 +19,7 @@ function LogCard({ log }) {
   const userName = userObj?.name ?? (typeof log.user === 'string' ? log.user : null) ?? log.userName ?? log.actor ?? 'Unknown';
   const userEmail = userObj?.email ?? log.email ?? log.userEmail ?? '';
   const when =
-    log.dateTime ?? log.timestamp ??
+    log.dateTime ?? formatSouthAfricaDateTime(log.timestamp ?? log.createdAt) ??
     [log.date, log.time].filter(Boolean).join('  ·  ');
 
   return (
@@ -68,7 +69,7 @@ export default function AuditScreen() {
   useEffect(() => subscribeAuditLogs((logs) => {
     const filtered = logs.filter((log) => `${log.actorEmail || ''} ${log.details || ''} ${log.action || ''}`.toLowerCase().includes(search.toLowerCase()));
     const items = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((log) => ({
-      ...log, user: log.actorEmail || 'System', dateTime: log.timestamp || log.createdAt,
+      ...log, user: log.actorEmail || 'System', dateTime: formatSouthAfricaDateTime(log.timestamp || log.createdAt),
     }));
     setData({ items, total: filtered.length,
       userActions: filtered.filter((x) => x.targetType === 'user').length,

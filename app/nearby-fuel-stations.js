@@ -5,7 +5,7 @@ import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StableScrollView from '../src/components/StableScrollView';
 import FuelMap from '../src/components/FuelMap';
-import { getPictureSearchEndpoint, getPictureSearchAuthHeaders } from '../src/config/pictureSearchApi';
+import { fetchWithPictureSearchFallback, getPictureSearchAuthHeaders } from '../src/config/pictureSearchApi';
 import { useForegroundLocation } from '../src/location/useForegroundLocation';
 import { useTheme } from '../src/theme/ThemeContext';
 
@@ -28,7 +28,7 @@ export default function NearbyFuelStationsScreen() {
         setIsLoadingStations(true);
         setStationError(null);
       }
-      return fetch(getPictureSearchEndpoint('/api/v1/nearby-fuel-stations'), {
+      return fetchWithPictureSearchFallback('/api/v1/nearby-fuel-stations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...await getPictureSearchAuthHeaders() },
         body: JSON.stringify({ location }),

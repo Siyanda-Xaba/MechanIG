@@ -12,6 +12,7 @@ import {
 import DiagnosticActionCard from '../components/DiagnosticActionCard';
 import ImageSourcePickerModal from '../components/ImageSourcePickerModal';
 import { scanDashboardWarningLights } from '../customer/dashboardWarningScannerService';
+import { getFriendlyDiagnosticError } from '../data/userFriendlyResponses';
 import { useImageCapture } from '../media/useImageCapture';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -48,7 +49,7 @@ function WarningLightResult({ detection, colors }) {
                     <Text style={[styles.detectionTitle, { color: colors.text }]}>{title}</Text>
                     {detection.detectedLabel && detection.detectedLabel !== title ? (
                         <Text style={[styles.detectedLabel, { color: colors.secondaryText }]}>
-                            Detected as: {detection.detectedLabel}
+                            Photo match: {detection.detectedLabel}
                         </Text>
                     ) : null}
                 </View>
@@ -89,7 +90,7 @@ function WarningLightResult({ detection, colors }) {
                 </DetailSection>
             )}
             {confidence != null && Number.isFinite(confidence) ? (
-                <Text style={[styles.confidence, { color: colors.secondaryText }]}>Model confidence: {Math.round(confidence * 100)}%. This is an estimate, not a confirmed diagnosis.</Text>
+                <Text style={[styles.confidence, { color: colors.secondaryText }]}>Photo match estimate: {Math.round(confidence * 100)}%. Check the symbol in your vehicle manual to confirm it.</Text>
             ) : null}
         </View>
     );
@@ -150,7 +151,7 @@ export default function CustomerDashboardWarningLightAction({ cardStyle }) {
             });
             setScanResult(result);
         } catch (error) {
-            setScanError(error instanceof Error ? error.message : 'Unable to analyze this dashboard image.');
+            setScanError(getFriendlyDiagnosticError(error, 'We could not check this photo. Try again with a clearer image or check your vehicle manual.'));
         } finally {
             setIsAnalyzing(false);
         }
@@ -195,11 +196,11 @@ export default function CustomerDashboardWarningLightAction({ cardStyle }) {
                         <View style={styles.modalHeader}>
                             <View style={styles.modalTitleWrap}>
                                 <Text style={[styles.modalTitle, { color: colors.text }]}>
-                                    {isAnalyzing ? 'Analyzing dashboard' : imageCaptureError ? 'Image unavailable' : scanError ? 'Unable to scan dashboard' : scanResult?.detections?.length ? 'Warning light results' : 'No warning light detected'}
+                                    {isAnalyzing ? 'Checking your photo' : imageCaptureError ? 'Photo not available' : scanError ? 'Could not check the photo' : scanResult?.detections?.length ? 'Warning light results' : 'No warning light found'}
                                 </Text>
                                 <Text style={[styles.modalSubtitle, { color: colors.secondaryText }]}>
                                     {isAnalyzing
-                                        ? 'Checking the photo against the warning-light catalogue…'
+                                        ? 'Looking for a dashboard warning symbol…'
                                         : imageCaptureError || scanError || scanResult?.message || 'Check the symbol and follow the vehicle manual for your exact model.'}
                                 </Text>
                             </View>
@@ -224,12 +225,12 @@ export default function CustomerDashboardWarningLightAction({ cardStyle }) {
                                         colors={colors}
                                     />
                                 ))}
-                                <Text style={[styles.disclaimer, { color: colors.secondaryText }]}>The camera model can misidentify symbols. Verify the warning in your owner&apos;s manual. For a red warning or unsafe vehicle behaviour, stop safely and seek qualified help.</Text>
+                                <Text style={[styles.disclaimer, { color: colors.secondaryText }]}>A photo can be misread. Check the symbol in your owner&apos;s manual. If a red warning is showing or the vehicle feels unsafe, stop somewhere safe and get help.</Text>
                             </ScrollView>
                         ) : (
                             <View style={styles.emptyState}>
                                 <MaterialCommunityIcons color={colors.secondaryText} name="image-search-outline" size={34} />
-                                <Text style={[styles.emptyText, { color: colors.secondaryText }]}>If the symbol is visible, retake the photo closer with good lighting and avoid glare.</Text>
+                                <Text style={[styles.emptyText, { color: colors.secondaryText }]}>We could not spot a known warning symbol. Try a closer, clearer photo with good lighting, or check your vehicle manual.</Text>
                             </View>
                         )}
                         {!isAnalyzing ? (

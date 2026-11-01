@@ -52,9 +52,9 @@ export const MECHANIC_PROFILE_SETTINGS = [
  * Identity, contact, workshop and professional details belong to
  * UserContext rather than being duplicated in this service.
  *
- * Verification status, availability preferences, review counts,
- * and profile activity have no connected authoritative provider
- * yet. Return null for each unknown value, not invented defaults.
+ * Use verified performance, verification and availability fields
+ * already saved on the mechanic profile. Return null for anything
+ * the account does not contain; never invent profile data.
  *
  * Home statistics may be reused only when actually available for
  * the same mechanic. An unavailable Home service must not prevent
@@ -67,7 +67,61 @@ export const MECHANIC_PROFILE_SETTINGS = [
  * @param {string} mechanicId
  * @returns {Promise<import('./profileTypes').MechanicProfileData>}
  */
-export async function getMechanicProfileData(mechanicId) {
+function numberOrNull(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue
+    const number = Number(value)
+    if (Number.isFinite(number)) return number
+  }
+  return null
+}
+
+function getSavedVerification(profile) {
+  const saved = profile.verification || {}
+  const documents = profile.documents || {}
+  const accountVerified = profile.isVerified === true || profile.isMechanicApproved === true
+  const accountStatus = String(profile.accountStatus || '').toLowerCase()
+  const submitted = (key) => Boolean(documents[key]?.storagePath || documents[key]?.uploadedAt || documents[key]?.status)
+  const identitySubmitted = submitted('idDocument')
+  const tradeCertificateSubmitted = submitted('tradeCertificate')
+  const businessSubmitted = submitted('workshopRegistration')
+  const status = saved.status || profile.verificationStatus || (accountVerified ? 'verified' :
+    (['pending', 'review', 'under_review'].includes(accountStatus) || identitySubmitted || tradeCertificateSubmitted || businessSubmitted) ? 'pending' : null)
+  const identityVerified = typeof saved.identityVerified === 'boolean'
+    ? saved.identityVerified : typeof profile.identityVerified === 'boolean' ? profile.identityVerified : null
+  const tradeCertificateVerified = typeof saved.tradeCertificateVerified === 'boolean'
+    ? saved.tradeCertificateVerified : typeof profile.tradeCertificateVerified === 'boolean' ? profile.tradeCertificateVerified : null
+  const businessVerified = typeof saved.businessVerified === 'boolean'
+    ? saved.businessVerified : typeof profile.businessVerified === 'boolean' ? profile.businessVerified : null
+  if (!status && identityVerified === null && tradeCertificateVerified === null && businessVerified === null) return null
+  return {
+    status: status || 'pending',
+    identityVerified,
+    tradeCertificateVerified,
+    businessVerified,
+    identitySubmitted,
+    tradeCertificateSubmitted,
+    businessSubmitted,
+  }
+}
+
+function getSavedAvailability(profile, professionalDetails) {
+  const saved = profile.availability || {}
+  let status = saved.status
+  if (!status && typeof profile.isAcceptingJobs === 'boolean') status = profile.isAcceptingJobs ? 'available' : 'unavailable'
+  if (!status && typeof profile.availabilityStatus === 'string') status = profile.availabilityStatus
+  if (status === 'online') status = 'available'
+  if (status === 'offline') status = 'unavailable'
+  const serviceRadius = saved.serviceRadiusLabel || professionalDetails.serviceRadius || profile.serviceRadius
+  if (!status && !serviceRadius) return null
+  return {
+    status: status || 'not-configured',
+    isAcceptingJobs: profile.isAcceptingJobs === true || saved.isAcceptingJobs === true,
+    serviceRadiusLabel: serviceRadius ? `Service area: ${serviceRadius}` : null,
+  }
+}
+
+export async function getMechanicProfileData(mechanicId, mechanicProfile = {}) {
   if (
     typeof mechanicId !== 'string' ||
     !mechanicId.trim()
@@ -77,6 +131,10 @@ export async function getMechanicProfileData(mechanicId) {
     )
   }
 
+  const profile = mechanicProfile && typeof mechanicProfile === 'object' ? mechanicProfile : {}
+  const professionalDetails = profile.professionalDetails && typeof profile.professionalDetails === 'object'
+    ? profile.professionalDetails
+    : {}
   let homeData = null
 
   try {
@@ -87,22 +145,16 @@ export async function getMechanicProfileData(mechanicId) {
   }
 
   return {
-    verification: null,
+    verification: getSavedVerification(profile),
 
     performance: {
-      rating: Number.isFinite(homeData?.rating)
-        ? homeData.rating
-        : null,
-      reviewCount: null,
-      completedJobs:
-        Number.isFinite(homeData?.jobsCompleted) &&
-        homeData.jobsCompleted >= 0
-          ? homeData.jobsCompleted
-          : null,
+      rating: numberOrNull(homeData?.rating, profile.performance?.rating, profile.rating, profile.averageRating),
+      reviewCount: numberOrNull(profile.performance?.reviewCount, profile.reviewCount, profile.reviewsCount, profile.totalReviews),
+      completedJobs: numberOrNull(homeData?.jobsCompleted, profile.performance?.completedJobs, profile.completedJobs, profile.jobsCompleted),
     },
 
-    availability: null,
+    availability: getSavedAvailability(profile, professionalDetails),
     settings: MECHANIC_PROFILE_SETTINGS,
-    recentActivity: null,
+    recentActivity: Array.isArray(profile.recentActivity) ? profile.recentActivity : null,
   }
 }

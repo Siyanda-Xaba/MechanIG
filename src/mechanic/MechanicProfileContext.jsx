@@ -35,16 +35,6 @@ export function MechanicProfileProvider({
       ? user.id
       : null
 
-  const currentScopeRef = useRef({
-    mechanicId,
-    isLoadingUser,
-  })
-
-  currentScopeRef.current = {
-    mechanicId,
-    isLoadingUser,
-  }
-
   const requestVersionRef = useRef(0)
 
   const [
@@ -58,12 +48,7 @@ export function MechanicProfileProvider({
         ++requestVersionRef.current
 
       const isCurrentRequest = () =>
-        requestVersion ===
-          requestVersionRef.current &&
-        currentScopeRef.current.mechanicId ===
-          mechanicId &&
-        currentScopeRef.current.isLoadingUser ===
-          false
+        requestVersion === requestVersionRef.current
 
       if (
         isLoadingUser ||
@@ -86,7 +71,8 @@ export function MechanicProfileProvider({
       try {
         const data =
           await getMechanicProfileData(
-            mechanicId
+            mechanicId,
+            user
           )
 
         if (!isCurrentRequest()) {
@@ -139,12 +125,17 @@ export function MechanicProfileProvider({
     }, [
       mechanicId,
       isLoadingUser,
+      user,
     ])
 
   useEffect(() => {
-    void refreshProfileData()
+    let cancelled = false
+    Promise.resolve().then(() => {
+      if (!cancelled) void refreshProfileData()
+    })
 
     return () => {
+      cancelled = true
       requestVersionRef.current += 1
     }
   }, [refreshProfileData])

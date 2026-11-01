@@ -162,10 +162,14 @@ export async function readUserProfile(firebaseUser) {
             const mechanicSnapshot = await get(ref(database, `mechanics/${firebaseUser.uid}`));
             if (mechanicSnapshot.exists()) {
                 const val = mechanicSnapshot.val();
+                const privateSnapshot = await get(ref(database, `mechanicPrivate/${firebaseUser.uid}`)).catch(() => null);
+                const privateProfile = privateSnapshot?.val?.() || {};
                 const merged = {
                     ...localProfile,
                     ...val,
+                    ...privateProfile,
                     id: firebaseUser.uid,
+                    uid: firebaseUser.uid,
                     role: 'mechanic',
                 };
                 try {

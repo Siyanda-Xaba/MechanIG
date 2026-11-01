@@ -471,6 +471,20 @@ export default function MechanicHome() {
               }
             >
               <MechanicQuickAction
+                icon="radar"
+                title="Nearby Requests"
+                description="View and accept requests within 30 km"
+                onPress={() => {
+                  router.push('/mechanic-request/incoming')
+                }}
+                backgroundColor={colors.card}
+                borderColor={colors.border}
+                textColor={colors.text}
+                secondaryTextColor={colors.secondaryText}
+                accentColor={colors.accent}
+              />
+
+              <MechanicQuickAction
                 icon="calendar-plus"
                 title="New Booking"
                 description="Create workshop or mobile service booking"

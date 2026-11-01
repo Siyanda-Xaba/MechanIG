@@ -1,11 +1,22 @@
+/* global __dirname */
 const http = require('node:http');
 const crypto = require('node:crypto');
 const path = require('node:path');
+const { Buffer } = require('node:buffer');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env.backend.local'), override: false });
 const { formatPredictions } = require('./dashboard-scanner/services/responseFormatter');
 const { detectWarningLights } = require('./dashboard-scanner/services/roboflowService');
+const {
+  findEligibleMechanics,
+  createAndBroadcastServiceRequest,
+  createAndBroadcastFuelRequest,
+  handleAcceptanceAttempt,
+  declineMechanicRequest,
+  syncMechanicOpenRequests,
+} = require('./services/serviceRequestService');
 
-const PORT = Number(process.env.PICTURE_SEARCH_PORT || 3001);
+// Render supplies PORT; local development keeps the existing PICTURE_SEARCH_PORT.
+const PORT = Number(process.env.PORT || process.env.PICTURE_SEARCH_PORT || 3001);
 const HOST = process.env.PICTURE_SEARCH_HOST || '0.0.0.0';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const GEMINI_FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.6-flash,gemini-3.5-flash-lite')
@@ -28,6 +39,13 @@ const ROUTE_LIMITS = new Map([
   ['/api/v1/nearby-fuel-stations', 20],
   ['/api/v1/nearby-stores', 20],
   ['/api/v1/vehicle-hero-image', 6],
+  ['/api/v1/service-requests', 10],
+  ['/api/v1/service-requests/accept', 30],
+  ['/api/v1/service-requests/eligible-mechanics', 20],
+  ['/api/v1/fuel-requests', 10],
+  ['/api/v1/fuel-requests/accept', 30],
+  ['/api/v1/mechanic/request-decline', 30],
+  ['/api/v1/mechanic/request-sync', 20],
 ]);
 const allowedOrigins = new Set((process.env.PICTURE_SEARCH_CORS_ORIGINS || '')
   .split(',').map((origin) => origin.trim()).filter(Boolean));
@@ -58,7 +76,7 @@ async function authenticateRequest(request) {
       })();
     }
     const auth = await adminAuthPromise;
-    await auth.verifyIdToken(match[1], process.env.NODE_ENV === 'production');
+    request.user = await auth.verifyIdToken(match[1], process.env.NODE_ENV === 'production');
     return true;
   } catch (error) {
     console.error('Picture-search authentication failed:', { code: error?.code || 'UNKNOWN' });
@@ -647,6 +665,114 @@ const server = http.createServer(async (request, response) => {
       catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
       if (!input || typeof input !== 'object' || Array.isArray(input)) return sendJson(response, 400, { error: 'The request body must be a JSON object.' });
       return sendJson(response, 200, await findNearbyStores(input));
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/service-requests') {
+      const body = await readBody(request, 1024 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        return sendJson(response, 400, { error: 'Invalid service request payload.' });
+      }
+      const latitude = Number(input.location?.latitude);
+      const longitude = Number(input.location?.longitude);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+          !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        return sendJson(response, 400, { error: 'A valid current GPS location is required.' });
+      }
+      if (typeof input.issueDescription !== 'string' || !input.issueDescription.trim()) {
+        return sendJson(response, 400, { error: 'Describe the vehicle problem before submitting.' });
+      }
+      if (!request.user?.uid) return sendJson(response, 401, { error: 'Authentication required.' });
+      const result = await createAndBroadcastServiceRequest(request.user.uid, input);
+      return sendJson(response, 201, result);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/service-requests/accept') {
+      const body = await readBody(request, 64 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) return sendJson(response, 400, { error: 'Invalid acceptance payload.' });
+      const requestId = String(input.requestId || '').trim();
+      if (!request.user?.uid) return sendJson(response, 401, { error: 'Mechanic authentication required.' });
+      if (!requestId) return sendJson(response, 400, { error: 'requestId is required.' });
+      const result = await handleAcceptanceAttempt(request.user.uid, requestId, 'service');
+      return sendJson(response, 200, result);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/fuel-requests') {
+      const body = await readBody(request, 64 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) return sendJson(response, 400, { error: 'Invalid fuel request payload.' });
+      const latitude = Number(input.location?.latitude);
+      const longitude = Number(input.location?.longitude);
+      const quantityLitres = Number(input.quantityLitres);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        return sendJson(response, 400, { error: 'A valid current GPS location is required.' });
+      }
+      if (typeof input.fuelType !== 'string' || !input.fuelType.trim() || !Number.isFinite(quantityLitres) || quantityLitres <= 0 || quantityLitres > 1000) {
+        return sendJson(response, 400, { error: 'Choose a fuel type and enter a quantity between 0 and 1000 litres.' });
+      }
+      if (!input.vehicleId && !input.vehicle?.id) return sendJson(response, 400, { error: 'Select a vehicle before requesting fuel.' });
+      if (!request.user?.uid) return sendJson(response, 401, { error: 'Authentication required.' });
+      const result = await createAndBroadcastFuelRequest(request.user.uid, input);
+      return sendJson(response, 201, result);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/fuel-requests/accept') {
+      const body = await readBody(request, 64 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) return sendJson(response, 400, { error: 'Invalid acceptance payload.' });
+      const requestId = String(input.requestId || '').trim();
+      if (!request.user?.uid) return sendJson(response, 401, { error: 'Mechanic authentication required.' });
+      if (!requestId) return sendJson(response, 400, { error: 'requestId is required.' });
+      const result = await handleAcceptanceAttempt(request.user.uid, requestId, 'fuel');
+      return sendJson(response, 200, result);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/mechanic/request-decline') {
+      const body = await readBody(request, 64 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) return sendJson(response, 400, { error: 'Invalid decline payload.' });
+      const requestId = String(input.requestId || '').trim();
+      const requestType = input.requestType === 'fuel' ? 'fuel' : 'service';
+      if (!request.user?.uid) return sendJson(response, 401, { error: 'Mechanic authentication required.' });
+      if (!requestId) return sendJson(response, 400, { error: 'requestId is required.' });
+      const result = await declineMechanicRequest(request.user.uid, requestId, requestType);
+      return sendJson(response, 200, result);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/mechanic/request-sync') {
+      const body = await readBody(request, 64 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) return sendJson(response, 400, { error: 'Invalid request refresh payload.' });
+      if (!request.user?.uid) return sendJson(response, 401, { error: 'Mechanic authentication required.' });
+      const location = input.location || {};
+      const latitude = Number(location.latitude);
+      const longitude = Number(location.longitude);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        return sendJson(response, 400, { error: 'A valid mechanic location is required to refresh requests.' });
+      }
+      const result = await syncMechanicOpenRequests(request.user.uid);
+      return sendJson(response, 200, result);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/v1/service-requests/eligible-mechanics') {
+      const body = await readBody(request, 64 * 1024);
+      let input;
+      try { input = JSON.parse(body.toString('utf8') || '{}'); }
+      catch { return sendJson(response, 400, { error: 'The request body must be valid JSON.' }); }
+      const latitude = Number(input.latitude);
+      const longitude = Number(input.longitude);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+          !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        return sendJson(response, 400, { error: 'Valid latitude and longitude are required.' });
+      }
+      const mechanics = await findEligibleMechanics({ latitude, longitude });
+      return sendJson(response, 200, { eligibleCount: mechanics.length, mechanics });
     }
     return sendJson(response, 404, { error: 'Endpoint not found.' });
   } catch (error) {

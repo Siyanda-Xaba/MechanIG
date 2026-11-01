@@ -117,8 +117,8 @@ async function getLiveNearbyStores({ requestPermission = false } = {}) {
         : await Location.getForegroundPermissionsAsync();
     if (!permission.granted) return [];
     const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    const { getPictureSearchEndpoint, getPictureSearchAuthHeaders } = await import('../config/pictureSearchApi');
-    const response = await fetch(getPictureSearchEndpoint('/api/v1/nearby-stores'), {
+    const { fetchWithPictureSearchFallback, getPictureSearchAuthHeaders } = await import('../config/pictureSearchApi');
+    const response = await fetchWithPictureSearchFallback('/api/v1/nearby-stores', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...await getPictureSearchAuthHeaders() },
         body: JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
     });
@@ -325,7 +325,7 @@ export async function getMarketplaceStoreById(storeId) {
 }
 
 export async function recognizeMarketplacePart(picture, vehicle) {
-    const { getPictureSearchEndpoint, getPictureSearchAuthHeaders } = await import('../config/pictureSearchApi');
+    const { fetchWithPictureSearchFallback, getPictureSearchAuthHeaders } = await import('../config/pictureSearchApi');
     const formData = new FormData();
     // Expo 57's fetch accepts Blob/File values, not the legacy { uri, name, type }
     // React Native object. File reads the selected photo without loading it into JS memory.
@@ -336,7 +336,7 @@ export async function recognizeMarketplacePart(picture, vehicle) {
     formData.append('model', vehicle?.model || '');
     formData.append('year', String(vehicle?.year || ''));
     formData.append('engine', vehicle?.engineSize || '');
-    const response = await fetch(getPictureSearchEndpoint('/api/v1/part-searches'), {
+    const response = await fetchWithPictureSearchFallback('/api/v1/part-searches', {
         method: 'POST',
       headers: await getPictureSearchAuthHeaders(),
         body: formData,
@@ -357,7 +357,7 @@ export async function recognizeMarketplacePart(picture, vehicle) {
     };
 }
 export async function checkMarketplacePartCompatibility(input) {
-    const { getPictureSearchEndpoint, getPictureSearchAuthHeaders } = await import('../config/pictureSearchApi');
+    const { fetchWithPictureSearchFallback, getPictureSearchAuthHeaders } = await import('../config/pictureSearchApi');
     const vehicle = input.vehicle || {};
     let location = null;
     try {
@@ -369,7 +369,7 @@ export async function checkMarketplacePartCompatibility(input) {
     } catch {
         // Location is optional; continue with online listings if permission or GPS fails.
     }
-    const response = await fetch(getPictureSearchEndpoint('/api/v1/part-searches/offers'), {
+    const response = await fetchWithPictureSearchFallback('/api/v1/part-searches/offers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...await getPictureSearchAuthHeaders() },
         body: JSON.stringify({

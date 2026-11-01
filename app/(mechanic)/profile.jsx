@@ -66,11 +66,11 @@ export default function MechanicProfile() {
   const fullName = user
     ? `${user.firstName ?? ''} ${
         user.lastName ?? ''
-      }`.trim()
+      }`.trim() || user.publicName || user.businessName
     : 'Mechanic'
 
   const professionalDetails =
-    user?.professionalDetails ?? {}
+    user?.professionalDetails ?? user?.professional ?? {}
 
   const verification =
     profileData?.verification ?? null
@@ -132,14 +132,14 @@ export default function MechanicProfile() {
       case 'business-information':
         Alert.alert(
           'Workshop & Business',
-          'Your workshop and professional information is shown on this profile. A dedicated editing screen will be connected to the mechanic profile update backend.'
+          'Your saved workshop and professional details are shown on this profile. Editing them is not available here yet.'
         )
         return
 
       case 'availability':
         Alert.alert(
           'Availability',
-          'Mechanic availability editing will be connected when the availability backend contract is available.'
+          'Go online from Incoming Nearby Requests to receive nearby work. Your saved service area is shown below.'
         )
         return
     }
@@ -311,8 +311,7 @@ export default function MechanicProfile() {
                   },
                 ]}
               >
-                Mechanic profile
-                unavailable.
+                We could not load your profile. Check your connection and try again.
               </Text>
             </View>
           ) : (
@@ -449,8 +448,7 @@ export default function MechanicProfile() {
                 <ProfileDetailRow
                   icon="person-outline"
                   value={
-                    user.username ??
-                    'N/A'
+                    displayProfileValue(user.username || user.handle)
                   }
                   colors={colors}
                 />
@@ -458,9 +456,7 @@ export default function MechanicProfile() {
                 <ProfileDetailRow
                   icon="mail-outline"
                   value={
-                    user.communicationEmail ??
-                    user.email ??
-                    'N/A'
+                    displayProfileValue(user.communicationEmail || user.email)
                   }
                   colors={colors}
                 />
@@ -468,8 +464,7 @@ export default function MechanicProfile() {
                 <ProfileDetailRow
                   icon="call-outline"
                   value={
-                    user.phone ??
-                    'N/A'
+                    displayProfileValue(user.phone)
                   }
                   colors={colors}
                 />
@@ -479,7 +474,7 @@ export default function MechanicProfile() {
                   value={
                     user.idNumber
                       ? `ID: ${user.idNumber}`
-                      : 'N/A'
+                      : 'Not added yet'
                   }
                   colors={colors}
                 />
@@ -487,8 +482,7 @@ export default function MechanicProfile() {
                 <ProfileDetailRow
                   icon="storefront-outline"
                   value={
-                    user.businessName ??
-                    'N/A'
+                    displayProfileValue(user.businessName)
                   }
                   colors={colors}
                 />
@@ -527,7 +521,7 @@ export default function MechanicProfile() {
                 ? performance.rating.toFixed(
                     1
                   )
-                : 'N/A'
+                : 'No data yet'
             }
             colors={colors}
           />
@@ -537,7 +531,7 @@ export default function MechanicProfile() {
             label="Completed"
             value={
               performance?.completedJobs ??
-              'N/A'
+              'Not available yet'
             }
             colors={colors}
           />
@@ -547,7 +541,7 @@ export default function MechanicProfile() {
             label="Reviews"
             value={
               performance?.reviewCount ??
-              'N/A'
+              'No data yet'
             }
             colors={colors}
             onPress={() =>
@@ -581,18 +575,21 @@ export default function MechanicProfile() {
           <VerificationRow
             label="Identity Document"
             isVerified={verification?.identityVerified ?? null}
+            isSubmitted={verification?.identitySubmitted}
             colors={colors}
           />
 
           <VerificationRow
             label="Trade Certificate"
             isVerified={verification?.tradeCertificateVerified ?? null}
+            isSubmitted={verification?.tradeCertificateSubmitted}
             colors={colors}
           />
 
           <VerificationRow
             label="Workshop Registration"
             isVerified={verification?.businessVerified ?? null}
+            isSubmitted={verification?.businessSubmitted}
             colors={colors}
             isLast
           />
@@ -624,8 +621,7 @@ export default function MechanicProfile() {
             icon="storefront-outline"
             label="Business Type"
             value={
-              user?.businessType ||
-              'N/A'
+              displayProfileValue(user?.businessType)
             }
             colors={colors}
           />
@@ -634,9 +630,11 @@ export default function MechanicProfile() {
             icon="calendar-outline"
             label="Years in Business"
             value={
-              user?.yearsInBusiness
-                ? `${user.yearsInBusiness} years`
-                : 'N/A'
+              (user?.yearsInBusiness ?? professionalDetails.yearsInBusiness) !== undefined &&
+              (user?.yearsInBusiness ?? professionalDetails.yearsInBusiness) !== null &&
+              (user?.yearsInBusiness ?? professionalDetails.yearsInBusiness) !== ''
+              ? `${user?.yearsInBusiness ?? professionalDetails.yearsInBusiness} years`
+                : 'Not added yet'
             }
             colors={colors}
           />
@@ -645,9 +643,9 @@ export default function MechanicProfile() {
             icon="account-group-outline"
             label="Employees"
             value={
-              user?.employees
+              user?.employees !== undefined && user?.employees !== null && user?.employees !== ''
                 ? String(user.employees)
-                : 'N/A'
+                : 'Not added yet'
             }
             colors={colors}
           />
@@ -656,8 +654,7 @@ export default function MechanicProfile() {
             icon="map-marker-outline"
             label="Workshop Location"
             value={
-              professionalDetails.workshopLocation ||
-              'N/A'
+              displayProfileValue(professionalDetails.workshopLocation || user?.workshopAddress || user?.address)
             }
             colors={colors}
           />
@@ -666,9 +663,7 @@ export default function MechanicProfile() {
             icon="construct-outline"
             label="Specialisation"
             value={
-              professionalDetails
-                .specialisation ||
-              'N/A'
+              displayProfileValue(professionalDetails.specialisation || professionalDetails.specialization)
             }
             colors={colors}
           />
@@ -677,9 +672,7 @@ export default function MechanicProfile() {
             icon="school-outline"
             label="Qualifications"
             value={
-              professionalDetails
-                .qualifications ||
-              'N/A'
+              displayProfileValue(professionalDetails.qualifications || user?.qualifications)
             }
             colors={colors}
           />
@@ -688,9 +681,7 @@ export default function MechanicProfile() {
             icon="map-marker-radius-outline"
             label="Service Area"
             value={
-              professionalDetails
-                .serviceRadius ||
-              'N/A'
+              displayProfileValue(professionalDetails.serviceRadius || user?.serviceRadius)
             }
             colors={colors}
           />
@@ -702,7 +693,7 @@ export default function MechanicProfile() {
               professionalDetails
                 .yearsExperience
                 ? `${professionalDetails.yearsExperience} years`
-                : 'N/A'
+                : 'Not added yet'
             }
             colors={colors}
           />
@@ -711,9 +702,7 @@ export default function MechanicProfile() {
             icon="card-account-details-outline"
             label="Trade / License"
             value={
-              professionalDetails
-                .licenseNumber ||
-              'N/A'
+              displayProfileValue(professionalDetails.licenseNumber || user?.licenseNumber)
             }
             colors={colors}
           />
@@ -722,9 +711,7 @@ export default function MechanicProfile() {
             icon="file-document-outline"
             label="Business Registration"
             value={
-              professionalDetails
-                .registrationNumber ||
-              'N/A'
+              displayProfileValue(professionalDetails.registrationNumber || user?.registrationNumber)
             }
             colors={colors}
           />
@@ -733,9 +720,7 @@ export default function MechanicProfile() {
             icon="car-multiple"
             label="Supported Brands"
             value={
-              Array.isArray(professionalDetails.vehicleBrands) && professionalDetails.vehicleBrands.length > 0
-                ? professionalDetails.vehicleBrands.join(', ')
-                : (professionalDetails.vehicleBrands || 'N/A')
+              displayProfileValue(professionalDetails.vehicleBrands || professionalDetails.supportedBrands)
             }
             colors={colors}
             isLast
@@ -814,12 +799,11 @@ export default function MechanicProfile() {
               ]}
             >
               {availability?.serviceRadiusLabel ??
-                (availability?.status ===
-                'not-configured'
-                  ? 'Availability preferences have not been configured.'
-                  : availability
-                    ? 'Service radius unavailable.'
-                    : 'Verified availability preferences are unavailable.')}
+                (availability?.status === 'not-configured'
+                  ? 'Your availability preferences have not been set yet.'
+                  : professionalDetails.serviceRadius || user?.serviceRadius
+                    ? `Service area: ${professionalDetails.serviceRadius || user?.serviceRadius}`
+                    : 'Add a service area so nearby customers know where you work.')}
             </Text>
           </View>
         </View>
@@ -974,7 +958,7 @@ export default function MechanicProfile() {
                   { color: colors.secondaryText },
                 ]}
               >
-                Recent profile activity is unavailable.
+                Your recent profile activity will appear here when available.
               </Text>
             </View>
           ) : recentActivity.length ===
@@ -1333,7 +1317,7 @@ function VerificationBadge({
       >
         {status
           ? formatVerificationStatus(status)
-          : 'Status unavailable'}
+          : 'Not updated yet'}
       </Text>
     </View>
   )
@@ -1342,6 +1326,7 @@ function VerificationBadge({
 function VerificationRow({
   label,
   isVerified,
+  isSubmitted,
   colors,
   isLast = false,
 }) {
@@ -1349,13 +1334,17 @@ function VerificationRow({
     ? colors.success
     : isVerified === false
       ? colors.warning
+      : isSubmitted
+        ? colors.accent
       : colors.secondaryText
 
   const displayState = isVerified === true
     ? 'Verified'
     : isVerified === false
-      ? 'Not verified'
-      : 'Unavailable'
+      ? 'Needs attention'
+      : isSubmitted
+        ? 'Submitted for review'
+        : 'Not added yet'
 
   return (
     <View
@@ -1376,7 +1365,9 @@ function VerificationRow({
             ? 'check-circle-outline'
             : isVerified === false
               ? 'clock-outline'
-              : 'help-circle-outline'
+              : isSubmitted
+                ? 'file-check-outline'
+                : 'file-question-outline'
         }
         size={21}
         color={color}
@@ -1483,13 +1474,13 @@ function formatVerificationStatus(
       return 'Verified'
 
     case 'pending':
-      return 'Verification Pending'
+      return 'Documents being reviewed'
 
     case 'rejected':
-      return 'Verification Rejected'
+      return 'Review needs attention'
 
     default:
-      return 'N/A'
+      return 'Not reviewed yet'
   }
 }
 
@@ -1507,10 +1498,10 @@ function formatAvailabilityStatus(
       return 'Unavailable'
 
     case 'not-configured':
-      return 'Not Configured'
+      return 'Not set yet'
 
     default:
-      return 'N/A'
+      return 'Not set yet'
   }
 }
 
@@ -1542,7 +1533,17 @@ function formatAddress(user) {
 
   return addressParts.length
     ? addressParts.join(', ')
-    : 'N/A'
+    : 'Not added yet'
+}
+
+function displayProfileValue(value) {
+  if (Array.isArray(value)) {
+    const joined = value.map((item) => String(item).trim()).filter(Boolean).join(', ')
+    return joined || 'Not added yet'
+  }
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'string' && value.trim()) return value.trim()
+  return 'Not added yet'
 }
 
 function getSettingIcon(id) {

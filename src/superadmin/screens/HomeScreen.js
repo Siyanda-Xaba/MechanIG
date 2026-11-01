@@ -3,7 +3,8 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radii, typography } from '../theme/theme';
-import { getRecentActivity, subscribeDashboardStats } from '../api/adminApi';
+import { subscribeDashboardStats, subscribeRecentActivity } from '../api/adminApi';
+import { formatSouthAfricaDate } from '../../utils/timeZone';
 import StatCard from '../components/StatCard';
 import StatGrid from '../components/StatGrid';
 import ActivityRow from '../components/ActivityRow';
@@ -30,7 +31,6 @@ export default function HomeScreen({ navigation }) {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    let isMounted = true;
     const unsubscribe = subscribeDashboardStats((nextStats) => {
       setStats(nextStats);
       setError(null);
@@ -39,16 +39,14 @@ export default function HomeScreen({ navigation }) {
       setError(subscriptionError.message || 'Unable to load dashboard data.');
       setLoading(false);
     });
-    getRecentActivity()
-      .then((recentActivity) => {
-        if (isMounted) setActivity(recentActivity);
-      })
-      .catch((activityError) => {
-        if (isMounted) setError(activityError.message || 'Unable to load recent activity.');
-      });
+    const unsubscribeActivity = subscribeRecentActivity((recentActivity) => {
+      setActivity(recentActivity);
+    }, (activityError) => {
+      setError(activityError.message || 'Unable to load recent activity.');
+    });
     return () => {
-      isMounted = false;
       unsubscribe();
+      unsubscribeActivity();
     };
   }, [reloadKey]);
 
@@ -82,9 +80,9 @@ export default function HomeScreen({ navigation }) {
             <Feather name="calendar" size={16} color={colors.primary} />
           </View>
           <View>
-            <Text style={styles.dateDay}>{today.toLocaleDateString(undefined, { weekday: 'long' })}</Text>
+            <Text style={styles.dateDay}>{formatSouthAfricaDate(today, { weekday: 'long' })}</Text>
             <Text style={styles.dateFull}>
-              {today.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+              {formatSouthAfricaDate(today, { day: 'numeric', month: 'short', year: 'numeric' })}
             </Text>
           </View>
         </View>
@@ -107,6 +105,7 @@ export default function HomeScreen({ navigation }) {
               <StatCard icon="tool" iconBg={colors.successBg} iconColor={colors.success} value={stats.mechanics.toLocaleString()} label="Mechanics" change={stats.mechanicsChange} />
               <StatCard icon="calendar" iconBg={colors.infoBg} iconColor={colors.info} value={stats.totalBookings.toLocaleString()} label="Workshop Bookings" change={stats.bookingsChange} />
               <StatCard icon="truck" iconBg={colors.warningBg} iconColor={colors.warning} value={stats.serviceRequests.toLocaleString()} label="Mobile Requests" change={stats.serviceRequestsChange} />
+              <StatCard icon="droplet" iconBg={colors.infoBg} iconColor={colors.info} value={stats.fuelRequests.toLocaleString()} label="Fuel Requests" change={stats.fuelRequestsChange} />
               <StatCard icon="droplet" iconBg={colors.infoBg} iconColor={colors.info} value={stats.fuelDeliveries.toLocaleString()} label="Fuel Deliveries" change={stats.fuelDeliveriesChange} />
               <StatCard icon="shield" iconBg={colors.purpleBg} iconColor={colors.purple} value={stats.administratorCount.toLocaleString()} label="Administrator Accounts" change={`${stats.activeAdministrators} active · ${stats.pendingAdministrators} pending`} />
               <StatCard icon="shopping-bag" iconBg={colors.warningBg} iconColor={colors.warning} value={stats.productCount.toLocaleString()} label="Marketplace Products" change={`${stats.activeProductCount} active listings`} />

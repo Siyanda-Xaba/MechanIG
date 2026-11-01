@@ -250,7 +250,7 @@ export default function CustomerDiagnostics() {
                                         {
                                             color: colors.secondaryText,
                                         },
-                                    ], children: scanError }), Platform.OS === 'android' && /pair|disconnect|no recognizable/i.test(scanError || '') && !/ignition|computer|ecu/i.test(scanError || '') ? (_jsxs(TouchableOpacity, { activeOpacity: 0.7, onPress: () => { Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS').catch(() => {}); }, style: styles.openSettingsButton, children: [_jsx(MaterialCommunityIcons, { name: "bluetooth", size: 14, color: "#00EFFD" }), _jsx(Text, { style: styles.openSettingsButtonText, children: "Open Bluetooth Settings to Pair" })] })) : null] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearScanResult, accessibilityRole: "button", accessibilityLabel: "Dismiss scan error", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DiagnosisInsightsCard, { readings: displayedReadings, dtcProblems: scanResult?.dtcProblems ?? [], isLive }), _jsx(LiveObdReadingsCard, { readings: displayedReadings, capturedAt: displayedCapturedAt, isLive: isLive, isStartingScan, connectionState, currentOperation, resultId: scanResult?.resultId, onStop: stopLive, onViewReport: handleViewSavedScan }), _jsxs(View, { style: styles.diagnosticActionsRow, children: [_jsx(CustomerProblemDescriptionAction, { cardStyle: styles.diagnosticActionCard }), _jsx(DashboardWarningLightAction, { cardStyle: styles.diagnosticActionCard })] }), _jsx(SoundDiagnosisCard, { captureStatus: captureStatus, durationMillis: recording?.durationMillis ??
+                                    ], children: scanError }), Platform.OS === 'android' && /pair|disconnect|no recognizable/i.test(scanError || '') && !/ignition|computer|ecu/i.test(scanError || '') ? (_jsxs(TouchableOpacity, { activeOpacity: 0.7, onPress: () => { Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS').catch(() => {}); }, style: styles.openSettingsButton, children: [_jsx(MaterialCommunityIcons, { name: "bluetooth", size: 14, color: "#00EFFD" }), _jsx(Text, { style: styles.openSettingsButtonText, children: "Open Bluetooth Settings to Pair" })] })) : null] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearScanResult, accessibilityRole: "button", accessibilityLabel: "Dismiss scan error", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DiagnosisInsightsCard, { readings: displayedReadings, dtcProblems: scanResult?.dtcProblems ?? [], isLive }), _jsx(LiveObdReadingsCard, { readings: displayedReadings, capturedAt: displayedCapturedAt, isLive: isLive, isStartingScan, connectionState, currentOperation, resultId: scanResult?.resultId, onStop: stopLive, onViewReport: handleViewSavedScan }), _jsx(CustomerProblemDescriptionAction, { cardStyle: styles.diagnosticActionCard }), _jsx(SoundDiagnosisCard, { captureStatus: captureStatus, durationMillis: recording?.durationMillis ??
                         durationMillis, hasRecording: Boolean(recording), isSubmittingAnalysis: isSubmittingAnalysis, onStartRecording: handleStartSoundRecording, onStopRecording: handleStopSoundRecording, onDiscardRecording: discardRecording, onSubmitForAnalysis: handleSubmitSoundAnalysis }), soundDiagnosisError ? (_jsxs(View, { style: [
                         styles.scanFeedbackCard,
                         {
@@ -308,7 +308,7 @@ export default function CustomerDiagnostics() {
                                         {
                                             color: colors.secondaryText,
                                         },
-                                    ], children: analysisResult.message })] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearAnalysisResult, accessibilityRole: "button", accessibilityLabel: "Dismiss sound analysis message", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(RecentDiagnosticsList, { scans: recentScans.slice(0, 2), onViewAllPress: () => {
+                                    ], children: analysisResult.message })] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearAnalysisResult, accessibilityRole: "button", accessibilityLabel: "Dismiss sound analysis message", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DashboardWarningLightAction, { cardStyle: styles.diagnosticActionCard }), _jsx(RecentDiagnosticsList, { scans: recentScans.slice(0, 2), onViewAllPress: () => {
                         router.push('/diagnostic-history');
                     }, onScanPress: (scan) => {
                         if (!scan.resultId) {
@@ -457,8 +457,11 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     diagnosticActionCard: {
-        width: '48%',
+        width: '100%',
         minHeight: 142,
+        marginTop: 18,
+        marginBottom: 18,
+        alignSelf: 'stretch',
     },
     openSettingsButtonText: {
         color: '#00EFFD',

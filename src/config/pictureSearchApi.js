@@ -59,7 +59,10 @@ export async function fetchWithPictureSearchFallback(path, options = {}) {
       lastError = err;
     }
   }
-  throw lastError || new Error('Cannot reach the vehicle image service. Start the app with npm start and keep the phone and computer on the same network.');
+  if (lastError) {
+    throw new Error('Parts search can’t reach the MechanIQ server. Make sure the server is running and your phone and computer are on the same Wi-Fi, then try again.');
+  }
+  throw new Error('Parts search is temporarily unavailable. Please try again.');
 }
 
 export async function getPictureSearchAuthHeaders() {
