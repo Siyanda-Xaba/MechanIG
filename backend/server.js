@@ -10,7 +10,7 @@ const {
   handleAcceptanceAttempt,
 } = require('./services/serviceRequestService');
 
-const PORT = Number(process.env.PICTURE_SEARCH_PORT || 3001);
+const PORT = Number(process.env.PORT || process.env.PICTURE_SEARCH_PORT || 3001);
 const HOST = process.env.PICTURE_SEARCH_HOST || '0.0.0.0';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const GEMINI_FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.6-flash,gemini-3.5-flash-lite')
