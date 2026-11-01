@@ -1,0 +1,14 @@
+{
+  "vehicles": [
+    {
+      "id": "veh_7858210c-1f1c-4fd2-a24f-6dd2008cb7c1",
+      "ownerId": "MNdvSJlZpteDKS6Fu2iV8ArAw2E3",
+      "createdAt": "2026-10-31T23:59:37.988Z",
+      "make": "Ford",
+      "model": "Fiesta",
+      "year": 2021,
+      "nickname": "DD341GP"
+    }
+  ],
+  "scans": []
+}
